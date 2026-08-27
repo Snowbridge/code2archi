@@ -1,7 +1,11 @@
 import type { CommandModule } from "yargs";
 import { CliError } from "../cli-error.js";
 import { resolveSourceDirs } from "../../scan/resolve-source-dirs.js";
-import { runScanFlow } from "../../scan/run-scan-flow.js";
+import type { GlobalArgv } from "../processor-groups.js";
+import {
+  createRunScanFlowInput,
+  runScanFlow,
+} from "../../scan/run-scan-flow.js";
 import { validateScanArgs } from "../../scan/validate-scan-args.js";
 
 export const scanCommand: CommandModule = {
@@ -34,7 +38,9 @@ export const scanCommand: CommandModule = {
         output: argv.output as string | undefined,
         force: argv.force as boolean,
       });
-      runScanFlow(scanArgs);
+      runScanFlow(
+        createRunScanFlowInput(scanArgs, argv as unknown as GlobalArgv),
+      );
     } catch (error) {
       if (error instanceof CliError) {
         console.error(error.message);

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import "./platform/processors/builtin-processors.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { scanCommand } from "./cli/commands/scan.js";
