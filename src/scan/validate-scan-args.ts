@@ -7,14 +7,12 @@ import { formatRunTimestamp } from "../platform/timestamp.js";
 export interface ScanArgs {
   sourceDirs: string[];
   outputDir: string;
-  noTraverse: boolean;
   force: boolean;
 }
 
 export interface ValidateScanArgsInput {
   sourceDirs: string[];
   output?: string;
-  noTraverse: boolean;
   force: boolean;
   now?: Date;
 }
@@ -42,7 +40,6 @@ export function validateScanArgs(input: ValidateScanArgsInput): ScanArgs {
   return {
     sourceDirs: input.sourceDirs,
     outputDir,
-    noTraverse: input.noTraverse,
     force: input.force,
   };
 }

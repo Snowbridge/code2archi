@@ -24,12 +24,6 @@ export const scanCommand: CommandModule = {
         type: "boolean",
         default: false,
         describe: "Overwrite non-empty output directory",
-      })
-      .option("traverse", {
-        type: "boolean",
-        default: true,
-        describe:
-          "Search for repository roots under source-dir (disable with --no-traverse)",
       }),
   handler: (argv) => {
     try {
@@ -38,7 +32,6 @@ export const scanCommand: CommandModule = {
       const scanArgs = validateScanArgs({
         sourceDirs,
         output: argv.output as string | undefined,
-        noTraverse: argv.traverse === false,
         force: argv.force as boolean,
       });
       runScanFlow(scanArgs);

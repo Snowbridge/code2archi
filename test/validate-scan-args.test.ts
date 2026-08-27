@@ -26,7 +26,6 @@ describe("validateScanArgs", () => {
       () =>
         validateScanArgs({
           sourceDirs: [path.join(tmpdir(), "c2a-missing-dir")],
-          noTraverse: false,
           force: false,
         }),
       ExitCode.ARGV,
@@ -47,7 +46,6 @@ describe("validateScanArgs", () => {
         validateScanArgs({
           sourceDirs: [sourceDir],
           output: outputDir,
-          noTraverse: false,
           force: false,
         }),
       ExitCode.RUNTIME,
@@ -66,7 +64,6 @@ describe("validateScanArgs", () => {
     const result = validateScanArgs({
       sourceDirs: [sourceDir],
       output: outputDir,
-      noTraverse: false,
       force: true,
       now: new Date("2026-08-27T12:00:00.000Z"),
     });
@@ -84,7 +81,6 @@ describe("validateScanArgs", () => {
     try {
       const result = validateScanArgs({
         sourceDirs: [sourceDir],
-        noTraverse: false,
         force: false,
         now: new Date("2026-08-27T12:00:45.000Z"),
       });
