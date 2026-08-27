@@ -20,10 +20,12 @@ export function createRunScanFlowInput(
 
 export function runScanFlow(input: RunScanFlowInput): void {
   console.log("[scan] step 1/4: repository discovery (scan-scope)");
-  const repoRoots = runScanScopeGroup(input.sourceDirs, input.processorFilters);
-  console.log(`[scan] found ${repoRoots.length} repository root(s)`);
+  const repositories = runScanScopeGroup(input.sourceDirs, input.processorFilters);
+  console.log(`[scan] found ${repositories.length} repository(ies)`);
 
   console.log("[scan] step 2/4: technology layer discovery (scan-tech)");
+  console.log(`[scan] scan-tech input: ${repositories.length} repository(ies)`);
+
   console.log("[scan] step 3/4: application layer discovery (scan-app)");
   console.log(`[scan] step 4/4: writing discovery-model to ${input.outputDir}`);
 }

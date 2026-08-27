@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { ProcessorFilters } from "./processor-filters.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanScopeInput, ScanScopeOutput } from "./scan-scope-types.js";
@@ -12,7 +11,7 @@ export function runScanScopeGroup(
     filters,
   );
 
-  const repoRoots = new Set<string>();
+  const repositories = new Map<string, ScanScopeOutput[number]>();
   for (const processor of processors) {
     const output = processor.process(input);
     if (output instanceof Promise) {
@@ -21,10 +20,13 @@ export function runScanScopeGroup(
       );
     }
 
-    for (const repoRoot of output) {
-      repoRoots.add(path.resolve(repoRoot));
+    for (const repository of output) {
+      if (repositories.has(repository.id)) {
+        throw new Error(`Duplicate repository id: ${repository.id}`);
+      }
+      repositories.set(repository.id, repository);
     }
   }
 
-  return [...repoRoots].sort();
+  return [...repositories.values()].sort((a, b) => a.id.localeCompare(b.id));
 }

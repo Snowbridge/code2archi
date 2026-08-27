@@ -4,7 +4,7 @@ import type {
   ScanScopeInput,
   ScanScopeOutput,
 } from "../../platform/processors/scan-scope-types.js";
-import { findGitRepoRootsInSourceDirs } from "./find-git-repo-roots.js";
+import { buildRepositoriesFromSourceDirs } from "./build-repositories-from-source-dirs.js";
 
 export class GitReposProcessor implements IProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id: ProcessorId = {
@@ -12,9 +12,9 @@ export class GitReposProcessor implements IProcessor<ScanScopeInput, ScanScopeOu
     artifactId: "git-repos",
   };
 
-  readonly version = "0.1.0";
+  readonly version = "0.2.0";
 
   process(input: ScanScopeInput): ScanScopeOutput {
-    return findGitRepoRootsInSourceDirs(input);
+    return buildRepositoriesFromSourceDirs(input);
   }
 }
