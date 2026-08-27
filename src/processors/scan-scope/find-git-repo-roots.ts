@@ -16,8 +16,8 @@ export function findGitRepoRoots(sourceDir: string): string[] {
   function walk(dir: string): void {
     if (hasGitDirectory(dir)) {
       results.push(path.resolve(dir));
+      return;
     }
-
     let entries;
     try {
       entries = readdirSync(dir, { withFileTypes: true });

@@ -31,8 +31,10 @@ yargs(hideBin(process.argv))
   .demandCommand(1, "Specify a command")
   .strict()
   .help()
+  .alias("help", "h")
   .version(packageVersion)
   .alias("version", "v")
+  .epilogue(`code2archi (c2a) version ${packageVersion}`)
   .fail((message, error) => {
     if (error instanceof CliError) {
       console.error(error.message);

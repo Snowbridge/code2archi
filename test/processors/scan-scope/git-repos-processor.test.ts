@@ -21,7 +21,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
     assert.deepEqual(result, [path.resolve(repo)]);
   });
 
-  it("finds nested repository roots", () => {
+  it("does not traverse inside a found repository root", () => {
     const root = mkdtempSync(path.join(tmpdir(), "c2a-nested-"));
     const monorepo = path.join(root, "monorepo");
     const nested = path.join(monorepo, "packages", "service-a");
@@ -30,7 +30,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
     createGitRepo(nested);
 
     const result = findGitRepoRootsInSourceDirs([monorepo]);
-    assert.deepEqual(result.sort(), [path.resolve(monorepo), path.resolve(nested)].sort());
+    assert.deepEqual(result, [path.resolve(monorepo)]);
   });
 
   it("deduplicates overlapping source directories", () => {

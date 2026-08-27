@@ -7,6 +7,7 @@ import {
   runScanFlow,
 } from "../../scan/run-scan-flow.js";
 import { validateScanArgs } from "../../scan/validate-scan-args.js";
+import { packageVersion } from "../../package-version.js";
 
 export const scanCommand: CommandModule = {
   command: "scan <source-dir..>",
@@ -28,7 +29,8 @@ export const scanCommand: CommandModule = {
         type: "boolean",
         default: false,
         describe: "Overwrite non-empty output directory",
-      }),
+      })
+      .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
   handler: (argv) => {
     try {
       const sourceDir = argv["source-dir"] as string[];

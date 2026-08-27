@@ -30,6 +30,7 @@ function arrayOption(description: string): Options {
     type: "array",
     string: true,
     default: [],
+    hidden: true,
     describe: description,
   };
 }
