@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { CliError } from "../src/cli/cli-error.js";
 import { ExitCode } from "../src/cli/exit-codes.js";
 import { validateScanArgs } from "../src/scan/validate-scan-args.js";
+import { createTestTempDir, workspaceTmpDir } from "./test-temp-dir.js";
 
 function expectCliError(
   fn: () => void,
@@ -25,7 +25,7 @@ describe("validateScanArgs", () => {
     expectCliError(
       () =>
         validateScanArgs({
-          sourceDirs: [path.join(tmpdir(), "c2a-missing-dir")],
+          sourceDirs: [path.join(workspaceTmpDir, "c2a-missing-dir")],
           force: false,
         }),
       ExitCode.ARGV,
@@ -34,7 +34,7 @@ describe("validateScanArgs", () => {
   });
 
   it("rejects non-empty output without force", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-out-"));
+    const root = createTestTempDir("c2a-out-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
     mkdirSync(sourceDir);
@@ -54,7 +54,7 @@ describe("validateScanArgs", () => {
   });
 
   it("allows non-empty output with force", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-force-"));
+    const root = createTestTempDir("c2a-force-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
     mkdirSync(sourceDir);
@@ -72,7 +72,7 @@ describe("validateScanArgs", () => {
   });
 
   it("uses default output directory name with timestamp", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-default-"));
+    const root = createTestTempDir("c2a-default-");
     const sourceDir = path.join(root, "src");
     mkdirSync(sourceDir);
     const previousCwd = process.cwd();

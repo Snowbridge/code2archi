@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { findGitRepoRootsInSourceDirs } from "../../../src/processors/scan-scope/find-git-repo-roots.js";
 import { GitReposProcessor } from "../../../src/processors/scan-scope/git-repos-processor.js";
+import { createTestTempDir } from "../../test-temp-dir.js";
 
 function createGitRepo(dir: string): void {
   mkdirSync(path.join(dir, ".git"), { recursive: true });
@@ -12,7 +12,7 @@ function createGitRepo(dir: string): void {
 
 describe("findGitRepoRootsInSourceDirs", () => {
   it("finds a single repository root", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-git-"));
+    const root = createTestTempDir("c2a-git-");
     const repo = path.join(root, "my-app");
     mkdirSync(repo, { recursive: true });
     createGitRepo(repo);
@@ -22,7 +22,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
   });
 
   it("does not traverse inside a found repository root", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-nested-"));
+    const root = createTestTempDir("c2a-nested-");
     const monorepo = path.join(root, "monorepo");
     const nested = path.join(monorepo, "packages", "service-a");
     mkdirSync(nested, { recursive: true });
@@ -34,7 +34,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
   });
 
   it("deduplicates overlapping source directories", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-overlap-"));
+    const root = createTestTempDir("c2a-overlap-");
     const repo = path.join(root, "repo");
     mkdirSync(repo, { recursive: true });
     createGitRepo(repo);
@@ -44,7 +44,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
   });
 
   it("returns empty list when no git repositories are found", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-no-git-"));
+    const root = createTestTempDir("c2a-no-git-");
     const plain = path.join(root, "plain");
     mkdirSync(plain, { recursive: true });
 
@@ -53,7 +53,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
   });
 
   it("ignores .git file entries", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-git-file-"));
+    const root = createTestTempDir("c2a-git-file-");
     const repo = path.join(root, "submodule-worktree");
     mkdirSync(repo, { recursive: true });
     writeFileSync(path.join(repo, ".git"), "gitdir: ../.git/modules/foo", "utf8");
@@ -63,7 +63,7 @@ describe("findGitRepoRootsInSourceDirs", () => {
   });
 
   it("does not follow directory symlinks", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "c2a-symlink-"));
+    const root = createTestTempDir("c2a-symlink-");
     const realRepo = path.join(root, "real");
     const linkParent = path.join(root, "linked-parent");
     mkdirSync(realRepo, { recursive: true });
