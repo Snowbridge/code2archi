@@ -6,9 +6,11 @@
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "sourceMap": true,
     "esModuleInterop": true,
+    "experimentalDecorators": true,
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"]

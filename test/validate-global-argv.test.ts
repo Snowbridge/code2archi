@@ -16,13 +16,13 @@ function baseArgv(): Record<string, unknown> {
     withNone: [],
     withoutScanScope: [],
     withoutScanTech: [],
-    withoutScanSource: [],
+    withoutScanApp: [],
     withoutGenerateElement: [],
     withoutGenerateRelation: [],
     withoutGenerateView: [],
     withOnlyScanScope: [],
     withOnlyScanTech: [],
-    withOnlyScanSource: [],
+    withOnlyScanApp: [],
     withOnlyGenerateElement: [],
     withOnlyGenerateRelation: [],
     withOnlyGenerateView: [],
@@ -43,7 +43,7 @@ describe("validateGlobalArgv", () => {
     assert.doesNotThrow(() =>
       validateGlobalArgv({
         ...baseArgv(),
-        withNone: ["scan-source"],
+        withNone: ["scan-app"],
         withOnlyScanTech: ["build-system-npm-workspace"],
       }),
     );
@@ -65,10 +65,10 @@ describe("validateGlobalArgv", () => {
       () =>
         validateGlobalArgv({
           ...baseArgv(),
-          withNone: ["scan-source"],
-          withOnlyScanSource: ["processor-a"],
+          withNone: ["scan-app"],
+          withOnlyScanApp: ["processor-a"],
         }),
-      'Conflicting processor filters for group "scan-source"',
+      'Conflicting processor filters for group "scan-app"',
     );
   });
 
@@ -100,7 +100,7 @@ describe("validateGlobalArgv", () => {
     assert.doesNotThrow(() =>
       validateGlobalArgv({
         ...baseArgv(),
-        withNone: ["scan-source"],
+        withNone: ["scan-app"],
         withoutScanTech: ["processor-a"],
       }),
     );

@@ -77,7 +77,7 @@ export const globalOptions: Record<string, Options> = {
   },
   "without-scan-scope": arrayOption("Exclude scan-scope processors by artifactId"),
   "without-scan-tech": arrayOption("Exclude scan-tech processors by artifactId"),
-  "without-scan-source": arrayOption("Exclude scan-source processors by artifactId"),
+  "without-scan-app": arrayOption("Exclude scan-app processors by artifactId"),
   "without-generate-element": arrayOption(
     "Exclude generate-element processors by artifactId",
   ),
@@ -89,7 +89,7 @@ export const globalOptions: Record<string, Options> = {
   ),
   "with-only-scan-scope": arrayOption("Run only listed scan-scope processors"),
   "with-only-scan-tech": arrayOption("Run only listed scan-tech processors"),
-  "with-only-scan-source": arrayOption("Run only listed scan-source processors"),
+  "with-only-scan-app": arrayOption("Run only listed scan-app processors"),
   "with-only-generate-element": arrayOption(
     "Run only listed generate-element processors",
   ),

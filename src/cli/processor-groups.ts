@@ -1,7 +1,7 @@
 export const PROCESSOR_GROUPS = [
   "scan-scope",
   "scan-tech",
-  "scan-source",
+  "scan-app",
   "generate-element",
   "generate-relation",
   "generate-view",
@@ -25,13 +25,13 @@ export interface GlobalArgv {
   withNone: string[];
   withoutScanScope: string[];
   withoutScanTech: string[];
-  withoutScanSource: string[];
+  withoutScanApp: string[];
   withoutGenerateElement: string[];
   withoutGenerateRelation: string[];
   withoutGenerateView: string[];
   withOnlyScanScope: string[];
   withOnlyScanTech: string[];
-  withOnlyScanSource: string[];
+  withOnlyScanApp: string[];
   withOnlyGenerateElement: string[];
   withOnlyGenerateRelation: string[];
   withOnlyGenerateView: string[];
@@ -51,9 +51,9 @@ export const PROCESSOR_GROUP_DEFS: ProcessorGroupDef[] = [
     withOnlyArgvKey: "withOnlyScanTech",
   },
   {
-    groupId: "scan-source",
-    withoutArgvKey: "withoutScanSource",
-    withOnlyArgvKey: "withOnlyScanSource",
+    groupId: "scan-app",
+    withoutArgvKey: "withoutScanApp",
+    withOnlyArgvKey: "withOnlyScanApp",
   },
   {
     groupId: "generate-element",
