@@ -8,6 +8,8 @@ export interface ScanArgs {
   sourceDirs: string[];
   outputDir: string;
   force: boolean;
+  scanId: string;
+  runStartedAt: Date;
 }
 
 export interface ValidateScanArgsInput {
@@ -27,12 +29,11 @@ export function validateScanArgs(input: ValidateScanArgsInput): ScanArgs {
     }
   }
 
+  const runStartedAt = input.now ?? new Date();
+  const scanId = formatRunTimestamp(runStartedAt);
   const outputDir = input.output
     ? path.resolve(input.output)
-    : path.resolve(
-        process.cwd(),
-        `code2archi-scan-${formatRunTimestamp(input.now ?? new Date())}`,
-      );
+    : path.resolve(process.cwd(), `code2archi-scan-${scanId}`);
 
   prepareOutputDir(outputDir, input.force);
   mkdirSync(outputDir, { recursive: true });
@@ -41,6 +42,8 @@ export function validateScanArgs(input: ValidateScanArgsInput): ScanArgs {
     sourceDirs: input.sourceDirs,
     outputDir,
     force: input.force,
+    scanId,
+    runStartedAt,
   };
 }
 

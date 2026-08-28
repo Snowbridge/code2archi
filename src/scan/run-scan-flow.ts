@@ -2,6 +2,7 @@ import type { ProcessorFilters } from "../platform/processors/processor-filters.
 import { resolveProcessorFilters } from "../platform/processors/resolve-processor-filters.js";
 import { runScanScopeGroup } from "../platform/processors/run-scan-scope-group.js";
 import type { GlobalArgv } from "../cli/processor-groups.js";
+import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
 import type { ScanArgs } from "./validate-scan-args.js";
 
 export interface RunScanFlowInput extends ScanArgs {
@@ -28,4 +29,11 @@ export function runScanFlow(input: RunScanFlowInput): void {
 
   console.log("[scan] step 3/4: application layer discovery (scan-app)");
   console.log(`[scan] step 4/4: writing discovery-model to ${input.outputDir}`);
+  new DiscoveryModelWriter().write({
+    outputDir: input.outputDir,
+    sourceDirs: input.sourceDirs,
+    repositories,
+    scanId: input.scanId,
+    scannedAt: new Date(),
+  });
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { CliError } from "../src/cli/cli-error.js";
 import { ExitCode } from "../src/cli/exit-codes.js";
 import { validateScanArgs } from "../src/scan/validate-scan-args.js";
@@ -21,6 +21,20 @@ function expectCliError(
 }
 
 describe("validateScanArgs", () => {
+  const previousTz = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "Etc/GMT-3";
+  });
+
+  afterEach(() => {
+    if (previousTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTz;
+    }
+  });
+
   it("rejects non-existent source directory", () => {
     expectCliError(
       () =>
@@ -69,6 +83,7 @@ describe("validateScanArgs", () => {
     });
 
     assert.equal(result.outputDir, outputDir);
+    assert.equal(result.scanId, "2026-08-27T15-00-00.0000+0300");
   });
 
   it("uses default output directory name with timestamp", () => {
@@ -82,12 +97,13 @@ describe("validateScanArgs", () => {
       const result = validateScanArgs({
         sourceDirs: [sourceDir],
         force: false,
-        now: new Date("2026-08-27T12:00:45.000Z"),
+        now: new Date("2026-08-27T09:00:45.000Z"),
       });
       assert.equal(
         result.outputDir,
-        path.join(root, "code2archi-scan-20260827T120045Z"),
+        path.join(root, "code2archi-scan-2026-08-27T12-00-45.0000+0300"),
       );
+      assert.equal(result.scanId, "2026-08-27T12-00-45.0000+0300");
     } finally {
       process.chdir(previousCwd);
     }
