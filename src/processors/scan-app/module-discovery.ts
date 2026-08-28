@@ -22,11 +22,21 @@ export interface ModuleDiscoveryInput {
   }[];
 }
 
+function applicationModuleDependencyIdentityKey(
+  parentId: string,
+  groupId: string,
+  artifactId: string,
+  version: string,
+): string {
+  return `${parentId}\u0001${groupId}\u0001${artifactId}\u0001${version}`;
+}
+
 export function buildModuleDiscoveryIntents(
   modules: readonly ModuleDiscoveryInput[],
 ): CreateIntents {
   const applicationModules: ApplicationModuleCreateIntent[] = [];
   const applicationModuleDependencies: ApplicationModuleDependencyCreateIntent[] = [];
+  const seenApplicationModuleDependencies = new Set<string>();
 
   for (const module of modules) {
     const moduleId = createEntityId([
@@ -51,6 +61,17 @@ export function buildModuleDiscoveryIntents(
     });
 
     for (const dependency of module.dependencies) {
+      const identityKey = applicationModuleDependencyIdentityKey(
+        moduleId,
+        dependency.groupId,
+        dependency.artifactId,
+        dependency.version,
+      );
+      if (seenApplicationModuleDependencies.has(identityKey)) {
+        continue;
+      }
+      seenApplicationModuleDependencies.add(identityKey);
+
       applicationModuleDependencies.push({
         id: createEntityId([moduleId, dependency.groupId, dependency.artifactId, dependency.version]),
         parentId: moduleId,

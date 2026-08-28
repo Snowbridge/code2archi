@@ -66,6 +66,65 @@ describe("MavenModulesAndDependenciesProcessor", () => {
     assert.equal(dependencies[0]?.parentId, modules[0]?.id);
   });
 
+  it("skips duplicate dependencies in pom.xml", () => {
+    const root = createTestTempDir("c2a-maven-dup-");
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>com.dep</groupId>
+      <artifactId>lib</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dep</groupId>
+      <artifactId>lib</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+  </dependencies>
+</project>`,
+    );
+
+    const repositoryId = createEntityId(["", root]);
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan-scope",
+      { groupId: "scan-scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [
+            {
+              id: repositoryId,
+              name: "app",
+              namespace: "/app",
+              localPath: root,
+              url: "",
+              buildSystems: ["maven"],
+            },
+          ],
+        },
+      },
+    );
+
+    const processor = new MavenModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const dependencies = output.entities?.ApplicationModuleDependency ?? [];
+
+    assert.equal(dependencies.length, 1);
+    assert.equal(dependencies[0]?.artifactId, "lib");
+    store.addCreateIntents("scan-app", processor.id, output);
+  });
+
   it("skips repositories without maven build system", () => {
     const root = createTestTempDir("c2a-maven-skip-");
     mkdirSync(root, { recursive: true });

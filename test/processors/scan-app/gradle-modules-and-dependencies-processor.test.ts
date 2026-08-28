@@ -54,4 +54,51 @@ implementation 'com.lib:core:1.0.0'`,
     assert.equal(modules[0]?.buildSystem, "gradle");
     assert.equal(dependencies[0]?.artifactId, "core");
   });
+
+  it("skips duplicate implementation dependencies in build.gradle", () => {
+    const root = createTestTempDir("c2a-gradle-dup-");
+    writeFileSync(
+      path.join(root, "settings.gradle"),
+      `rootProject.name = 'demo'`,
+    );
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'com.gradle'
+version = '1.0.0'
+implementation 'com.lib:core:1.0.0'
+implementation 'com.lib:core:1.0.0'`,
+    );
+
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan-scope",
+      { groupId: "scan-scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [
+            {
+              id: "repo-gradle",
+              name: "demo",
+              namespace: "/demo",
+              localPath: root,
+              url: "",
+              buildSystems: ["gradle"],
+            },
+          ],
+        },
+      },
+    );
+
+    const processor = new GradleModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const dependencies = output.entities?.ApplicationModuleDependency ?? [];
+
+    assert.equal(dependencies.length, 1);
+    assert.equal(dependencies[0]?.artifactId, "core");
+    store.addCreateIntents("scan-app", processor.id, output);
+  });
 });
