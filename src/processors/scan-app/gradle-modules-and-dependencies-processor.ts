@@ -26,7 +26,7 @@ export class GradleModulesAndDependenciesProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Обнаруживает Gradle-модули и implementation-зависимости в репозиториях с buildSystems, содержащим gradle.";
+    "Discovers Gradle modules and implementation dependencies in repositories whose buildSystems include gradle.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const modules = input

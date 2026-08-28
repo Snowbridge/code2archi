@@ -27,7 +27,7 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Обнаруживает npm-модули (включая workspaces) и dependencies в репозиториях с buildSystems, содержащим npm.";
+    "Discovers npm modules (including workspaces) and dependencies in repositories whose buildSystems include npm.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const modules = input

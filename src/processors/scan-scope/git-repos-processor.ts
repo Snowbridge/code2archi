@@ -18,7 +18,7 @@ export class GitReposProcessor extends AbstractProcessor<ScanScopeInput, ScanSco
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Обнаруживает корни Git-репозиториев в sourceDirs и создаёт сущности Repository с remote URL и buildSystems.";
+    "Discovers Git repository roots in sourceDirs and creates Repository entities with remote URL and buildSystems.";
 
   protected doProcess(input: ScanScopeInput): ScanScopeOutput {
     const repoRoots = GitWorkingCopy.findRepoRootsInSourceDirs(input);

@@ -16,6 +16,7 @@ export abstract class AbstractProcessor<TInput, TOutput> {
   abstract readonly id: ProcessorId;
   abstract readonly version: string;
   abstract readonly executionPolicy: ProcessorExecutionPolicy;
+  /** One-line purpose summary; must be English (see platform/processors.md). */
   abstract readonly description: string;
 
   private tracedProcess?: (input: TInput) => TOutput | Promise<TOutput>;

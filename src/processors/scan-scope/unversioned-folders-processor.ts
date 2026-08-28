@@ -21,7 +21,7 @@ export class UnversionedFoldersProcessor extends AbstractProcessor<
   readonly executionPolicy = "ON_DEMAND" as const;
 
   readonly description =
-    "Создаёт Repository для каждого sourceDir как готового корня репозитория без обхода каталогов и без VCS remote.";
+    "Creates a Repository for each sourceDir as a ready repository root without directory traversal or VCS remote.";
 
   protected doProcess(input: ScanScopeInput): ScanScopeOutput {
     return input.map((sourceDir) =>

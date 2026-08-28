@@ -26,7 +26,7 @@ export class MavenModulesAndDependenciesProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Обнаруживает Maven-модули и их зависимости в репозиториях с buildSystems, содержащим maven.";
+    "Discovers Maven modules and their dependencies in repositories whose buildSystems include maven.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const modules = input
