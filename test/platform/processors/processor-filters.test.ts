@@ -1,24 +1,26 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { GlobalArgv } from "../../../src/cli/processor-groups.js";
-import type {
-  IProcessor,
-  ProcessorExecutionPolicy,
+import {
+  AbstractProcessor,
+  type ProcessorExecutionPolicy,
 } from "../../../src/platform/processors/processor.js";
 import { ProcessorRegistry } from "../../../src/platform/processors/processor-registry.js";
 import { resolveProcessorFilters } from "../../../src/platform/processors/resolve-processor-filters.js";
 
-class StubProcessor implements IProcessor<string, string[]> {
-  constructor(
-    readonly id: { groupId: "scan-scope"; artifactId: string },
-    readonly executionPolicy: ProcessorExecutionPolicy = "ALWAYS",
-  ) {}
-
+class StubProcessor extends AbstractProcessor<string, string[]> {
+  readonly id: { groupId: "scan-scope"; artifactId: string };
   readonly version = "0.0.0";
-
+  readonly executionPolicy: ProcessorExecutionPolicy;
   readonly description = "Stub processor for tests.";
 
-  process(): string[] {
+  constructor(id: { groupId: "scan-scope"; artifactId: string }, executionPolicy: ProcessorExecutionPolicy = "ALWAYS") {
+    super();
+    this.id = id;
+    this.executionPolicy = executionPolicy;
+  }
+
+  protected doProcess(): string[] {
     return [];
   }
 }

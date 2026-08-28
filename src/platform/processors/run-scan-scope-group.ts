@@ -18,10 +18,7 @@ export function runScanScopeGroup(
   );
 
   for (const processor of processors) {
-    const processorLogger = getLogger(
-      `processor.${processor.id.groupId}.${processor.id.artifactId}`,
-    );
-    processorLogger.info("processor start");
+    processor.logStart();
 
     const output = processor.process(input);
     if (output instanceof Promise) {
@@ -31,7 +28,7 @@ export function runScanScopeGroup(
     }
 
     if (output.length === 0) {
-      processorLogger.info("processor completed", { count: 0 });
+      processor.logCompleted(0);
       continue;
     }
 
@@ -40,7 +37,7 @@ export function runScanScopeGroup(
         Repository: [...output],
       },
     });
-    processorLogger.info("processor completed", { count: output.length });
+    processor.logCompleted(output.length);
   }
 
   logger.info("group completed", {

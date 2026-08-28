@@ -40,10 +40,7 @@ export function runCreateIntentProcessorGroup(
   >(groupId, filters);
 
   for (const processor of processors) {
-    const processorLogger = getLogger(
-      `processor.${processor.id.groupId}.${processor.id.artifactId}`,
-    );
-    processorLogger.info("processor start");
+    processor.logStart();
 
     const output = processor.process(snapshot);
     if (output instanceof Promise) {
@@ -54,12 +51,12 @@ export function runCreateIntentProcessorGroup(
 
     const count = countCreateIntents(output);
     if (!output.entities && !output.links) {
-      processorLogger.info("processor completed", { count: 0 });
+      processor.logCompleted(0);
       continue;
     }
 
     store.addCreateIntents(groupId, processor.id, output);
-    processorLogger.info("processor completed", { count });
+    processor.logCompleted(count);
   }
 
   logger.info("group completed", { groupId });

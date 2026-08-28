@@ -1,20 +1,20 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { IProcessor } from "../../../src/platform/processors/processor.js";
+import { AbstractProcessor } from "../../../src/platform/processors/processor.js";
 import { ProcessorRegistry } from "../../../src/platform/processors/processor-registry.js";
 
-class StubProcessor implements IProcessor<string, string[]> {
-  constructor(
-    readonly id: { groupId: "scan-scope"; artifactId: string },
-    readonly version = "0.0.0",
-    private readonly output: string[] = [],
-  ) {}
-
+class StubProcessor extends AbstractProcessor<string, string[]> {
+  readonly id: { groupId: "scan-scope"; artifactId: string };
+  readonly version = "0.0.0";
   readonly executionPolicy = "ALWAYS" as const;
-
   readonly description = "Stub processor for tests.";
 
-  process(): string[] {
+  constructor(id: { groupId: "scan-scope"; artifactId: string }, private readonly output: string[] = []) {
+    super();
+    this.id = id;
+  }
+
+  protected doProcess(): string[] {
     return this.output;
   }
 }

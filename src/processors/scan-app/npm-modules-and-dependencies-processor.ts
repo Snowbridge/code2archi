@@ -1,12 +1,12 @@
-import type { IProcessor } from "../../platform/processors/processor.js";
 import type { ProcessorId } from "../../platform/processors/processor-id.js";
+import { AbstractProcessor } from "../../platform/processors/processor.js";
 import type { ScanAppInput, ScanAppOutput } from "../../platform/processors/scan-app-types.js";
-import { logCalls, processorLoggerName } from "../../platform/logging/index.js";
 import { buildNpmCreateIntents } from "./npm-discovery.js";
 
-export class NpmModulesAndDependenciesProcessor
-  implements IProcessor<ScanAppInput, ScanAppOutput>
-{
+export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
+  ScanAppInput,
+  ScanAppOutput
+> {
   readonly id: ProcessorId = {
     groupId: "scan-app",
     artifactId: "npm-modules-and-dependencies",
@@ -19,12 +19,7 @@ export class NpmModulesAndDependenciesProcessor
   readonly description =
     "Обнаруживает npm-модули (включая workspaces) и dependencies в репозиториях с buildSystems, содержащим npm.";
 
-  process = logCalls(
-    (input: ScanAppInput): ScanAppOutput => buildNpmCreateIntents(input),
-    processorLoggerName({
-      groupId: "scan-app",
-      artifactId: "npm-modules-and-dependencies",
-    }),
-    "process",
-  );
+  protected doProcess(input: ScanAppInput): ScanAppOutput {
+    return buildNpmCreateIntents(input);
+  }
 }

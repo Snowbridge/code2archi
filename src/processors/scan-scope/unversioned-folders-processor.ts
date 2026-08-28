@@ -1,16 +1,16 @@
 import path from "node:path";
-import type { IProcessor } from "../../platform/processors/processor.js";
 import type { ProcessorId } from "../../platform/processors/processor-id.js";
+import { AbstractProcessor } from "../../platform/processors/processor.js";
 import type {
   ScanScopeInput,
   ScanScopeOutput,
 } from "../../platform/processors/scan-scope-types.js";
-import { logCalls, processorLoggerName } from "../../platform/logging/index.js";
 import { RepositoryBuilder } from "../../utils/repository-builder.js";
 
-export class UnversionedFoldersProcessor
-  implements IProcessor<ScanScopeInput, ScanScopeOutput>
-{
+export class UnversionedFoldersProcessor extends AbstractProcessor<
+  ScanScopeInput,
+  ScanScopeOutput
+> {
   readonly id: ProcessorId = {
     groupId: "scan-scope",
     artifactId: "unversioned-folders",
@@ -23,12 +23,9 @@ export class UnversionedFoldersProcessor
   readonly description =
     "Создаёт Repository для каждого sourceDir как готового корня репозитория без обхода каталогов и без VCS remote.";
 
-  process = logCalls(
-    (input: ScanScopeInput): ScanScopeOutput =>
-      input.map((sourceDir) =>
-        RepositoryBuilder.buildFromRoot(input, path.resolve(sourceDir), ""),
-      ),
-    processorLoggerName({ groupId: "scan-scope", artifactId: "unversioned-folders" }),
-    "process",
-  );
+  protected doProcess(input: ScanScopeInput): ScanScopeOutput {
+    return input.map((sourceDir) =>
+      RepositoryBuilder.buildFromRoot(input, path.resolve(sourceDir), ""),
+    );
+  }
 }

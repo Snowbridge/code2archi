@@ -2,13 +2,13 @@ import type { ProcessorGroupId } from "../../cli/processor-groups.js";
 import type { ProcessorFilters } from "./processor-filters.js";
 import type { ProcessorId } from "./processor-id.js";
 import { processorKey } from "./processor-id.js";
-import type { IProcessor } from "./processor.js";
+import type { AbstractProcessor } from "./processor.js";
 
 export class ProcessorRegistry {
-  private readonly processors = new Map<string, IProcessor<unknown, unknown>>();
+  private readonly processors = new Map<string, AbstractProcessor<unknown, unknown>>();
   private readonly groupOrder = new Map<ProcessorGroupId, string[]>();
 
-  register<TInput, TOutput>(processor: IProcessor<TInput, TOutput>): void {
+  register<TInput, TOutput>(processor: AbstractProcessor<TInput, TOutput>): void {
     const key = processorKey(processor.id);
     if (this.processors.has(key)) {
       throw new Error(
@@ -16,7 +16,7 @@ export class ProcessorRegistry {
       );
     }
 
-    this.processors.set(key, processor as IProcessor<unknown, unknown>);
+    this.processors.set(key, processor as AbstractProcessor<unknown, unknown>);
 
     const order = this.groupOrder.get(processor.id.groupId) ?? [];
     order.push(key);
@@ -43,25 +43,25 @@ export class ProcessorRegistry {
   get<TInput, TOutput>(
     groupId: ProcessorGroupId,
     artifactId: string,
-  ): IProcessor<TInput, TOutput> | undefined {
+  ): AbstractProcessor<TInput, TOutput> | undefined {
     return this.processors.get(processorKey({ groupId, artifactId })) as
-      | IProcessor<TInput, TOutput>
+      | AbstractProcessor<TInput, TOutput>
       | undefined;
   }
 
   listByGroup<TInput, TOutput>(
     groupId: ProcessorGroupId,
-  ): IProcessor<TInput, TOutput>[] {
+  ): AbstractProcessor<TInput, TOutput>[] {
     const order = this.groupOrder.get(groupId) ?? [];
     return order
       .map((key) => this.processors.get(key))
-      .filter((processor): processor is IProcessor<TInput, TOutput> => processor !== undefined);
+      .filter((processor) => processor !== undefined) as AbstractProcessor<TInput, TOutput>[];
   }
 
   listFiltered<TInput, TOutput>(
     groupId: ProcessorGroupId,
     filters: ProcessorFilters,
-  ): IProcessor<TInput, TOutput>[] {
+  ): AbstractProcessor<TInput, TOutput>[] {
     if (filters.withNone.includes(groupId)) {
       return [];
     }
@@ -78,7 +78,7 @@ export class ProcessorRegistry {
     const denied = without ? new Set(without) : new Set<string>();
     const onDemandEnabled = withRequested ? new Set(withRequested) : new Set<string>();
 
-    const selected: IProcessor<TInput, TOutput>[] = [];
+    const selected: AbstractProcessor<TInput, TOutput>[] = [];
     const seen = new Set<string>();
 
     for (const processor of registered) {
