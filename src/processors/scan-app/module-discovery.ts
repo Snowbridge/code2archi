@@ -2,8 +2,14 @@ import type { ApplicationModuleCreateIntent } from "../../discovery-model/applic
 import type { ApplicationModuleDependencyCreateIntent } from "../../discovery-model/application-module-dependency.js";
 import type { BuildSystem } from "../../discovery-model/application-module.js";
 import type { CreateIntents } from "../../discovery-model/create-intents.js";
+import type { DiscoveryEntityRecord } from "../../discovery-model/entity-types.js";
+import type { Repository } from "../../discovery-model/repository.js";
 import { createEntityId } from "../../utils/discovery-model-entities.js";
 import { parseNpmName } from "../../parsers/npm-name.js";
+
+export function asRepositoryFromSnapshot(entity: DiscoveryEntityRecord): Repository {
+  return entity as unknown as Repository;
+}
 
 export interface ModuleDiscoveryInput {
   readonly repositoryId: string;

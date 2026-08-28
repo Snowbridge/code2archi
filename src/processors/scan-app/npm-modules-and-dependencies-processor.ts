@@ -1,7 +1,17 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import type { ProcessorId } from "../../platform/processors/processor-id.js";
 import { AbstractProcessor } from "../../platform/processors/processor.js";
 import type { ScanAppInput, ScanAppOutput } from "../../platform/processors/scan-app-types.js";
-import { buildNpmCreateIntents } from "./npm-discovery.js";
+import type { Repository } from "../../discovery-model/repository.js";
+import { parseNpmRepository } from "../../parsers/package-json-parser.js";
+import {
+  asRepositoryFromSnapshot,
+  buildModuleDiscoveryIntents,
+  moduleIdForCoordinates,
+  npmDependencyParts,
+  type ModuleDiscoveryInput,
+} from "./module-discovery.js";
 
 export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
   ScanAppInput,
@@ -20,6 +30,49 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
     "Обнаруживает npm-модули (включая workspaces) и dependencies в репозиториях с buildSystems, содержащим npm.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    return buildNpmCreateIntents(input);
+    const modules = input
+      .listEntities("Repository")
+      .flatMap((entity) => this.discoverModules(asRepositoryFromSnapshot(entity)));
+    return buildModuleDiscoveryIntents(modules);
+  }
+
+  private discoverModules(repository: Repository): ModuleDiscoveryInput[] {
+    if (!repository.buildSystems.includes("npm")) {
+      return [];
+    }
+
+    const rootPackageJson = path.join(repository.localPath, "package.json");
+    if (!existsSync(rootPackageJson)) {
+      return [];
+    }
+
+    const parsedModules = parseNpmRepository(repository.localPath, "package.json");
+    const rootModule = parsedModules[0];
+    const rootModuleId = rootModule
+      ? moduleIdForCoordinates(repository.id, "npm", rootModule.groupId, rootModule.artifactId)
+      : undefined;
+
+    return parsedModules.map((module) => {
+      const parentName = module.parentName;
+      let parentModuleId: string | undefined;
+      if (parentName && rootModule && parentName === rootModule.name) {
+        parentModuleId = rootModuleId;
+      }
+
+      return {
+        repositoryId: repository.id,
+        buildSystem: "npm" as const,
+        groupId: module.groupId,
+        artifactId: module.artifactId,
+        version: module.version,
+        repoPath: module.repoPath,
+        buildScript: module.buildScript,
+        isMultimodule: module.isMultimodule,
+        parentModuleId,
+        dependencies: Object.entries(module.dependencies).map(([name, version]) =>
+          npmDependencyParts(name, version),
+        ),
+      };
+    });
   }
 }
