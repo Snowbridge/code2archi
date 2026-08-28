@@ -76,6 +76,16 @@ export const globalOptions: Record<string, Options> = {
     default: [],
     describe: "Disable all processors for listed groupIds",
   },
+  "with-scan-scope": arrayOption("Enable ON_DEMAND scan-scope processors by artifactId"),
+  "with-scan-tech": arrayOption("Enable ON_DEMAND scan-tech processors by artifactId"),
+  "with-scan-app": arrayOption("Enable ON_DEMAND scan-app processors by artifactId"),
+  "with-generate-element": arrayOption(
+    "Enable ON_DEMAND generate-element processors by artifactId",
+  ),
+  "with-generate-relation": arrayOption(
+    "Enable ON_DEMAND generate-relation processors by artifactId",
+  ),
+  "with-generate-view": arrayOption("Enable ON_DEMAND generate-view processors by artifactId"),
   "without-scan-scope": arrayOption("Exclude scan-scope processors by artifactId"),
   "without-scan-tech": arrayOption("Exclude scan-tech processors by artifactId"),
   "without-scan-app": arrayOption("Exclude scan-app processors by artifactId"),

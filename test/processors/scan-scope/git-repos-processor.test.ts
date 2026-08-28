@@ -24,6 +24,7 @@ describe("GitReposProcessor", () => {
       artifactId: "git-repos",
     });
     assert.equal(processor.version, "0.2.0");
+    assert.equal(processor.executionPolicy, "ALWAYS");
   });
 
   it("returns Repository entities", () => {

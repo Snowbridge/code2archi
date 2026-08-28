@@ -17,12 +17,18 @@ function asStringArray(value: unknown): string[] {
 
 export function resolveProcessorFilters(argv: GlobalArgv): ProcessorFilters {
   const without: Partial<Record<ProcessorGroupId, string[]>> = {};
+  const withRequested: Partial<Record<ProcessorGroupId, string[]>> = {};
   const withOnly: Partial<Record<ProcessorGroupId, string[]>> = {};
 
   for (const def of PROCESSOR_GROUP_DEFS) {
     const denied = asStringArray(argv[def.withoutArgvKey]);
     if (denied.length > 0) {
       without[def.groupId] = denied;
+    }
+
+    const enabled = asStringArray(argv[def.withArgvKey]);
+    if (enabled.length > 0) {
+      withRequested[def.groupId] = enabled;
     }
 
     const allowed = asStringArray(argv[def.withOnlyArgvKey]);
@@ -34,6 +40,7 @@ export function resolveProcessorFilters(argv: GlobalArgv): ProcessorFilters {
   return {
     withNone: asStringArray(argv.withNone) as ProcessorGroupId[],
     without,
+    with: withRequested,
     withOnly,
   };
 }

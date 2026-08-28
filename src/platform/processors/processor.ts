@@ -1,5 +1,7 @@
 import type { ProcessorId } from "./processor-id.js";
 
+export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";
+
 /**
  * Contract for a processor implementation.
  *
@@ -11,5 +13,6 @@ import type { ProcessorId } from "./processor-id.js";
 export interface IProcessor<TInput, TOutput> {
   readonly id: ProcessorId;
   readonly version: string;
+  readonly executionPolicy: ProcessorExecutionPolicy;
   process(input: TInput): TOutput | Promise<TOutput>;
 }

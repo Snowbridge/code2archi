@@ -73,13 +73,35 @@ export class ProcessorRegistry {
       return registered.filter((processor) => allowed.has(processor.id.artifactId));
     }
 
+    const withRequested = filters.with[groupId];
     const without = filters.without[groupId];
-    if (without && without.length > 0) {
-      const denied = new Set(without);
-      return registered.filter((processor) => !denied.has(processor.id.artifactId));
+    const denied = without ? new Set(without) : new Set<string>();
+    const onDemandEnabled = withRequested ? new Set(withRequested) : new Set<string>();
+
+    const selected: IProcessor<TInput, TOutput>[] = [];
+    const seen = new Set<string>();
+
+    for (const processor of registered) {
+      const artifactId = processor.id.artifactId;
+      if (seen.has(artifactId)) {
+        continue;
+      }
+
+      if (processor.executionPolicy === "ON_DEMAND") {
+        if (onDemandEnabled.has(artifactId) && !denied.has(artifactId)) {
+          selected.push(processor);
+          seen.add(artifactId);
+        }
+        continue;
+      }
+
+      if (!denied.has(artifactId)) {
+        selected.push(processor);
+        seen.add(artifactId);
+      }
     }
 
-    return registered;
+    return selected;
   }
 }
 

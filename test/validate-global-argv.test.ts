@@ -14,6 +14,12 @@ function baseArgv(): Record<string, unknown> {
     sync: false,
     continueOnError: false,
     withNone: [],
+    withScanScope: [],
+    withScanTech: [],
+    withScanApp: [],
+    withGenerateElement: [],
+    withGenerateRelation: [],
+    withGenerateView: [],
     withoutScanScope: [],
     withoutScanTech: [],
     withoutScanApp: [],
@@ -93,6 +99,42 @@ describe("validateGlobalArgv", () => {
           withoutScanScope: ["processor-a"],
         }),
       'Conflicting processor filters for group "scan-scope"',
+    );
+  });
+
+  it("rejects --with-none with --with for the same group", () => {
+    expectCliError(
+      () =>
+        validateGlobalArgv({
+          ...baseArgv(),
+          withNone: ["scan-scope"],
+          withScanScope: ["unversioned-folders"],
+        }),
+      'Conflicting processor filters for group "scan-scope"',
+    );
+  });
+
+  it("rejects --with-only with --with for the same group", () => {
+    expectCliError(
+      () =>
+        validateGlobalArgv({
+          ...baseArgv(),
+          withOnlyScanScope: ["git-repos"],
+          withScanScope: ["unversioned-folders"],
+        }),
+      'Conflicting processor filters for group "scan-scope"',
+    );
+  });
+
+  it("rejects the same artifactId in --with and --without", () => {
+    expectCliError(
+      () =>
+        validateGlobalArgv({
+          ...baseArgv(),
+          withScanScope: ["unversioned-folders"],
+          withoutScanScope: ["unversioned-folders"],
+        }),
+      'both list "unversioned-folders"',
     );
   });
 

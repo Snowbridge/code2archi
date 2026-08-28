@@ -10,6 +10,8 @@ class StubProcessor implements IProcessor<string, string[]> {
     private readonly output: string[] = [],
   ) {}
 
+  readonly executionPolicy = "ALWAYS" as const;
+
   process(): string[] {
     return this.output;
   }

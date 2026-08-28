@@ -14,6 +14,8 @@ class StubRepositoryProcessor implements IProcessor<ScanScopeInput, ScanScopeOut
 
   readonly version = "0.0.0";
 
+  readonly executionPolicy = "ALWAYS" as const;
+
   process(): ScanScopeOutput {
     return this.repositories;
   }
@@ -50,6 +52,7 @@ describe("runScanScopeGroup", () => {
         runScanScopeGroup(["/tmp"], {
           withNone: [],
           without: {},
+          with: {},
           withOnly: { "scan-scope": [STUB_ONE, STUB_TWO] },
         }),
       /Duplicate repository id: repo-1/,

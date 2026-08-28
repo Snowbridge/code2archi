@@ -12,6 +12,7 @@ export type ProcessorGroupId = (typeof PROCESSOR_GROUPS)[number];
 export interface ProcessorGroupDef {
   groupId: ProcessorGroupId;
   withoutArgvKey: keyof GlobalArgv;
+  withArgvKey: keyof GlobalArgv;
   withOnlyArgvKey: keyof GlobalArgv;
 }
 
@@ -23,6 +24,12 @@ export interface GlobalArgv {
   sync: boolean;
   continueOnError: boolean;
   withNone: string[];
+  withScanScope: string[];
+  withScanTech: string[];
+  withScanApp: string[];
+  withGenerateElement: string[];
+  withGenerateRelation: string[];
+  withGenerateView: string[];
   withoutScanScope: string[];
   withoutScanTech: string[];
   withoutScanApp: string[];
@@ -43,31 +50,37 @@ export const PROCESSOR_GROUP_DEFS: ProcessorGroupDef[] = [
   {
     groupId: "scan-scope",
     withoutArgvKey: "withoutScanScope",
+    withArgvKey: "withScanScope",
     withOnlyArgvKey: "withOnlyScanScope",
   },
   {
     groupId: "scan-tech",
     withoutArgvKey: "withoutScanTech",
+    withArgvKey: "withScanTech",
     withOnlyArgvKey: "withOnlyScanTech",
   },
   {
     groupId: "scan-app",
     withoutArgvKey: "withoutScanApp",
+    withArgvKey: "withScanApp",
     withOnlyArgvKey: "withOnlyScanApp",
   },
   {
     groupId: "generate-element",
     withoutArgvKey: "withoutGenerateElement",
+    withArgvKey: "withGenerateElement",
     withOnlyArgvKey: "withOnlyGenerateElement",
   },
   {
     groupId: "generate-relation",
     withoutArgvKey: "withoutGenerateRelation",
+    withArgvKey: "withGenerateRelation",
     withOnlyArgvKey: "withOnlyGenerateRelation",
   },
   {
     groupId: "generate-view",
     withoutArgvKey: "withoutGenerateView",
+    withArgvKey: "withGenerateView",
     withOnlyArgvKey: "withOnlyGenerateView",
   },
 ];
