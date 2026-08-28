@@ -1,5 +1,4 @@
-import { getLogger, logCalls, processorLoggerName } from "../logging/index.js";
-import type { Logger } from "../logging/types.js";
+import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
 import type { ProcessorId } from "./processor-id.js";
 
 export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";

@@ -1,7 +1,5 @@
 import type { ProcessorId } from "../processors/processor-id.js";
-import { getLogger } from "./get-logger.js";
-import { isDebugEnabled } from "./init-logging.js";
-import { logError } from "./log-error.js";
+import { getLogger, isDebugEnabled, logError } from "./logging.js";
 
 const MAX_STRING_LENGTH = 500;
 const MAX_DEPTH = 3;
@@ -109,19 +107,6 @@ function wrapMethod(
   };
 }
 
-/** Automatic DEBUG trace for class methods (ADR-26082402, legacy decorators). */
-export function LogCalls(loggerName?: string) {
-  return function (
-    _target: object,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): PropertyDescriptor {
-    const original = descriptor.value as (...args: unknown[]) => unknown;
-    descriptor.value = wrapMethod(original, propertyKey, loggerName ?? "unknown");
-    return descriptor;
-  };
-}
-
 /** DEBUG trace wrapper for standalone functions and class fields. */
 export function logCalls<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => TReturn,
@@ -132,5 +117,3 @@ export function logCalls<TArgs extends unknown[], TReturn>(
     ...args: TArgs
   ) => TReturn;
 }
-
-export { serializeArgs, serializeValue };
