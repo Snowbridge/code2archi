@@ -1,20 +1,91 @@
 import path from "node:path";
 import type { ProcessorGroupId } from "../cli/processor-groups.js";
-import type { CreateIntents } from "./create-intents.js";
-import { enrichDiscoveryEntity } from "./enrich-discovery-entity.js";
-import {
-  type DiscoveryModelSnapshot,
-  deepFreeze,
-} from "./discovery-model-snapshot.js";
-import type { DiscoveryEntityRecord, EntityType } from "./entity-types.js";
-import { ENTITY_TYPES } from "./entity-types.js";
-import { isEntityTypeAllowedForGroup } from "./group-entity-allowlist.js";
+import { packageVersion } from "../package-version.js";
+import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import type { ProcessorId } from "../platform/processors/processor-id.js";
+import type { CreateIntents } from "./entities/create-intents.js";
+import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
+import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
+import { ENTITY_TYPES } from "./entities/entity-types.js";
+
+export interface DiscoveryModelSnapshot {
+  readonly scanId: string;
+  readonly sourceRoot: string;
+  readonly runStartedAt: Date;
+  listEntities(entityType: EntityType): readonly DiscoveryEntityRecord[];
+  getEntity(entityType: EntityType, id: string): DiscoveryEntityRecord | undefined;
+}
 
 export interface RunEntityStoreInit {
   readonly sourceDirs: readonly string[];
   readonly scanId: string;
   readonly runStartedAt: Date;
+}
+
+/** Mirror of documentation/specifications/discovery-model/entity-types.md */
+export const GROUP_ENTITY_ALLOWLIST: Partial<
+  Record<ProcessorGroupId, readonly EntityType[]>
+> = {
+  "scan-scope": ["Repository"],
+  "scan-tech": ["BuildScript", "RuntimeEnvironment"],
+  "scan-app": [
+    "ApplicationModule",
+    "ApplicationModuleDependency",
+    "RestController",
+    "RestClient",
+    "MessageConsumer",
+    "MessageProducer",
+  ],
+};
+
+function isEntityTypeAllowedForGroup(
+  groupId: ProcessorGroupId,
+  entityType: EntityType,
+): boolean {
+  return (GROUP_ENTITY_ALLOWLIST[groupId] ?? []).includes(entityType);
+}
+
+function formatScannerExtractor(processorId: ProcessorId): string {
+  return `${processorId.groupId}:${processorId.artifactId}`;
+}
+
+function enrichDiscoveryEntity(
+  record: DiscoveryEntityCreateIntent,
+  processorId: ProcessorId,
+  extractedAt: Date = new Date(),
+): DiscoveryEntityRecord {
+  if (!record.id) {
+    throw new Error("Entity create-intent is missing id");
+  }
+
+  return {
+    ...record,
+    id: record.id,
+    scannerExtractor: formatScannerExtractor(processorId),
+    scannerSchema: packageVersion,
+    extractedAt: formatIso8601WithOffset(extractedAt),
+  };
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+
+  Object.freeze(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      deepFreeze(item);
+    }
+    return value;
+  }
+
+  for (const child of Object.values(value as Record<string, unknown>)) {
+    deepFreeze(child);
+  }
+
+  return value;
 }
 
 class FrozenDiscoveryModelSnapshot implements DiscoveryModelSnapshot {

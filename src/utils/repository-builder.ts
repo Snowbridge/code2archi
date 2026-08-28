@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import type { RepositoryCreateIntent } from "../discovery-model/repository.js";
+import type { RepositoryCreateIntent } from "../discovery-model/entities/repository.js";
 import { createEntityId } from "./discovery-model-entities.js";
 
 export class RepositoryBuilder {

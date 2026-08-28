@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
-import { REPOSITORY_SCHEMA_ID } from "../../src/discovery-model/schema-ids.js";
+import { REPOSITORY_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 

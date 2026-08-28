@@ -1,9 +1,9 @@
-import type { ApplicationModuleCreateIntent } from "../../discovery-model/application-module.js";
-import type { ApplicationModuleDependencyCreateIntent } from "../../discovery-model/application-module-dependency.js";
-import type { BuildSystem } from "../../discovery-model/application-module.js";
-import type { CreateIntents } from "../../discovery-model/create-intents.js";
-import type { DiscoveryEntityRecord } from "../../discovery-model/entity-types.js";
-import type { Repository } from "../../discovery-model/repository.js";
+import type { ApplicationModuleCreateIntent } from "../../discovery-model/entities/application-module.js";
+import type { ApplicationModuleDependencyCreateIntent } from "../../discovery-model/entities/application-module-dependency.js";
+import type { BuildSystem } from "../../discovery-model/entities/application-module.js";
+import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
+import type { DiscoveryEntityRecord } from "../../discovery-model/entities/entity-types.js";
+import type { Repository } from "../../discovery-model/entities/repository.js";
 import { createEntityId } from "../../utils/discovery-model-entities.js";
 import { parseNpmName } from "../../parsers/npm-name.js";
 

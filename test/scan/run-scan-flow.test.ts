@@ -7,7 +7,7 @@ import {
   APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   APPLICATION_MODULE_SCHEMA_ID,
   REPOSITORY_SCHEMA_ID,
-} from "../../src/discovery-model/schema-ids.js";
+} from "../../src/discovery-model/discovery-model-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { runScanFlow } from "../../src/scan/run-scan-flow.js";
 import { createTestTempDir } from "../test-temp-dir.js";

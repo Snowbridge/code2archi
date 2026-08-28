@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
-import { groupEntityAllowlistForTests } from "../../src/discovery-model/group-entity-allowlist.js";
+import { afterEach, beforeEach, describe, it } from "node:test";
+import {
+  GROUP_ENTITY_ALLOWLIST,
+  RunEntityStore,
+} from "../../src/discovery-model/run-entity-store.js";
 import { packageVersion } from "../../src/package-version.js";
 
 const SCAN_SCOPE_PROCESSOR = {
@@ -15,6 +17,20 @@ const SCAN_TECH_PROCESSOR = {
 };
 
 describe("RunEntityStore", () => {
+  const previousTz = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "Etc/GMT-3";
+  });
+
+  afterEach(() => {
+    if (previousTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTz;
+    }
+  });
+
   it("adds entities allowed for the processor group with platform metadata", () => {
     const store = new RunEntityStore({
       sourceDirs: ["/tmp/src"],
@@ -22,23 +38,43 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
+    const extractedAt = new Date("2026-08-28T09:49:00.123Z");
     store.addCreateIntents(
       "scan-scope",
-      SCAN_SCOPE_PROCESSOR,
+      { groupId: "scan-scope", artifactId: "git-repos" },
       {
         entities: {
           Repository: [{ id: "repo-1", name: "a" }],
         },
       },
-      new Date("2026-08-27T12:00:00.000Z"),
+      extractedAt,
     );
 
     const repository = store.getEntities("Repository")[0];
     assert.equal(store.getEntities("Repository").length, 1);
     assert.equal(repository?.name, "a");
-    assert.equal(repository?.scannerExtractor, "scan-scope:test-processor");
+    assert.equal(repository?.scannerExtractor, "scan-scope:git-repos");
     assert.equal(repository?.scannerSchema, packageVersion);
-    assert.match(repository?.extractedAt ?? "", /^\d{4}-\d{2}-\d{2}T/);
+    assert.equal(repository?.extractedAt, "2026-08-28T12:49:00.123+03:00");
+  });
+
+  it("formats scanner extractor as groupId:artifactId", () => {
+    const store = new RunEntityStore({
+      sourceDirs: ["/tmp/src"],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    store.addCreateIntents("scan-tech", { groupId: "scan-tech", artifactId: "maven-module" }, {
+      entities: {
+        BuildScript: [{ id: "bs-1" }],
+      },
+    });
+
+    assert.equal(
+      store.getEntities("BuildScript")[0]?.scannerExtractor,
+      "scan-tech:maven-module",
+    );
   });
 
   it("rejects entity types not allowed for the processor group", () => {
@@ -128,12 +164,12 @@ describe("RunEntityStore", () => {
   });
 
   it("mirrors group allowlist from specifications", () => {
-    assert.deepEqual(groupEntityAllowlistForTests()["scan-scope"], ["Repository"]);
-    assert.deepEqual(groupEntityAllowlistForTests()["scan-tech"], [
+    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan-scope"], ["Repository"]);
+    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan-tech"], [
       "BuildScript",
       "RuntimeEnvironment",
     ]);
-    assert.deepEqual(groupEntityAllowlistForTests()["scan-app"], [
+    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan-app"], [
       "ApplicationModule",
       "ApplicationModuleDependency",
       "RestController",

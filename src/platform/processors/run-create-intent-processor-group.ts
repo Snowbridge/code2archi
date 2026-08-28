@@ -1,6 +1,6 @@
 import type { ProcessorGroupId } from "../../cli/processor-groups.js";
-import type { CreateIntents } from "../../discovery-model/create-intents.js";
-import type { DiscoveryModelSnapshot } from "../../discovery-model/discovery-model-snapshot.js";
+import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
+import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import type { ProcessorFilters } from "./processor-filters.js";
 import { processorRegistry } from "./processor-registry.js";

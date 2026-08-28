@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import type { RepositoryCreateIntent } from "../../../src/discovery-model/repository.js";
+import type { RepositoryCreateIntent } from "../../../src/discovery-model/entities/repository.js";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
 import { AbstractProcessor } from "../../../src/platform/processors/processor.js";
 import { processorRegistry } from "../../../src/platform/processors/processor-registry.js";

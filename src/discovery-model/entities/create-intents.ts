@@ -7,7 +7,3 @@ export interface CreateIntents {
   >;
   readonly links?: Partial<Record<string, readonly Record<string, string>[]>>;
 }
-
-export function emptyCreateIntents(): CreateIntents {
-  return { entities: {}, links: {} };
-}
