@@ -1,49 +1,47 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { packageVersion } from "../package-version.js";
+import { getEntityCollectionDef } from "./entity-collection-registry.js";
 import type { Manifest } from "./manifest.js";
-import type { Repository } from "./repository.js";
-import { REPOSITORY_SCHEMA_ID } from "./schema-ids.js";
+import type { RunEntityStore } from "./run-entity-store.js";
 
 export interface DiscoveryModelWriteInput {
   readonly outputDir: string;
-  readonly sourceDirs: readonly string[];
-  readonly repositories: readonly Repository[];
-  readonly scanId: string;
+  readonly store: RunEntityStore;
   readonly scannedAt: Date;
 }
 
 export class DiscoveryModelWriter {
   write(input: DiscoveryModelWriteInput): void {
-    this.writeRepositories(input.outputDir, input.repositories);
-    this.writeManifest(input);
-  }
+    const collections: NonNullable<Manifest["collections"]>[number][] = [];
 
-  private writeRepositories(
-    outputDir: string,
-    repositories: readonly Repository[],
-  ): void {
-    writeFileSync(
-      path.join(outputDir, "repositories.json"),
-      `${JSON.stringify(repositories, null, 2)}\n`,
-      "utf8",
-    );
-  }
+    for (const entityType of input.store.listNonemptyEntityTypes()) {
+      const def = getEntityCollectionDef(entityType);
+      if (!def.schemaId) {
+        continue;
+      }
 
-  private writeManifest(input: DiscoveryModelWriteInput): void {
+      const entities = input.store.getEntities(entityType);
+      writeFileSync(
+        path.join(input.outputDir, def.collectionPath),
+        `${JSON.stringify(entities, null, 2)}\n`,
+        "utf8",
+      );
+
+      collections.push({
+        path: def.collectionPath,
+        contentType: "entities",
+        entityType,
+        schema: def.schemaId,
+      });
+    }
+
     const manifest: Manifest = {
       formatVersion: packageVersion,
-      scanId: input.scanId,
+      scanId: input.store.scanId,
       scannedAt: input.scannedAt.toISOString(),
-      sourceRoot: this.computeSourceRoot(input.sourceDirs),
-      collections: [
-        {
-          path: "repositories.json",
-          contentType: "entities",
-          entityType: "Repository",
-          schema: REPOSITORY_SCHEMA_ID,
-        },
-      ],
+      sourceRoot: input.store.sourceRoot,
+      collections,
     };
 
     writeFileSync(
@@ -51,32 +49,5 @@ export class DiscoveryModelWriter {
       `${JSON.stringify(manifest, null, 2)}\n`,
       "utf8",
     );
-  }
-
-  private computeSourceRoot(sourceDirs: readonly string[]): string {
-    if (sourceDirs.length === 0) {
-      return "";
-    }
-
-    if (sourceDirs.length === 1) {
-      return path.resolve(sourceDirs[0]!);
-    }
-
-    let prefix = path.resolve(sourceDirs[0]!);
-    for (const sourceDir of sourceDirs.slice(1)) {
-      const resolved = path.resolve(sourceDir);
-      while (
-        prefix !== resolved &&
-        !resolved.startsWith(prefix + path.sep) &&
-        prefix !== path.parse(prefix).root
-      ) {
-        prefix = path.dirname(prefix);
-      }
-      if (prefix === path.parse(prefix).root) {
-        return prefix;
-      }
-    }
-
-    return prefix;
   }
 }

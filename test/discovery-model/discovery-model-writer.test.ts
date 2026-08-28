@@ -3,12 +3,13 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
+import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
 import { REPOSITORY_SCHEMA_ID } from "../../src/discovery-model/schema-ids.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
 describe("DiscoveryModelWriter", () => {
-  it("writes manifest.json and repositories.json", () => {
+  it("writes manifest.json and repositories.json from run entity store", () => {
     const root = createTestTempDir("c2a-dm-writer-");
     const outputDir = path.join(root, "out");
     const sourceDir = path.join(root, "src");
@@ -26,12 +27,16 @@ describe("DiscoveryModelWriter", () => {
       },
     ];
     const scannedAt = new Date("2026-08-27T12:00:00.000Z");
+    const store = new RunEntityStore({
+      sourceDirs: [sourceDir],
+      scanId: "scan-1",
+      runStartedAt: scannedAt,
+    });
+    store.addCreateIntents("scan-scope", { entities: { Repository: repositories } });
 
     new DiscoveryModelWriter().write({
       outputDir,
-      sourceDirs: [sourceDir],
-      repositories,
-      scanId: "scan-1",
+      store,
       scannedAt,
     });
 
@@ -78,18 +83,48 @@ describe("DiscoveryModelWriter", () => {
     mkdirSync(first, { recursive: true });
     mkdirSync(second, { recursive: true });
 
+    const store = new RunEntityStore({
+      sourceDirs: [first, second],
+      scanId: "scan-2",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
     new DiscoveryModelWriter().write({
       outputDir,
-      sourceDirs: [first, second],
-      repositories: [],
-      scanId: "scan-2",
+      store,
       scannedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
     const manifest = JSON.parse(
       readFileSync(path.join(outputDir, "manifest.json"), "utf8"),
-    ) as { sourceRoot: string };
+    ) as { sourceRoot: string; collections: unknown[] };
 
     assert.equal(manifest.sourceRoot, path.resolve(root, "mono"));
+    assert.deepEqual(manifest.collections, []);
+  });
+
+  it("skips entity types without schema even when present in store", () => {
+    const root = createTestTempDir("c2a-dm-no-schema-");
+    const outputDir = path.join(root, "out");
+    mkdirSync(outputDir);
+
+    const store = new RunEntityStore({
+      sourceDirs: [path.join(root, "src")],
+      scanId: "scan-3",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents("scan-tech", {
+      entities: {
+        BuildScript: [{ id: "bs-1", name: "build.gradle" }],
+      },
+    });
+
+    new DiscoveryModelWriter().write({
+      outputDir,
+      store,
+      scannedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    assert.ok(!existsSync(path.join(outputDir, "build-scripts.json")));
   });
 });

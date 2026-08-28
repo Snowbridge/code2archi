@@ -1,3 +1,4 @@
+import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import type { ProcessorFilters } from "./processor-filters.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanScopeInput, ScanScopeOutput } from "./scan-scope-types.js";
@@ -5,7 +6,8 @@ import type { ScanScopeInput, ScanScopeOutput } from "./scan-scope-types.js";
 export function runScanScopeGroup(
   input: ScanScopeInput,
   filters: ProcessorFilters,
-): ScanScopeOutput {
+  store: RunEntityStore,
+): void {
   const processors = processorRegistry.listFiltered<ScanScopeInput, ScanScopeOutput>(
     "scan-scope",
     filters,
@@ -28,5 +30,13 @@ export function runScanScopeGroup(
     }
   }
 
-  return [...repositories.values()].sort((a, b) => a.id.localeCompare(b.id));
+  if (repositories.size === 0) {
+    return;
+  }
+
+  store.addCreateIntents("scan-scope", {
+    entities: {
+      Repository: [...repositories.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    },
+  });
 }
