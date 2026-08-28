@@ -1,62 +1,19 @@
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { describe, it } from "node:test";
 import {
+  formatLogFileTimestamp,
+  formatLogRecordTimestamp,
   formatIso8601WithOffset,
-  formatRunTimestamp,
 } from "../../src/platform/timestamp.js";
 
-describe("formatRunTimestamp", () => {
-  const previousTz = process.env.TZ;
-
-  beforeEach(() => {
-    process.env.TZ = "Etc/GMT-3";
+describe("timestamp logging helpers", () => {
+  it("formatLogFileTimestamp uses compact UTC", () => {
+    const date = new Date(Date.UTC(2026, 7, 24, 12, 42, 1, 123));
+    assert.equal(formatLogFileTimestamp(date), "20260824T124201123");
   });
 
-  afterEach(() => {
-    if (previousTz === undefined) {
-      delete process.env.TZ;
-    } else {
-      process.env.TZ = previousTz;
-    }
-  });
-
-  it("formats host-local timestamp with fractional seconds and offset", () => {
-    const date = new Date("2026-08-23T18:33:56.123Z");
-    assert.equal(formatRunTimestamp(date), "2026-08-23T21-33-56.1230+0300");
-  });
-
-  it("pads single-digit month/day/time parts", () => {
-    const date = new Date("2026-01-05T06:08:07.000Z");
-    assert.equal(formatRunTimestamp(date), "2026-01-05T09-08-07.0000+0300");
-  });
-
-  it("matches profile artifact name template", () => {
-    const date = new Date("2026-08-27T09:00:45.000Z");
-    const profileName = `code2archi-profile-scan-${formatRunTimestamp(date)}.json`;
-    assert.equal(
-      profileName,
-      "code2archi-profile-scan-2026-08-27T12-00-45.0000+0300.json",
-    );
-  });
-});
-
-describe("formatIso8601WithOffset", () => {
-  const previousTz = process.env.TZ;
-
-  beforeEach(() => {
-    process.env.TZ = "Etc/GMT-3";
-  });
-
-  afterEach(() => {
-    if (previousTz === undefined) {
-      delete process.env.TZ;
-    } else {
-      process.env.TZ = previousTz;
-    }
-  });
-
-  it("formats ISO 8601 with host offset", () => {
-    const date = new Date("2026-08-28T09:49:00.123Z");
-    assert.equal(formatIso8601WithOffset(date), "2026-08-28T12:49:00.123+03:00");
+  it("formatLogRecordTimestamp matches ISO with offset", () => {
+    const date = new Date("2026-08-24T12:42:01.123Z");
+    assert.equal(formatLogRecordTimestamp(date), formatIso8601WithOffset(date));
   });
 });

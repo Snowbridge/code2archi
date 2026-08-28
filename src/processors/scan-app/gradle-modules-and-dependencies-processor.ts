@@ -1,6 +1,7 @@
 import type { IProcessor } from "../../platform/processors/processor.js";
 import type { ProcessorId } from "../../platform/processors/processor-id.js";
 import type { ScanAppInput, ScanAppOutput } from "../../platform/processors/scan-app-types.js";
+import { logCalls, processorLoggerName } from "../../platform/logging/index.js";
 import { buildGradleCreateIntents } from "./gradle-discovery.js";
 
 export class GradleModulesAndDependenciesProcessor
@@ -18,7 +19,12 @@ export class GradleModulesAndDependenciesProcessor
   readonly description =
     "Обнаруживает Gradle-модули и implementation-зависимости в репозиториях с buildSystems, содержащим gradle.";
 
-  process(input: ScanAppInput): ScanAppOutput {
-    return buildGradleCreateIntents(input);
-  }
+  process = logCalls(
+    (input: ScanAppInput): ScanAppOutput => buildGradleCreateIntents(input),
+    processorLoggerName({
+      groupId: "scan-app",
+      artifactId: "gradle-modules-and-dependencies",
+    }),
+    "process",
+  );
 }

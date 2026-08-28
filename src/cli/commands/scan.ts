@@ -7,6 +7,7 @@ import {
   runScanFlow,
 } from "../../scan/run-scan-flow.js";
 import { validateScanArgs } from "../../scan/validate-scan-args.js";
+import { getLogger, logError } from "../../platform/logging/index.js";
 import { packageVersion } from "../../package-version.js";
 
 export const scanCommand: CommandModule = {
@@ -32,6 +33,7 @@ export const scanCommand: CommandModule = {
       })
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
   handler: (argv) => {
+    const logger = getLogger("cli.scan");
     try {
       const sourceDir = argv["source-dir"] as string[];
       const sourceDirs = resolveSourceDirs(sourceDir);
@@ -40,15 +42,21 @@ export const scanCommand: CommandModule = {
         output: argv.output as string | undefined,
         force: argv.force as boolean,
       });
+      logger.info("command start", {
+        sourceDirCount: sourceDirs.length,
+        outputDir: scanArgs.outputDir,
+      });
       runScanFlow(
         createRunScanFlowInput(scanArgs, argv as unknown as GlobalArgv),
       );
+      logger.info("command completed", { outputDir: scanArgs.outputDir });
     } catch (error) {
       if (error instanceof CliError) {
         console.error(error.message);
         process.exit(error.exitCode);
         return;
       }
+      logError(logger, error);
       throw error;
     }
   },

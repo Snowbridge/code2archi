@@ -1,6 +1,7 @@
 import type { IProcessor } from "../../platform/processors/processor.js";
 import type { ProcessorId } from "../../platform/processors/processor-id.js";
 import type { ScanAppInput, ScanAppOutput } from "../../platform/processors/scan-app-types.js";
+import { logCalls, processorLoggerName } from "../../platform/logging/index.js";
 import { buildMavenCreateIntents } from "./maven-discovery.js";
 
 export class MavenModulesAndDependenciesProcessor
@@ -18,7 +19,12 @@ export class MavenModulesAndDependenciesProcessor
   readonly description =
     "Обнаруживает Maven-модули и их зависимости в репозиториях с buildSystems, содержащим maven.";
 
-  process(input: ScanAppInput): ScanAppOutput {
-    return buildMavenCreateIntents(input);
-  }
+  process = logCalls(
+    (input: ScanAppInput): ScanAppOutput => buildMavenCreateIntents(input),
+    processorLoggerName({
+      groupId: "scan-app",
+      artifactId: "maven-modules-and-dependencies",
+    }),
+    "process",
+  );
 }

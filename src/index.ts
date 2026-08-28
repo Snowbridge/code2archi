@@ -8,6 +8,8 @@ import { CliError } from "./cli/cli-error.js";
 import { ExitCode } from "./cli/exit-codes.js";
 import { globalOptions } from "./cli/global-options.js";
 import { validateGlobalArgv } from "./cli/validate-global-argv.js";
+import { initLogging } from "./platform/logging/index.js";
+import type { GlobalArgv } from "./cli/processor-groups.js";
 import { packageVersion } from "./package-version.js";
 
 yargs(hideBin(process.argv))
@@ -26,6 +28,12 @@ yargs(hideBin(process.argv))
       }
       throw error;
     }
+
+    const globalArgv = argv as unknown as GlobalArgv;
+    initLogging({
+      logLevel: globalArgv.logLevel,
+      verbose: globalArgv.verbose,
+    });
   })
   .command(scanCommand)
   .demandCommand(1, "Specify a command")

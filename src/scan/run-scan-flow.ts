@@ -6,6 +6,7 @@ import { runScanTechGroup } from "../platform/processors/run-scan-tech-group.js"
 import type { GlobalArgv } from "../cli/processor-groups.js";
 import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../discovery-model/run-entity-store.js";
+import { getLogger } from "../platform/logging/index.js";
 import type { ScanArgs } from "./validate-scan-args.js";
 
 export interface RunScanFlowInput extends ScanArgs {
@@ -23,27 +24,39 @@ export function createRunScanFlowInput(
 }
 
 export function runScanFlow(input: RunScanFlowInput): void {
+  const logger = getLogger("scan.flow");
+  logger.info("flow start", {
+    sourceDirCount: input.sourceDirs.length,
+    outputDir: input.outputDir,
+    scanId: input.scanId,
+  });
+
   const store = new RunEntityStore({
     sourceDirs: input.sourceDirs,
     scanId: input.scanId,
     runStartedAt: input.runStartedAt,
   });
 
-  console.log("[scan] step 1/4: repository discovery (scan-scope)");
+  logger.info("step start", { step: 1, action: "repository discovery", groupId: "scan-scope" });
   runScanScopeGroup(input.sourceDirs, input.processorFilters, store);
   const repositoryCount = store.getEntities("Repository").length;
-  console.log(`[scan] found ${repositoryCount} repository(ies)`);
+  logger.info("step completed", { step: 1, count: repositoryCount });
 
-  console.log("[scan] step 2/4: technology layer discovery (scan-tech)");
+  logger.info("step start", { step: 2, action: "technology layer discovery", groupId: "scan-tech" });
   runScanTechGroup(store.snapshot(), input.processorFilters, store);
+  logger.info("step completed", { step: 2 });
 
-  console.log("[scan] step 3/4: application layer discovery (scan-app)");
+  logger.info("step start", { step: 3, action: "application layer discovery", groupId: "scan-app" });
   runScanAppGroup(store.snapshot(), input.processorFilters, store);
+  logger.info("step completed", { step: 3 });
 
-  console.log(`[scan] step 4/4: writing discovery-model to ${input.outputDir}`);
+  logger.info("step start", { step: 4, action: "writing discovery-model", outputDir: input.outputDir });
   new DiscoveryModelWriter().write({
     outputDir: input.outputDir,
     store,
     scannedAt: new Date(),
   });
+  logger.info("step completed", { step: 4, outputDir: input.outputDir });
+
+  logger.info("flow completed", { outputDir: input.outputDir, repositoryCount });
 }
