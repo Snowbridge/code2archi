@@ -1,5 +1,9 @@
 import type { EntityType } from "./entity-types.js";
-import { REPOSITORY_SCHEMA_ID } from "./schema-ids.js";
+import {
+  APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
+  APPLICATION_MODULE_SCHEMA_ID,
+  REPOSITORY_SCHEMA_ID,
+} from "./schema-ids.js";
 
 export interface EntityCollectionDef {
   readonly collectionPath: string;
@@ -14,7 +18,14 @@ export const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef>
   },
   BuildScript: { collectionPath: "build-scripts.json" },
   RuntimeEnvironment: { collectionPath: "runtime-environments.json" },
-  ApplicationModule: { collectionPath: "application-modules.json" },
+  ApplicationModule: {
+    collectionPath: "application-modules.json",
+    schemaId: APPLICATION_MODULE_SCHEMA_ID,
+  },
+  ApplicationModuleDependency: {
+    collectionPath: "application-module-dependencies.json",
+    schemaId: APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
+  },
   RestController: { collectionPath: "rest-controllers.json" },
   RestClient: { collectionPath: "rest-clients.json" },
   MessageConsumer: { collectionPath: "message-consumers.json" },

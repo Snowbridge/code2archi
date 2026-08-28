@@ -133,5 +133,13 @@ describe("RunEntityStore", () => {
       "BuildScript",
       "RuntimeEnvironment",
     ]);
+    assert.deepEqual(groupEntityAllowlistForTests()["scan-app"], [
+      "ApplicationModule",
+      "ApplicationModuleDependency",
+      "RestController",
+      "RestClient",
+      "MessageConsumer",
+      "MessageProducer",
+    ]);
   });
 });

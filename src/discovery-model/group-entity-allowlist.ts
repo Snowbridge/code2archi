@@ -7,6 +7,7 @@ const GROUP_ENTITY_ALLOWLIST: Partial<Record<ProcessorGroupId, readonly EntityTy
   "scan-tech": ["BuildScript", "RuntimeEnvironment"],
   "scan-app": [
     "ApplicationModule",
+    "ApplicationModuleDependency",
     "RestController",
     "RestClient",
     "MessageConsumer",

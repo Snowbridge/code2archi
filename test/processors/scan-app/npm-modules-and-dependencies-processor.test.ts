@@ -1,0 +1,58 @@
+import assert from "node:assert/strict";
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+import { describe, it } from "node:test";
+import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
+import { NpmModulesAndDependenciesProcessor } from "../../../src/processors/scan-app/npm-modules-and-dependencies-processor.js";
+import { createTestTempDir } from "../../test-temp-dir.js";
+
+describe("NpmModulesAndDependenciesProcessor", () => {
+  it("creates modules from package.json", () => {
+    const root = createTestTempDir("c2a-npm-proc-");
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "demo-app",
+        version: "1.0.0",
+        dependencies: {
+          axios: "1.6.0",
+        },
+      }),
+    );
+
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan-scope",
+      { groupId: "scan-scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [
+            {
+              id: "repo-npm",
+              name: "demo-app",
+              namespace: "/demo-app",
+              localPath: root,
+              url: "",
+              buildSystems: ["npm"],
+            },
+          ],
+        },
+      },
+    );
+
+    const processor = new NpmModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const modules = output.entities?.ApplicationModule ?? [];
+    const dependencies = output.entities?.ApplicationModuleDependency ?? [];
+
+    assert.equal(modules.length, 1);
+    assert.equal(modules[0]?.artifactId, "demo-app");
+    assert.equal(modules[0]?.buildSystem, "npm");
+    assert.equal(dependencies.length, 1);
+    assert.equal(dependencies[0]?.artifactId, "axios");
+  });
+});

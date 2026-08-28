@@ -5,6 +5,7 @@ export const ENTITY_TYPES = [
   "BuildScript",
   "RuntimeEnvironment",
   "ApplicationModule",
+  "ApplicationModuleDependency",
   "RestController",
   "RestClient",
   "MessageConsumer",
