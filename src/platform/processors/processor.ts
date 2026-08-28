@@ -14,5 +14,6 @@ export interface IProcessor<TInput, TOutput> {
   readonly id: ProcessorId;
   readonly version: string;
   readonly executionPolicy: ProcessorExecutionPolicy;
+  readonly description: string;
   process(input: TInput): TOutput | Promise<TOutput>;
 }

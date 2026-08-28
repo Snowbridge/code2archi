@@ -19,6 +19,9 @@ export class UnversionedFoldersProcessor
 
   readonly executionPolicy = "ON_DEMAND" as const;
 
+  readonly description =
+    "Создаёт Repository для каждого sourceDir как готового корня репозитория без обхода каталогов и без VCS remote.";
+
   process(input: ScanScopeInput): ScanScopeOutput {
     return input.map((sourceDir) =>
       RepositoryBuilder.buildFromRoot(input, path.resolve(sourceDir), ""),

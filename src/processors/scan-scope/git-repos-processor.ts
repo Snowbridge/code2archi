@@ -17,6 +17,9 @@ export class GitReposProcessor implements IProcessor<ScanScopeInput, ScanScopeOu
 
   readonly executionPolicy = "ALWAYS" as const;
 
+  readonly description =
+    "Обнаруживает корни Git-репозиториев в sourceDirs и создаёт сущности Repository с remote URL и buildSystems.";
+
   process(input: ScanScopeInput): ScanScopeOutput {
     const repoRoots = GitWorkingCopy.findRepoRootsInSourceDirs(input);
     return repoRoots.map((repoRoot) => {

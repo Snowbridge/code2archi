@@ -16,6 +16,8 @@ class StubProcessor implements IProcessor<string, string[]> {
 
   readonly version = "0.0.0";
 
+  readonly description = "Stub processor for tests.";
+
   process(): string[] {
     return [];
   }

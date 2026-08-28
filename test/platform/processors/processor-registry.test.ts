@@ -12,6 +12,8 @@ class StubProcessor implements IProcessor<string, string[]> {
 
   readonly executionPolicy = "ALWAYS" as const;
 
+  readonly description = "Stub processor for tests.";
+
   process(): string[] {
     return this.output;
   }

@@ -16,6 +16,8 @@ class StubRepositoryProcessor implements IProcessor<ScanScopeInput, ScanScopeOut
 
   readonly executionPolicy = "ALWAYS" as const;
 
+  readonly description = "Stub processor for tests.";
+
   process(): ScanScopeOutput {
     return this.repositories;
   }
