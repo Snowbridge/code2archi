@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
-import type { Repository } from "../../../src/discovery-model/repository.js";
+import type { RepositoryCreateIntent } from "../../../src/discovery-model/repository.js";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
 import type { IProcessor } from "../../../src/platform/processors/processor.js";
 import { processorRegistry } from "../../../src/platform/processors/processor-registry.js";
@@ -10,7 +10,7 @@ import type { ScanScopeInput, ScanScopeOutput } from "../../../src/platform/proc
 class StubRepositoryProcessor implements IProcessor<ScanScopeInput, ScanScopeOutput> {
   constructor(
     readonly id: { groupId: "scan-scope"; artifactId: string },
-    private readonly repositories: Repository[],
+    private readonly repositories: RepositoryCreateIntent[],
   ) {}
 
   readonly version = "0.0.0";
@@ -36,7 +36,7 @@ describe("runScanScopeGroup", () => {
   });
 
   it("unions repositories by id and throws on duplicate id", () => {
-    const repository: Repository = {
+    const repository: RepositoryCreateIntent = {
       id: "repo-1",
       name: "a",
       namespace: "/a",
@@ -70,12 +70,12 @@ describe("runScanScopeGroup", () => {
           },
           store,
         ),
-      /Duplicate repository id: repo-1/,
+      /Duplicate Repository id: repo-1/,
     );
   });
 
-  it("stores merged repositories in run entity store", () => {
-    const repository: Repository = {
+  it("stores merged repositories in run entity store with scannerExtractor", () => {
+    const repository: RepositoryCreateIntent = {
       id: "repo-1",
       name: "a",
       namespace: "/a",
@@ -107,5 +107,9 @@ describe("runScanScopeGroup", () => {
 
     assert.equal(store.getEntities("Repository").length, 1);
     assert.equal(store.getEntities("Repository")[0]?.name, "a");
+    assert.equal(
+      store.getEntities("Repository")[0]?.scannerExtractor,
+      `scan-scope:${STUB_STORE}`,
+    );
   });
 });

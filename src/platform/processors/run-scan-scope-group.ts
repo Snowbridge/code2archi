@@ -13,7 +13,6 @@ export function runScanScopeGroup(
     filters,
   );
 
-  const repositories = new Map<string, ScanScopeOutput[number]>();
   for (const processor of processors) {
     const output = processor.process(input);
     if (output instanceof Promise) {
@@ -22,21 +21,14 @@ export function runScanScopeGroup(
       );
     }
 
-    for (const repository of output) {
-      if (repositories.has(repository.id)) {
-        throw new Error(`Duplicate repository id: ${repository.id}`);
-      }
-      repositories.set(repository.id, repository);
+    if (output.length === 0) {
+      continue;
     }
-  }
 
-  if (repositories.size === 0) {
-    return;
+    store.addCreateIntents("scan-scope", processor.id, {
+      entities: {
+        Repository: [...output],
+      },
+    });
   }
-
-  store.addCreateIntents("scan-scope", {
-    entities: {
-      Repository: [...repositories.values()].sort((a, b) => a.id.localeCompare(b.id)),
-    },
-  });
 }

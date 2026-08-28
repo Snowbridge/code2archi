@@ -1,6 +1,7 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { packageVersion } from "../package-version.js";
+import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import { getEntityCollectionDef } from "./entity-collection-registry.js";
 import type { Manifest } from "./manifest.js";
 import type { RunEntityStore } from "./run-entity-store.js";
@@ -39,7 +40,7 @@ export class DiscoveryModelWriter {
     const manifest: Manifest = {
       formatVersion: packageVersion,
       scanId: input.store.scanId,
-      scannedAt: input.scannedAt.toISOString(),
+      scannedAt: formatIso8601WithOffset(input.scannedAt),
       sourceRoot: input.store.sourceRoot,
       collections,
     };

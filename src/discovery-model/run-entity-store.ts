@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { ProcessorGroupId } from "../cli/processor-groups.js";
 import type { CreateIntents } from "./create-intents.js";
+import { enrichDiscoveryEntity } from "./enrich-discovery-entity.js";
 import {
   type DiscoveryModelSnapshot,
   deepFreeze,
@@ -8,6 +9,7 @@ import {
 import type { DiscoveryEntityRecord, EntityType } from "./entity-types.js";
 import { ENTITY_TYPES } from "./entity-types.js";
 import { isEntityTypeAllowedForGroup } from "./group-entity-allowlist.js";
+import type { ProcessorId } from "../platform/processors/processor-id.js";
 
 export interface RunEntityStoreInit {
   readonly sourceDirs: readonly string[];
@@ -50,7 +52,18 @@ export class RunEntityStore {
     return RunEntityStore.computeSourceRoot(this.sourceDirs);
   }
 
-  addCreateIntents(groupId: ProcessorGroupId, intents: CreateIntents): void {
+  addCreateIntents(
+    groupId: ProcessorGroupId,
+    processorId: ProcessorId,
+    intents: CreateIntents,
+    extractedAt: Date = new Date(),
+  ): void {
+    if (processorId.groupId !== groupId) {
+      throw new Error(
+        `Processor groupId mismatch: expected ${groupId}, got ${processorId.groupId}`,
+      );
+    }
+
     if (intents.entities) {
       for (const [entityTypeKey, records] of Object.entries(intents.entities)) {
         if (!records || records.length === 0) {
@@ -65,7 +78,10 @@ export class RunEntityStore {
         }
 
         for (const record of records) {
-          this.addEntity(entityType, record);
+          this.addEntity(
+            entityType,
+            enrichDiscoveryEntity(record, processorId, extractedAt),
+          );
         }
       }
     }

@@ -2,23 +2,43 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
 import { groupEntityAllowlistForTests } from "../../src/discovery-model/group-entity-allowlist.js";
+import { packageVersion } from "../../src/package-version.js";
+
+const SCAN_SCOPE_PROCESSOR = {
+  groupId: "scan-scope" as const,
+  artifactId: "test-processor",
+};
+
+const SCAN_TECH_PROCESSOR = {
+  groupId: "scan-tech" as const,
+  artifactId: "test-processor",
+};
 
 describe("RunEntityStore", () => {
-  it("adds entities allowed for the processor group", () => {
+  it("adds entities allowed for the processor group with platform metadata", () => {
     const store = new RunEntityStore({
       sourceDirs: ["/tmp/src"],
       scanId: "scan-1",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", {
-      entities: {
-        Repository: [{ id: "repo-1", name: "a" }],
+    store.addCreateIntents(
+      "scan-scope",
+      SCAN_SCOPE_PROCESSOR,
+      {
+        entities: {
+          Repository: [{ id: "repo-1", name: "a" }],
+        },
       },
-    });
+      new Date("2026-08-27T12:00:00.000Z"),
+    );
 
+    const repository = store.getEntities("Repository")[0];
     assert.equal(store.getEntities("Repository").length, 1);
-    assert.equal(store.getEntities("Repository")[0]?.name, "a");
+    assert.equal(repository?.name, "a");
+    assert.equal(repository?.scannerExtractor, "scan-scope:test-processor");
+    assert.equal(repository?.scannerSchema, packageVersion);
+    assert.match(repository?.extractedAt ?? "", /^\d{4}-\d{2}-\d{2}T/);
   });
 
   it("rejects entity types not allowed for the processor group", () => {
@@ -30,7 +50,7 @@ describe("RunEntityStore", () => {
 
     assert.throws(
       () =>
-        store.addCreateIntents("scan-scope", {
+        store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
           entities: {
             BuildScript: [{ id: "bs-1" }],
           },
@@ -46,7 +66,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", {
+    store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
       entities: {
         Repository: [{ id: "same-id", name: "a" }],
       },
@@ -54,7 +74,7 @@ describe("RunEntityStore", () => {
 
     assert.throws(
       () =>
-        store.addCreateIntents("scan-scope", {
+        store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
           entities: {
             Repository: [{ id: "same-id", name: "b" }],
           },
@@ -70,12 +90,12 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", {
+    store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
       entities: {
         Repository: [{ id: "shared-id", name: "repo" }],
       },
     });
-    store.addCreateIntents("scan-tech", {
+    store.addCreateIntents("scan-tech", SCAN_TECH_PROCESSOR, {
       entities: {
         BuildScript: [{ id: "shared-id", script: "build" }],
       },
@@ -92,7 +112,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", {
+    store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
       entities: {
         Repository: [{ id: "repo-1", name: "a" }],
       },

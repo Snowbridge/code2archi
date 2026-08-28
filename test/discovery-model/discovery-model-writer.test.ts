@@ -1,14 +1,38 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
 import { REPOSITORY_SCHEMA_ID } from "../../src/discovery-model/schema-ids.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
+const GIT_REPOS_PROCESSOR = {
+  groupId: "scan-scope" as const,
+  artifactId: "git-repos",
+};
+
+const SCAN_TECH_PROCESSOR = {
+  groupId: "scan-tech" as const,
+  artifactId: "test-processor",
+};
+
 describe("DiscoveryModelWriter", () => {
+  const previousTz = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "Etc/GMT-3";
+  });
+
+  afterEach(() => {
+    if (previousTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTz;
+    }
+  });
+
   it("writes manifest.json and repositories.json from run entity store", () => {
     const root = createTestTempDir("c2a-dm-writer-");
     const outputDir = path.join(root, "out");
@@ -16,23 +40,31 @@ describe("DiscoveryModelWriter", () => {
     mkdirSync(outputDir);
     mkdirSync(sourceDir);
 
-    const repositories = [
-      {
-        id: "repo-1",
-        name: "src",
-        namespace: "/src",
-        localPath: sourceDir,
-        url: "",
-        buildSystems: [] as string[],
-      },
-    ];
     const scannedAt = new Date("2026-08-27T12:00:00.000Z");
     const store = new RunEntityStore({
       sourceDirs: [sourceDir],
       scanId: "scan-1",
       runStartedAt: scannedAt,
     });
-    store.addCreateIntents("scan-scope", { entities: { Repository: repositories } });
+    store.addCreateIntents(
+      "scan-scope",
+      GIT_REPOS_PROCESSOR,
+      {
+        entities: {
+          Repository: [
+            {
+              id: "repo-1",
+              name: "src",
+              namespace: "/src",
+              localPath: sourceDir,
+              url: "",
+              buildSystems: [],
+            },
+          ],
+        },
+      },
+      scannedAt,
+    );
 
     new DiscoveryModelWriter().write({
       outputDir,
@@ -60,7 +92,7 @@ describe("DiscoveryModelWriter", () => {
 
     assert.equal(manifest.formatVersion, packageVersion);
     assert.equal(manifest.scanId, "scan-1");
-    assert.equal(manifest.scannedAt, scannedAt.toISOString());
+    assert.equal(manifest.scannedAt, "2026-08-27T15:00:00.000+03:00");
     assert.equal(manifest.sourceRoot, path.resolve(sourceDir));
     assert.equal(manifest.collections.length, 1);
     assert.equal(manifest.collections[0]?.path, "repositories.json");
@@ -70,8 +102,16 @@ describe("DiscoveryModelWriter", () => {
 
     const writtenRepositories = JSON.parse(
       readFileSync(repositoriesPath, "utf8"),
-    );
-    assert.deepEqual(writtenRepositories, repositories);
+    ) as Array<{
+      id: string;
+      scannerExtractor: string;
+      scannerSchema: string;
+      extractedAt: string;
+    }>;
+    assert.equal(writtenRepositories.length, 1);
+    assert.equal(writtenRepositories[0]?.scannerExtractor, "scan-scope:git-repos");
+    assert.equal(writtenRepositories[0]?.scannerSchema, packageVersion);
+    assert.equal(writtenRepositories[0]?.extractedAt, "2026-08-27T15:00:00.000+03:00");
   });
 
   it("uses common path prefix as sourceRoot for multiple source dirs", () => {
@@ -113,7 +153,7 @@ describe("DiscoveryModelWriter", () => {
       scanId: "scan-3",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
-    store.addCreateIntents("scan-tech", {
+    store.addCreateIntents("scan-tech", SCAN_TECH_PROCESSOR, {
       entities: {
         BuildScript: [{ id: "bs-1", name: "build.gradle" }],
       },

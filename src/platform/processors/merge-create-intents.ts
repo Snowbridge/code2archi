@@ -1,11 +1,12 @@
 import type { CreateIntents } from "../../discovery-model/create-intents.js";
-import type { DiscoveryEntityRecord, EntityType } from "../../discovery-model/entity-types.js";
+import type { DiscoveryEntityCreateIntent } from "../../discovery-model/entity-base.js";
+import type { EntityType } from "../../discovery-model/entity-types.js";
 
 export function mergeCreateIntents(
   left: CreateIntents,
   right: CreateIntents,
 ): CreateIntents {
-  const entities: Partial<Record<EntityType, DiscoveryEntityRecord[]>> = {};
+  const entities: Partial<Record<EntityType, DiscoveryEntityCreateIntent[]>> = {};
 
   for (const source of [left.entities, right.entities]) {
     if (!source) {

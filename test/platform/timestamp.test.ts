@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { formatRunTimestamp } from "../../src/platform/timestamp.js";
+import {
+  formatIso8601WithOffset,
+  formatRunTimestamp,
+} from "../../src/platform/timestamp.js";
 
 describe("formatRunTimestamp", () => {
   const previousTz = process.env.TZ;
@@ -34,5 +37,26 @@ describe("formatRunTimestamp", () => {
       profileName,
       "code2archi-profile-scan-2026-08-27T12-00-45.0000+0300.json",
     );
+  });
+});
+
+describe("formatIso8601WithOffset", () => {
+  const previousTz = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "Etc/GMT-3";
+  });
+
+  afterEach(() => {
+    if (previousTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTz;
+    }
+  });
+
+  it("formats ISO 8601 with host offset", () => {
+    const date = new Date("2026-08-28T09:49:00.123Z");
+    assert.equal(formatIso8601WithOffset(date), "2026-08-28T12:49:00.123+03:00");
   });
 });

@@ -3,7 +3,6 @@ import type { CreateIntents } from "../../discovery-model/create-intents.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/discovery-model-snapshot.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import type { ProcessorFilters } from "./processor-filters.js";
-import { mergeCreateIntents } from "./merge-create-intents.js";
 import { processorRegistry } from "./processor-registry.js";
 
 export function runCreateIntentProcessorGroup(
@@ -17,7 +16,6 @@ export function runCreateIntentProcessorGroup(
     CreateIntents
   >(groupId, filters);
 
-  let merged: CreateIntents | undefined;
   for (const processor of processors) {
     const output = processor.process(snapshot);
     if (output instanceof Promise) {
@@ -26,10 +24,10 @@ export function runCreateIntentProcessorGroup(
       );
     }
 
-    merged = merged ? mergeCreateIntents(merged, output) : output;
-  }
+    if (!output.entities && !output.links) {
+      continue;
+    }
 
-  if (merged) {
-    store.addCreateIntents(groupId, merged);
+    store.addCreateIntents(groupId, processor.id, output);
   }
 }
