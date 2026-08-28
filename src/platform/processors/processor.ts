@@ -1,7 +1,25 @@
+import type { ProcessorGroupId } from "../../cli/processor-groups.js";
+import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
+import type { RepositoryCreateIntent } from "../../discovery-model/entities/repository.js";
+import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
-import type { ProcessorId } from "./processor-id.js";
+
+export interface ProcessorId {
+  readonly groupId: ProcessorGroupId;
+  readonly artifactId: string;
+}
+
+export function processorKey(id: ProcessorId): string {
+  return `${id.groupId}/${id.artifactId}`;
+}
 
 export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";
+
+export type ScanScopeInput = readonly string[];
+export type ScanScopeOutput = readonly RepositoryCreateIntent[];
+
+export type ScanAppInput = DiscoveryModelSnapshot;
+export type ScanAppOutput = CreateIntents;
 
 /**
  * Base class for processor implementations.

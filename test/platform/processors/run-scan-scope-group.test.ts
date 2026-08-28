@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import type { RepositoryCreateIntent } from "../../../src/discovery-model/entities/repository.js";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
-import { AbstractProcessor } from "../../../src/platform/processors/processor.js";
+import {
+  AbstractProcessor,
+  type ScanScopeInput,
+  type ScanScopeOutput,
+} from "../../../src/platform/processors/processor.js";
 import { processorRegistry } from "../../../src/platform/processors/processor-registry.js";
 import { runScanScopeGroup } from "../../../src/platform/processors/run-scan-scope-group.js";
-import type { ScanScopeInput, ScanScopeOutput } from "../../../src/platform/processors/scan-scope-types.js";
 
 class StubRepositoryProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id: { groupId: "scan-scope"; artifactId: string };

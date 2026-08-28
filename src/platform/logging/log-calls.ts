@@ -1,4 +1,4 @@
-import type { ProcessorId } from "../processors/processor-id.js";
+import type { ProcessorId } from "../processors/processor.js";
 import { getLogger, isDebugEnabled, logError } from "./logging.js";
 
 const MAX_STRING_LENGTH = 500;

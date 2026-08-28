@@ -2,7 +2,7 @@ import path from "node:path";
 import type { ProcessorGroupId } from "../cli/processor-groups.js";
 import { packageVersion } from "../package-version.js";
 import { formatIso8601WithOffset } from "../platform/timestamp.js";
-import type { ProcessorId } from "../platform/processors/processor-id.js";
+import type { ProcessorId } from "../platform/processors/processor.js";
 import type { CreateIntents } from "./entities/create-intents.js";
 import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";

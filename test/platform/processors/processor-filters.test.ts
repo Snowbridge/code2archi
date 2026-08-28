@@ -5,8 +5,10 @@ import {
   AbstractProcessor,
   type ProcessorExecutionPolicy,
 } from "../../../src/platform/processors/processor.js";
-import { ProcessorRegistry } from "../../../src/platform/processors/processor-registry.js";
-import { resolveProcessorFilters } from "../../../src/platform/processors/resolve-processor-filters.js";
+import {
+  ProcessorRegistry,
+  resolveProcessorFilters,
+} from "../../../src/platform/processors/processor-registry.js";
 
 class StubProcessor extends AbstractProcessor<string, string[]> {
   readonly id: { groupId: "scan-scope"; artifactId: string };

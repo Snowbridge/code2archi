@@ -1,8 +1,11 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import type { ProcessorId } from "../../platform/processors/processor-id.js";
-import { AbstractProcessor } from "../../platform/processors/processor.js";
-import type { ScanAppInput, ScanAppOutput } from "../../platform/processors/scan-app-types.js";
+import {
+  AbstractProcessor,
+  type ProcessorId,
+  type ScanAppInput,
+  type ScanAppOutput,
+} from "../../platform/processors/processor.js";
 import type { Repository } from "../../discovery-model/entities/repository.js";
 import { parseMavenRepository } from "../../parsers/maven-pom-parser.js";
 import {

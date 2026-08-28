@@ -1,7 +1,7 @@
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
-import type { ProcessorFilters } from "./processor-filters.js";
+import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
-import type { ScanScopeInput, ScanScopeOutput } from "./scan-scope-types.js";
+import type { ScanScopeInput, ScanScopeOutput } from "./processor.js";
 import { getLogger } from "../logging/index.js";
 
 export function runScanScopeGroup(

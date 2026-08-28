@@ -2,7 +2,7 @@ import type { ProcessorGroupId } from "../../cli/processor-groups.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
-import type { ProcessorFilters } from "./processor-filters.js";
+import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import { getLogger } from "../logging/index.js";
 

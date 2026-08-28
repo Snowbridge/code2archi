@@ -1,8 +1,9 @@
-import type { ProcessorFilters } from "../platform/processors/processor-filters.js";
-import { resolveProcessorFilters } from "../platform/processors/resolve-processor-filters.js";
-import { runScanAppGroup } from "../platform/processors/run-scan-app-group.js";
+import {
+  type ProcessorFilters,
+  resolveProcessorFilters,
+} from "../platform/processors/processor-registry.js";
+import { runCreateIntentProcessorGroup } from "../platform/processors/run-create-intent-processor-group.js";
 import { runScanScopeGroup } from "../platform/processors/run-scan-scope-group.js";
-import { runScanTechGroup } from "../platform/processors/run-scan-tech-group.js";
 import type { GlobalArgv } from "../cli/processor-groups.js";
 import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../discovery-model/run-entity-store.js";
@@ -43,11 +44,11 @@ export function runScanFlow(input: RunScanFlowInput): void {
   logger.info("step completed", { step: 1, count: repositoryCount });
 
   logger.info("step start", { step: 2, action: "technology layer discovery", groupId: "scan-tech" });
-  runScanTechGroup(store.snapshot(), input.processorFilters, store);
+  runCreateIntentProcessorGroup("scan-tech", store.snapshot(), input.processorFilters, store);
   logger.info("step completed", { step: 2 });
 
   logger.info("step start", { step: 3, action: "application layer discovery", groupId: "scan-app" });
-  runScanAppGroup(store.snapshot(), input.processorFilters, store);
+  runCreateIntentProcessorGroup("scan-app", store.snapshot(), input.processorFilters, store);
   logger.info("step completed", { step: 3 });
 
   logger.info("step start", { step: 4, action: "writing discovery-model", outputDir: input.outputDir });

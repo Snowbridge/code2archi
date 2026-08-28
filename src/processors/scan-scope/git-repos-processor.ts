@@ -1,9 +1,9 @@
-import type { ProcessorId } from "../../platform/processors/processor-id.js";
-import { AbstractProcessor } from "../../platform/processors/processor.js";
-import type {
-  ScanScopeInput,
-  ScanScopeOutput,
-} from "../../platform/processors/scan-scope-types.js";
+import {
+  AbstractProcessor,
+  type ProcessorId,
+  type ScanScopeInput,
+  type ScanScopeOutput,
+} from "../../platform/processors/processor.js";
 import { RepositoryBuilder } from "../../utils/repository-builder.js";
 import { GitWorkingCopy } from "../../utils/git-working-copy.js";
 
