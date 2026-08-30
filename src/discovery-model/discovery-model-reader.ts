@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { DiscoveryModelSnapshot } from "./run-entity-store.js";
+import { buildDiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
+import type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
 import { ENTITY_TYPES } from "./entities/entity-types.js";
 
@@ -16,25 +17,6 @@ interface Manifest {
   readonly scannedAt?: string;
   readonly sourceRoot?: string;
   readonly collections?: readonly ManifestCollectionEntry[];
-}
-
-class LoadedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
-  constructor(
-    readonly scanId: string,
-    readonly sourceRoot: string,
-    readonly runStartedAt: Date,
-    private readonly entities: Readonly<
-      Partial<Record<EntityType, readonly DiscoveryEntityRecord[]>>
-    >,
-  ) {}
-
-  listEntities(entityType: EntityType): readonly DiscoveryEntityRecord[] {
-    return this.entities[entityType] ?? [];
-  }
-
-  getEntity(entityType: EntityType, id: string): DiscoveryEntityRecord | undefined {
-    return this.listEntities(entityType).find((entity) => entity.id === id);
-  }
 }
 
 function isEntityType(value: string): value is EntityType {
@@ -75,11 +57,11 @@ export class DiscoveryModelReader {
 
     const runStartedAt = manifest.scannedAt ? new Date(manifest.scannedAt) : new Date();
 
-    return new LoadedDiscoveryModelSnapshot(
-      manifest.scanId ?? path.basename(inputDir),
-      manifest.sourceRoot ?? inputDir,
-      Number.isNaN(runStartedAt.getTime()) ? new Date() : runStartedAt,
-      entities,
-    );
+    return buildDiscoveryModelSnapshot({
+      scanId: manifest.scanId ?? path.basename(inputDir),
+      sourceRoot: manifest.sourceRoot ?? inputDir,
+      runStartedAt: Number.isNaN(runStartedAt.getTime()) ? new Date() : runStartedAt,
+      entityArrays: entities,
+    });
   }
 }

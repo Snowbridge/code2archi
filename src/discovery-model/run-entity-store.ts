@@ -4,6 +4,8 @@ import { resolveBuiltInGroupId } from "../platform/processors/processor-coordina
 import { packageVersion } from "../package-version.js";
 import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import type { ProcessorId } from "../platform/processors/processor.js";
+import { buildDiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
+import type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 import type { CreateIntents } from "./entities/create-intents.js";
 import type { CreateIntentRecord } from "./entities/create-intents.js";
 import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
@@ -11,13 +13,7 @@ import { Entity } from "./entities/entity.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
 import { ENTITY_TYPES } from "./entities/entity-types.js";
 
-export interface DiscoveryModelSnapshot {
-  readonly scanId: string;
-  readonly sourceRoot: string;
-  readonly runStartedAt: Date;
-  listEntities(entityType: EntityType): readonly DiscoveryEntityRecord[];
-  getEntity(entityType: EntityType, id: string): DiscoveryEntityRecord | undefined;
-}
+export type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 
 export interface RunEntityStoreInit {
   readonly sourceDirs: readonly string[];
@@ -69,46 +65,6 @@ function enrichDiscoveryEntity(
     scannerSchema: packageVersion,
     extractedAt: formatIso8601WithOffset(extractedAt),
   };
-}
-
-function deepFreeze<T>(value: T): T {
-  if (value === null || typeof value !== "object") {
-    return value;
-  }
-
-  Object.freeze(value);
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      deepFreeze(item);
-    }
-    return value;
-  }
-
-  for (const child of Object.values(value as Record<string, unknown>)) {
-    deepFreeze(child);
-  }
-
-  return value;
-}
-
-class FrozenDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
-  constructor(
-    readonly scanId: string,
-    readonly sourceRoot: string,
-    readonly runStartedAt: Date,
-    private readonly entities: Readonly<
-      Partial<Record<EntityType, readonly DiscoveryEntityRecord[]>>
-    >,
-  ) {}
-
-  listEntities(entityType: EntityType): readonly DiscoveryEntityRecord[] {
-    return this.entities[entityType] ?? [];
-  }
-
-  getEntity(entityType: EntityType, id: string): DiscoveryEntityRecord | undefined {
-    return this.listEntities(entityType).find((entity) => entity.id === id);
-  }
 }
 
 function toDiscoveryEntityCreateIntent(
@@ -187,27 +143,12 @@ export class RunEntityStore {
   }
 
   snapshot(): DiscoveryModelSnapshot {
-    const entities: Partial<Record<EntityType, readonly DiscoveryEntityRecord[]>> = {};
-
-    for (const entityType of ENTITY_TYPES) {
-      const bucket = this.entities.get(entityType);
-      if (!bucket || bucket.size === 0) {
-        continue;
-      }
-
-      entities[entityType] = deepFreeze(
-        [...bucket.values()].sort((a, b) => a.id.localeCompare(b.id)),
-      );
-    }
-
-    return deepFreeze(
-      new FrozenDiscoveryModelSnapshot(
-        this.scanId,
-        this.sourceRoot,
-        this.runStartedAt,
-        deepFreeze(entities),
-      ),
-    );
+    return buildDiscoveryModelSnapshot({
+      scanId: this.scanId,
+      sourceRoot: this.sourceRoot,
+      runStartedAt: this.runStartedAt,
+      entityMaps: this.entities,
+    });
   }
 
   listNonemptyEntityTypes(): EntityType[] {

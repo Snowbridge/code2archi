@@ -165,6 +165,58 @@ describe("RunEntityStore", () => {
     });
   });
 
+  it("exposes indexed lookup helpers on snapshot", () => {
+    const store = new RunEntityStore({
+      sourceDirs: ["/tmp/src"],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
+      entities: {
+        Repository: [{ id: "repo-1", name: "repo" }],
+      },
+    });
+    store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
+      entities: {
+        ApplicationModule: [
+          {
+            id: "module-a",
+            repositoryId: "repo-1",
+            name: "module-a",
+          },
+        ],
+        ApplicationModuleDependency: [
+          {
+            id: "dep-1",
+            parentId: "module-a",
+            groupId: "com.example",
+            artifactId: "lib",
+            version: "1.0.0",
+          },
+        ],
+      },
+    });
+
+    const snapshot = store.snapshot();
+
+    assert.equal(snapshot.getById("module-a")?.name, "module-a");
+    assert.equal(snapshot.getEntity("ApplicationModule", "module-a")?.repositoryId, "repo-1");
+    assert.deepEqual(
+      snapshot.listEntitiesByRef("ApplicationModuleDependency", "parentId", "module-a").map(
+        (entity) => entity.id,
+      ),
+      ["dep-1"],
+    );
+    assert.deepEqual(
+      snapshot.listEntitiesByRef("ApplicationModule", "repositoryId", "repo-1").map(
+        (entity) => entity.id,
+      ),
+      ["module-a"],
+    );
+    assert.deepEqual(snapshot.listEntitiesByRef("Repository", "name", "repo"), []);
+  });
+
   it("mirrors group allowlist from specifications", () => {
     assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.scope"], ["Repository"]);
     assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.source"], [
