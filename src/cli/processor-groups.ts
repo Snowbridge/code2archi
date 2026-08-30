@@ -2,8 +2,10 @@ export const PROCESSOR_GROUPS = [
   "scan-scope",
   "scan-tech",
   "scan-app",
-  "generate-element",
-  "generate-relation",
+  "generate-biz",
+  "generate-app",
+  "generate-tech",
+  "generate-rel",
   "generate-view",
 ] as const;
 
@@ -27,20 +29,26 @@ export interface GlobalArgv {
   withScanScope: string[];
   withScanTech: string[];
   withScanApp: string[];
-  withGenerateElement: string[];
-  withGenerateRelation: string[];
+  withGenerateBiz: string[];
+  withGenerateApp: string[];
+  withGenerateTech: string[];
+  withGenerateRel: string[];
   withGenerateView: string[];
   withoutScanScope: string[];
   withoutScanTech: string[];
   withoutScanApp: string[];
-  withoutGenerateElement: string[];
-  withoutGenerateRelation: string[];
+  withoutGenerateBiz: string[];
+  withoutGenerateApp: string[];
+  withoutGenerateTech: string[];
+  withoutGenerateRel: string[];
   withoutGenerateView: string[];
   withOnlyScanScope: string[];
   withOnlyScanTech: string[];
   withOnlyScanApp: string[];
-  withOnlyGenerateElement: string[];
-  withOnlyGenerateRelation: string[];
+  withOnlyGenerateBiz: string[];
+  withOnlyGenerateApp: string[];
+  withOnlyGenerateTech: string[];
+  withOnlyGenerateRel: string[];
   withOnlyGenerateView: string[];
 }
 
@@ -66,16 +74,28 @@ export const PROCESSOR_GROUP_DEFS: ProcessorGroupDef[] = [
     withOnlyArgvKey: "withOnlyScanApp",
   },
   {
-    groupId: "generate-element",
-    withoutArgvKey: "withoutGenerateElement",
-    withArgvKey: "withGenerateElement",
-    withOnlyArgvKey: "withOnlyGenerateElement",
+    groupId: "generate-biz",
+    withoutArgvKey: "withoutGenerateBiz",
+    withArgvKey: "withGenerateBiz",
+    withOnlyArgvKey: "withOnlyGenerateBiz",
   },
   {
-    groupId: "generate-relation",
-    withoutArgvKey: "withoutGenerateRelation",
-    withArgvKey: "withGenerateRelation",
-    withOnlyArgvKey: "withOnlyGenerateRelation",
+    groupId: "generate-app",
+    withoutArgvKey: "withoutGenerateApp",
+    withArgvKey: "withGenerateApp",
+    withOnlyArgvKey: "withOnlyGenerateApp",
+  },
+  {
+    groupId: "generate-tech",
+    withoutArgvKey: "withoutGenerateTech",
+    withArgvKey: "withGenerateTech",
+    withOnlyArgvKey: "withOnlyGenerateTech",
+  },
+  {
+    groupId: "generate-rel",
+    withoutArgvKey: "withoutGenerateRel",
+    withArgvKey: "withGenerateRel",
+    withOnlyArgvKey: "withOnlyGenerateRel",
   },
   {
     groupId: "generate-view",
@@ -90,3 +110,13 @@ const PROCESSOR_GROUP_ID_SET = new Set<string>(PROCESSOR_GROUPS);
 export function isProcessorGroupId(value: string): value is ProcessorGroupId {
   return PROCESSOR_GROUP_ID_SET.has(value);
 }
+
+export const GENERATE_PROCESSOR_GROUPS = [
+  "generate-biz",
+  "generate-app",
+  "generate-tech",
+  "generate-rel",
+  "generate-view",
+] as const satisfies readonly ProcessorGroupId[];
+
+export type GenerateProcessorGroupId = (typeof GENERATE_PROCESSOR_GROUPS)[number];

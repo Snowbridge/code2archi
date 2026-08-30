@@ -1,4 +1,6 @@
 import type { ProcessorGroupId } from "../../cli/processor-groups.js";
+import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
+import type { ArchiModelSnapshot } from "../../archimate-model/archi-model-store.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { Repository } from "../../discovery-model/entities/repository.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
@@ -20,6 +22,13 @@ export type ScanScopeOutput = readonly Repository[];
 
 export type ScanAppInput = DiscoveryModelSnapshot;
 export type ScanAppOutput = CreateIntents;
+
+export interface GenerateProcessorInput {
+  readonly discovery: DiscoveryModelSnapshot;
+  readonly archi: ArchiModelSnapshot;
+}
+
+export type GenerateProcessorOutput = ArchiCreateIntents;
 
 /**
  * Base class for processor implementations.

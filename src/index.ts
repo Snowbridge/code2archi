@@ -4,6 +4,7 @@ import "./platform/processors/builtin-processors.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { scanCommand } from "./cli/commands/scan.js";
+import { generateCommand } from "./cli/commands/generate.js";
 import { CliError } from "./cli/cli-error.js";
 import { ExitCode } from "./cli/exit-codes.js";
 import { globalOptions } from "./cli/global-options.js";
@@ -36,6 +37,7 @@ yargs(hideBin(process.argv))
     });
   })
   .command(scanCommand)
+  .command(generateCommand)
   .demandCommand(1, "Specify a command")
   .strict()
   .help()

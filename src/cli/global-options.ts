@@ -79,33 +79,25 @@ export const globalOptions: Record<string, Options> = {
   "with-scan-scope": arrayOption("Enable ON_DEMAND scan-scope processors by artifactId"),
   "with-scan-tech": arrayOption("Enable ON_DEMAND scan-tech processors by artifactId"),
   "with-scan-app": arrayOption("Enable ON_DEMAND scan-app processors by artifactId"),
-  "with-generate-element": arrayOption(
-    "Enable ON_DEMAND generate-element processors by artifactId",
-  ),
-  "with-generate-relation": arrayOption(
-    "Enable ON_DEMAND generate-relation processors by artifactId",
-  ),
+  "with-generate-biz": arrayOption("Enable ON_DEMAND generate-biz processors by artifactId"),
+  "with-generate-app": arrayOption("Enable ON_DEMAND generate-app processors by artifactId"),
+  "with-generate-tech": arrayOption("Enable ON_DEMAND generate-tech processors by artifactId"),
+  "with-generate-rel": arrayOption("Enable ON_DEMAND generate-rel processors by artifactId"),
   "with-generate-view": arrayOption("Enable ON_DEMAND generate-view processors by artifactId"),
   "without-scan-scope": arrayOption("Exclude scan-scope processors by artifactId"),
   "without-scan-tech": arrayOption("Exclude scan-tech processors by artifactId"),
   "without-scan-app": arrayOption("Exclude scan-app processors by artifactId"),
-  "without-generate-element": arrayOption(
-    "Exclude generate-element processors by artifactId",
-  ),
-  "without-generate-relation": arrayOption(
-    "Exclude generate-relation processors by artifactId",
-  ),
-  "without-generate-view": arrayOption(
-    "Exclude generate-view processors by artifactId",
-  ),
+  "without-generate-biz": arrayOption("Exclude generate-biz processors by artifactId"),
+  "without-generate-app": arrayOption("Exclude generate-app processors by artifactId"),
+  "without-generate-tech": arrayOption("Exclude generate-tech processors by artifactId"),
+  "without-generate-rel": arrayOption("Exclude generate-rel processors by artifactId"),
+  "without-generate-view": arrayOption("Exclude generate-view processors by artifactId"),
   "with-only-scan-scope": arrayOption("Run only listed scan-scope processors"),
   "with-only-scan-tech": arrayOption("Run only listed scan-tech processors"),
   "with-only-scan-app": arrayOption("Run only listed scan-app processors"),
-  "with-only-generate-element": arrayOption(
-    "Run only listed generate-element processors",
-  ),
-  "with-only-generate-relation": arrayOption(
-    "Run only listed generate-relation processors",
-  ),
+  "with-only-generate-biz": arrayOption("Run only listed generate-biz processors"),
+  "with-only-generate-app": arrayOption("Run only listed generate-app processors"),
+  "with-only-generate-tech": arrayOption("Run only listed generate-tech processors"),
+  "with-only-generate-rel": arrayOption("Run only listed generate-rel processors"),
   "with-only-generate-view": arrayOption("Run only listed generate-view processors"),
 };
