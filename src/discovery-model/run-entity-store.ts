@@ -4,7 +4,9 @@ import { packageVersion } from "../package-version.js";
 import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import type { ProcessorId } from "../platform/processors/processor.js";
 import type { CreateIntents } from "./entities/create-intents.js";
+import type { CreateIntentRecord } from "./entities/create-intents.js";
 import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
+import { Entity } from "./entities/entity.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
 import { ENTITY_TYPES } from "./entities/entity-types.js";
 
@@ -107,8 +109,19 @@ class FrozenDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
   }
 }
 
+function toDiscoveryEntityCreateIntent(
+  record: CreateIntentRecord,
+): DiscoveryEntityCreateIntent {
+  if (record instanceof Entity) {
+    return record.toCreateIntent();
+  }
+
+  return record;
+}
+
 export class RunEntityStore {
   private readonly entities = new Map<EntityType, Map<string, DiscoveryEntityRecord>>();
+  private readonly globalIds = new Set<string>();
   private readonly sourceDirs: readonly string[];
   readonly scanId: string;
   readonly runStartedAt: Date;
@@ -151,7 +164,11 @@ export class RunEntityStore {
         for (const record of records) {
           this.addEntity(
             entityType,
-            enrichDiscoveryEntity(record, processorId, extractedAt),
+            enrichDiscoveryEntity(
+              toDiscoveryEntityCreateIntent(record),
+              processorId,
+              extractedAt,
+            ),
           );
         }
       }
@@ -211,6 +228,10 @@ export class RunEntityStore {
       throw new Error(`Entity record of type ${entityType} is missing id`);
     }
 
+    if (this.globalIds.has(record.id)) {
+      throw new Error(`Duplicate id: ${record.id} (entityType: ${entityType})`);
+    }
+
     let bucket = this.entities.get(entityType);
     if (!bucket) {
       bucket = new Map();
@@ -221,6 +242,7 @@ export class RunEntityStore {
       throw new Error(`Duplicate ${entityType} id: ${record.id}`);
     }
 
+    this.globalIds.add(record.id);
     bucket.set(record.id, record);
   }
 

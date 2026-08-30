@@ -6,7 +6,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../platform/processors/processor.js";
-import type { Repository } from "../../discovery-model/entities/repository.js";
+import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
 import { parseNpmRepository } from "../../parsers/package-json-parser.js";
 import {
   asRepositoryFromSnapshot,
@@ -39,7 +39,7 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
     return buildModuleDiscoveryIntents(modules);
   }
 
-  private discoverModules(repository: Repository): ModuleDiscoveryInput[] {
+  private discoverModules(repository: RepositoryRecord): ModuleDiscoveryInput[] {
     if (!repository.buildSystems.includes("npm")) {
       return [];
     }
@@ -68,6 +68,7 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
         groupId: module.groupId,
         artifactId: module.artifactId,
         version: module.version,
+        name: module.name,
         repoPath: module.repoPath,
         buildScript: module.buildScript,
         isMultimodule: module.isMultimodule,

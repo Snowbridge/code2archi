@@ -115,11 +115,11 @@ describe("RunEntityStore", () => {
             Repository: [{ id: "same-id", name: "b" }],
           },
         }),
-      /Duplicate Repository id: same-id/,
+      /Duplicate id: same-id/,
     );
   });
 
-  it("allows the same id across different entity types", () => {
+  it("throws on duplicate id across different entity types", () => {
     const store = new RunEntityStore({
       sourceDirs: ["/tmp/src"],
       scanId: "scan-1",
@@ -131,14 +131,16 @@ describe("RunEntityStore", () => {
         Repository: [{ id: "shared-id", name: "repo" }],
       },
     });
-    store.addCreateIntents("scan-tech", SCAN_TECH_PROCESSOR, {
-      entities: {
-        BuildScript: [{ id: "shared-id", script: "build" }],
-      },
-    });
 
-    assert.equal(store.getEntities("Repository")[0]?.id, "shared-id");
-    assert.equal(store.getEntities("BuildScript")[0]?.id, "shared-id");
+    assert.throws(
+      () =>
+        store.addCreateIntents("scan-tech", SCAN_TECH_PROCESSOR, {
+          entities: {
+            BuildScript: [{ id: "shared-id", script: "build" }],
+          },
+        }),
+      /Duplicate id: shared-id/,
+    );
   });
 
   it("returns a deep-frozen snapshot", () => {

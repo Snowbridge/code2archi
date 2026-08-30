@@ -1,32 +1,28 @@
-import type { ApplicationModuleCreateIntent } from "../../discovery-model/entities/application-module.js";
-import type { ApplicationModuleDependencyCreateIntent } from "../../discovery-model/entities/application-module-dependency.js";
-import type { BuildSystem } from "../../discovery-model/entities/application-module.js";
+import {
+  ApplicationModule,
+  type ApplicationModuleNaturalKeys,
+} from "../../discovery-model/entities/application-module.js";
+import { ApplicationModuleDependency } from "../../discovery-model/entities/application-module-dependency.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryEntityRecord } from "../../discovery-model/entities/entity-types.js";
-import type { Repository } from "../../discovery-model/entities/repository.js";
-import { createEntityId } from "../../utils/discovery-model-entities.js";
+import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
 import { parseNpmName } from "../../parsers/npm-name.js";
 
-export function asRepositoryFromSnapshot(entity: DiscoveryEntityRecord): Repository {
-  return entity as unknown as Repository;
+export function asRepositoryFromSnapshot(entity: DiscoveryEntityRecord): RepositoryRecord {
+  return entity as unknown as RepositoryRecord;
 }
 
-export interface ModuleDiscoveryInput {
-  readonly repositoryId: string;
-  readonly buildSystem: BuildSystem;
-  readonly groupId: string;
-  readonly artifactId: string;
-  readonly version: string;
-  readonly repoPath: string;
-  readonly buildScript: string;
-  readonly isMultimodule: boolean;
+export type ModuleDiscoveryInput = Omit<
+  ApplicationModuleNaturalKeys,
+  "parentId"
+> & {
   readonly parentModuleId?: string;
   readonly dependencies: readonly {
     readonly groupId: string;
     readonly artifactId: string;
     readonly version: string;
   }[];
-}
+};
 
 function applicationModuleDependencyIdentityKey(
   parentId: string,
@@ -40,31 +36,26 @@ function applicationModuleDependencyIdentityKey(
 export function buildModuleDiscoveryIntents(
   modules: readonly ModuleDiscoveryInput[],
 ): CreateIntents {
-  const applicationModules: ApplicationModuleCreateIntent[] = [];
-  const applicationModuleDependencies: ApplicationModuleDependencyCreateIntent[] = [];
+  const applicationModules: ApplicationModule[] = [];
+  const applicationModuleDependencies: ApplicationModuleDependency[] = [];
   const seenApplicationModuleDependencies = new Set<string>();
 
   for (const module of modules) {
-    const moduleId = createEntityId([
-      module.repositoryId,
-      module.buildSystem,
-      module.groupId,
-      module.artifactId,
-    ]);
-
-    applicationModules.push({
-      id: moduleId,
+    const applicationModule = new ApplicationModule({
       repositoryId: module.repositoryId,
       buildSystem: module.buildSystem,
       groupId: module.groupId,
       artifactId: module.artifactId,
       version: module.version,
-      name: module.artifactId,
+      name: module.name,
       repoPath: module.repoPath,
       buildScript: module.buildScript,
       isMultimodule: module.isMultimodule,
       ...(module.parentModuleId ? { parentId: module.parentModuleId } : {}),
     });
+
+    applicationModules.push(applicationModule);
+    const moduleId = applicationModule.id;
 
     for (const dependency of module.dependencies) {
       const identityKey = applicationModuleDependencyIdentityKey(
@@ -78,13 +69,14 @@ export function buildModuleDiscoveryIntents(
       }
       seenApplicationModuleDependencies.add(identityKey);
 
-      applicationModuleDependencies.push({
-        id: createEntityId([moduleId, dependency.groupId, dependency.artifactId, dependency.version]),
-        parentId: moduleId,
-        groupId: dependency.groupId,
-        artifactId: dependency.artifactId,
-        version: dependency.version,
-      });
+      applicationModuleDependencies.push(
+        new ApplicationModuleDependency({
+          parentId: moduleId,
+          groupId: dependency.groupId,
+          artifactId: dependency.artifactId,
+          version: dependency.version,
+        }),
+      );
     }
   }
 
@@ -98,11 +90,16 @@ export function buildModuleDiscoveryIntents(
 
 export function moduleIdForCoordinates(
   repositoryId: string,
-  buildSystem: BuildSystem,
+  buildSystem: ApplicationModuleNaturalKeys["buildSystem"],
   groupId: string,
   artifactId: string,
 ): string {
-  return createEntityId([repositoryId, buildSystem, groupId, artifactId]);
+  return ApplicationModule.idForCoordinates(
+    repositoryId,
+    buildSystem,
+    groupId,
+    artifactId,
+  );
 }
 
 export function npmDependencyParts(name: string, version: string): {

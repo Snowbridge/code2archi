@@ -1,7 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import type { RepositoryCreateIntent } from "../discovery-model/entities/repository.js";
-import { createEntityId } from "./discovery-model-entities.js";
+import { Repository } from "../discovery-model/entities/repository.js";
 
 export class RepositoryBuilder {
   private static readonly BUILD_SYSTEM_ORDER = ["maven", "gradle", "npm"] as const;
@@ -20,17 +19,16 @@ export class RepositoryBuilder {
     sourceDirs: readonly string[],
     repoRoot: string,
     url: string,
-  ): RepositoryCreateIntent {
+  ): Repository {
     const localPath = path.resolve(repoRoot);
 
-    return {
-      id: createEntityId([url, localPath]),
+    return new Repository({
+      url,
+      localPath,
       name: path.basename(localPath),
       namespace: RepositoryBuilder.computeNamespace(sourceDirs, localPath),
-      localPath,
-      url,
       buildSystems: RepositoryBuilder.detectBuildSystems(localPath),
-    };
+    });
   }
 
   private static computeNamespace(

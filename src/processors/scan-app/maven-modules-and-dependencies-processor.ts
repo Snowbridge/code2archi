@@ -6,7 +6,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../platform/processors/processor.js";
-import type { Repository } from "../../discovery-model/entities/repository.js";
+import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
 import { parseMavenRepository } from "../../parsers/maven-pom-parser.js";
 import {
   asRepositoryFromSnapshot,
@@ -38,7 +38,7 @@ export class MavenModulesAndDependenciesProcessor extends AbstractProcessor<
     return buildModuleDiscoveryIntents(modules);
   }
 
-  private discoverModules(repository: Repository): ModuleDiscoveryInput[] {
+  private discoverModules(repository: RepositoryRecord): ModuleDiscoveryInput[] {
     if (!repository.buildSystems.includes("maven")) {
       return [];
     }
@@ -55,6 +55,7 @@ export class MavenModulesAndDependenciesProcessor extends AbstractProcessor<
       groupId: module.coordinates.groupId,
       artifactId: module.coordinates.artifactId,
       version: module.coordinates.version,
+      name: module.coordinates.artifactId,
       repoPath: module.repoPath,
       buildScript: module.buildScript,
       isMultimodule: module.isMultimodule,

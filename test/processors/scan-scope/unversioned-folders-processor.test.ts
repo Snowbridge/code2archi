@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { UnversionedFoldersProcessor } from "../../../src/processors/scan-scope/unversioned-folders-processor.js";
-import { createEntityId } from "../../../src/utils/discovery-model-entities.js";
+import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
 describe("UnversionedFoldersProcessor", () => {
@@ -33,7 +33,16 @@ describe("UnversionedFoldersProcessor", () => {
     assert.equal(result[0]?.name, "first");
     assert.equal(result[0]?.url, "");
     assert.deepEqual(result[0]?.buildSystems, ["maven"]);
-    assert.equal(result[0]?.id, createEntityId(["", path.resolve(first)]));
+    assert.equal(
+      result[0]?.id,
+      new Repository({
+        url: "",
+        localPath: path.resolve(first),
+        name: "first",
+        namespace: result[0]?.namespace ?? "",
+        buildSystems: ["maven"],
+      }).id,
+    );
     assert.equal(result[1]?.name, "second");
     assert.equal(result[1]?.url, "");
     assert.deepEqual(result[1]?.buildSystems, []);

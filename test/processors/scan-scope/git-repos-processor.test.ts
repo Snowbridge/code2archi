@@ -3,7 +3,7 @@ import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { GitReposProcessor } from "../../../src/processors/scan-scope/git-repos-processor.js";
-import { createEntityId } from "../../../src/utils/discovery-model-entities.js";
+import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
 function createGitRepo(dir: string): void {
@@ -55,7 +55,16 @@ describe("GitReposProcessor", () => {
     assert.equal(repository?.localPath, path.resolve(repo));
     assert.equal(repository?.url, "");
     assert.deepEqual(repository?.buildSystems, ["maven"]);
-    assert.equal(repository?.id, createEntityId(["", path.resolve(repo)]));
+    assert.equal(
+      repository?.id,
+      new Repository({
+        url: "",
+        localPath: path.resolve(repo),
+        name: "my-app",
+        namespace: repository?.namespace ?? "",
+        buildSystems: ["maven"],
+      }).id,
+    );
   });
 
   it("strips common path prefix from sourceDirs into namespace", () => {

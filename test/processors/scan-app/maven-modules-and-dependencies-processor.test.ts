@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
 import { MavenModulesAndDependenciesProcessor } from "../../../src/processors/scan-app/maven-modules-and-dependencies-processor.js";
-import { createEntityId } from "../../../src/utils/discovery-model-entities.js";
+import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
 describe("MavenModulesAndDependenciesProcessor", () => {
@@ -28,7 +28,14 @@ describe("MavenModulesAndDependenciesProcessor", () => {
 </project>`,
     );
 
-    const repositoryId = createEntityId(["", root]);
+    const repository = new Repository({
+      url: "",
+      localPath: root,
+      name: "app",
+      namespace: "/app",
+      buildSystems: ["maven"],
+    });
+    const repositoryId = repository.id;
     const store = new RunEntityStore({
       sourceDirs: [root],
       scanId: "scan-1",
@@ -39,16 +46,7 @@ describe("MavenModulesAndDependenciesProcessor", () => {
       { groupId: "scan-scope", artifactId: "test" },
       {
         entities: {
-          Repository: [
-            {
-              id: repositoryId,
-              name: "app",
-              namespace: "/app",
-              localPath: root,
-              url: "",
-              buildSystems: ["maven"],
-            },
-          ],
+          Repository: [repository],
         },
       },
     );
@@ -91,7 +89,14 @@ describe("MavenModulesAndDependenciesProcessor", () => {
 </project>`,
     );
 
-    const repositoryId = createEntityId(["", root]);
+    const repository = new Repository({
+      url: "",
+      localPath: root,
+      name: "app",
+      namespace: "/app",
+      buildSystems: ["maven"],
+    });
+    const repositoryId = repository.id;
     const store = new RunEntityStore({
       sourceDirs: [root],
       scanId: "scan-1",
@@ -102,16 +107,7 @@ describe("MavenModulesAndDependenciesProcessor", () => {
       { groupId: "scan-scope", artifactId: "test" },
       {
         entities: {
-          Repository: [
-            {
-              id: repositoryId,
-              name: "app",
-              namespace: "/app",
-              localPath: root,
-              url: "",
-              buildSystems: ["maven"],
-            },
-          ],
+          Repository: [repository],
         },
       },
     );

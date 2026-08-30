@@ -1,6 +1,6 @@
 import type { ProcessorGroupId } from "../../cli/processor-groups.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
-import type { RepositoryCreateIntent } from "../../discovery-model/entities/repository.js";
+import type { Repository } from "../../discovery-model/entities/repository.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
 
@@ -16,7 +16,7 @@ export function processorKey(id: ProcessorId): string {
 export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";
 
 export type ScanScopeInput = readonly string[];
-export type ScanScopeOutput = readonly RepositoryCreateIntent[];
+export type ScanScopeOutput = readonly Repository[];
 
 export type ScanAppInput = DiscoveryModelSnapshot;
 export type ScanAppOutput = CreateIntents;
@@ -27,7 +27,7 @@ export type ScanAppOutput = CreateIntents;
  * Processors that emit discovery-model entities or links must follow create-only
  * semantics: only new records (create-intents), no updates to existing records.
  * After acceptance into the run entity store, records are immutable for the run.
- * Duplicate `id` on create is a runtime error. See ADR-26082702.
+ * Duplicate `id` on create is a runtime error. See ADR-26082702 and ADR-26083001.
  */
 export abstract class AbstractProcessor<TInput, TOutput> {
   abstract readonly id: ProcessorId;

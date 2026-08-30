@@ -75,7 +75,7 @@ describe("runScanScopeGroup", () => {
           },
           store,
         ),
-      /Duplicate Repository id: repo-1/,
+      /Duplicate id: repo-1/,
     );
   });
 
