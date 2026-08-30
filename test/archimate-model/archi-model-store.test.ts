@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { ArchiModelStore } from "../../src/archimate-model/archi-model-store.js";
-import { createNestedFolderId, createRootFolderId } from "../../src/archimate-model/create-archi-id.js";
-import { ApplicationComponentBuilder, BusinessActorBuilder } from "../../src/archimate-model/elements/archi-element.js";
 import { PREDEFINED_FOLDERS } from "../../src/archimate-model/concept-types.js";
+import {
+  ApplicationComponent,
+  BusinessActor,
+} from "../../src/archimate-model/elements/archi-element.js";
+import { ArchiFolderIds } from "../../src/archimate-model/folders/archi-folder.js";
 
 describe("ArchiModelStore", () => {
   it("initializes predefined layer folders", () => {
@@ -23,11 +26,11 @@ describe("ArchiModelStore", () => {
       modelId: "model-id",
     });
     const applicationFolderId = store.getPredefinedFolderId("application");
-    const element = ApplicationComponentBuilder.withId("element-id")
+    const element = ApplicationComponent.withId("element-id")
       .name("service-a")
       .inFolder(applicationFolderId)
       .build();
-    const wrongConcept = BusinessActorBuilder.withId("biz-id")
+    const wrongConcept = BusinessActor.withId("biz-id")
       .name("Actor")
       .inFolder(applicationFolderId)
       .build();
@@ -55,7 +58,7 @@ describe("ArchiModelStore", () => {
       modelId: "model-id",
     });
     const folderId = store.getPredefinedFolderId("application");
-    const element = ApplicationComponentBuilder.withId("duplicate-id")
+    const element = ApplicationComponent.withId("duplicate-id")
       .name("service-a")
       .inFolder(folderId)
       .build();
@@ -86,7 +89,7 @@ describe("ArchiModelStore", () => {
     const folder = store.createFolder(parentId, "Domain");
 
     assert.equal(folder.parentFolderId, parentId);
-    assert.equal(folder.id, createNestedFolderId(parentId, "Domain"));
+    assert.equal(folder.id, ArchiFolderIds.nestedId(parentId, "Domain"));
     assert.deepEqual(
       store.snapshot().findFolders({ parentFolderId: parentId, name: "Domain" }),
       [folder],
@@ -99,7 +102,7 @@ describe("ArchiModelStore", () => {
       modelId: "model-id",
     });
     const folderId = store.getPredefinedFolderId("application");
-    const element = ApplicationComponentBuilder.withId("element-id")
+    const element = ApplicationComponent.withId("element-id")
       .name("service-a")
       .inFolder(folderId)
       .build();
@@ -112,11 +115,11 @@ describe("ArchiModelStore", () => {
 
     assert.deepEqual(
       store.snapshot().findByConceptTypeAndName("ApplicationComponent", "service-a"),
-      [element],
+      [element.toCreateIntent()],
     );
   });
 
   it("uses deterministic predefined folder ids", () => {
-    assert.equal(createRootFolderId("business"), createRootFolderId("business"));
+    assert.equal(ArchiFolderIds.rootIdFor("business"), ArchiFolderIds.rootIdFor("business"));
   });
 });

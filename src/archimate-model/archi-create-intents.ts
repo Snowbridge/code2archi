@@ -1,9 +1,12 @@
-import type { ArchiElementCreateIntent } from "./elements/archi-element.js";
+import type { ArchiElement, ArchiElementCreateIntent } from "./elements/archi-element.js";
 import type { ArchiFolderCreateIntent } from "./folders/archi-folder.js";
-import type { ArchiProfileCreateIntent } from "./profiles/profile.js";
+import type { ArchiProfile, ArchiProfileCreateIntent } from "./profiles/profile.js";
+
+export type ArchiElementRecord = ArchiElement | ArchiElementCreateIntent;
+export type ArchiProfileRecord = ArchiProfile | ArchiProfileCreateIntent;
 
 export interface ArchiCreateIntents {
   readonly folders?: readonly ArchiFolderCreateIntent[];
-  readonly elements?: readonly ArchiElementCreateIntent[];
-  readonly profiles?: readonly ArchiProfileCreateIntent[];
+  readonly elements?: readonly ArchiElementRecord[];
+  readonly profiles?: readonly ArchiProfileRecord[];
 }

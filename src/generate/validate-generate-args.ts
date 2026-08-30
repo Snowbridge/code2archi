@@ -2,7 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { CliError } from "../cli/cli-error.js";
 import { ExitCode } from "../cli/exit-codes.js";
-import { createModelId } from "../archimate-model/create-archi-id.js";
+import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
 import { resolveLatestDiscoveryModelDir } from "./resolve-discovery-model-dir.js";
 
 export interface GenerateArgs {
@@ -57,7 +57,7 @@ export function validateGenerateArgs(input: ValidateGenerateArgsInput): Generate
     discoveryModelDir,
     force: input.force,
     modelName: path.basename(outputFile, ".archimate"),
-    modelId: createModelId(outputFile),
+    modelId: ArchiModelStore.computeModelId(outputFile),
   };
 }
 

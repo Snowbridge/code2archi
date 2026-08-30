@@ -1,5 +1,6 @@
 import type { ProcessorGroupId } from "../cli/processor-groups.js";
 import type { ProcessorId } from "../platform/processors/processor.js";
+import { computeArchiId } from "./archi-id.js";
 import type { ArchiCreateIntents } from "./archi-create-intents.js";
 import {
   type ConceptType,
@@ -8,24 +9,27 @@ import {
   PREDEFINED_FOLDERS,
   type PredefinedFolderKey,
 } from "./concept-types.js";
-import { createNestedFolderId, createProfileId, createRootFolderId } from "./create-archi-id.js";
-import type { ArchiElement, ArchiElementCreateIntent } from "./elements/archi-element.js";
-import type { ArchiFolder, ArchiFolderCreateIntent } from "./folders/archi-folder.js";
-import type { ArchiProfile, ArchiProfileCreateIntent } from "./profiles/profile.js";
+import { ArchiElement, type ArchiElementCreateIntent } from "./elements/archi-element.js";
+import {
+  ArchiFolderIds,
+  type ArchiFolder,
+  type ArchiFolderCreateIntent,
+} from "./folders/archi-folder.js";
+import { ArchiProfile, type ArchiProfileCreateIntent } from "./profiles/profile.js";
 
 export interface ArchiModelSnapshot {
   getFolder(id: string): ArchiFolder | undefined;
   findFolders(query: ArchiFolderQuery): readonly ArchiFolder[];
-  getElement(id: string): ArchiElement | undefined;
-  findById(id: string): ArchiFolder | ArchiElement | ArchiProfile | undefined;
+  getElement(id: string): ArchiElementCreateIntent | undefined;
+  findById(id: string): ArchiFolder | ArchiElementCreateIntent | ArchiProfileCreateIntent | undefined;
   findByConceptTypeAndName(
     conceptType: ConceptType,
     name: string,
-  ): readonly ArchiElement[];
-  findProfile(name: string, conceptType: ConceptType | string): ArchiProfile | undefined;
+  ): readonly ArchiElementCreateIntent[];
+  findProfile(name: string, conceptType: ConceptType): ArchiProfileCreateIntent | undefined;
   listFolders(): readonly ArchiFolder[];
-  listElements(): readonly ArchiElement[];
-  listProfiles(): readonly ArchiProfile[];
+  listElements(): readonly ArchiElementCreateIntent[];
+  listProfiles(): readonly ArchiProfileCreateIntent[];
   getPredefinedFolderId(key: PredefinedFolderKey): string;
 }
 
@@ -120,11 +124,31 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
+function toArchiElementCreateIntent(
+  record: ArchiElement | ArchiElementCreateIntent,
+): ArchiElementCreateIntent {
+  if (record instanceof ArchiElement) {
+    return record.toCreateIntent();
+  }
+
+  return record;
+}
+
+function toArchiProfileCreateIntent(
+  record: ArchiProfile | ArchiProfileCreateIntent,
+): ArchiProfileCreateIntent {
+  if (record instanceof ArchiProfile) {
+    return record.toCreateIntent();
+  }
+
+  return record;
+}
+
 class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
   constructor(
     private readonly folders: ReadonlyMap<string, ArchiFolder>,
-    private readonly elements: ReadonlyMap<string, ArchiElement>,
-    private readonly profiles: ReadonlyMap<string, ArchiProfile>,
+    private readonly elements: ReadonlyMap<string, ArchiElementCreateIntent>,
+    private readonly profiles: ReadonlyMap<string, ArchiProfileCreateIntent>,
     private readonly predefinedFolderIds: Readonly<Record<PredefinedFolderKey, string>>,
   ) {}
 
@@ -154,11 +178,13 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
     return matches.sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  getElement(id: string): ArchiElement | undefined {
+  getElement(id: string): ArchiElementCreateIntent | undefined {
     return this.elements.get(id);
   }
 
-  findById(id: string): ArchiFolder | ArchiElement | ArchiProfile | undefined {
+  findById(
+    id: string,
+  ): ArchiFolder | ArchiElementCreateIntent | ArchiProfileCreateIntent | undefined {
     return (
       this.folders.get(id) ?? this.elements.get(id) ?? this.profiles.get(id)
     );
@@ -167,14 +193,14 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
   findByConceptTypeAndName(
     conceptType: ConceptType,
     name: string,
-  ): readonly ArchiElement[] {
+  ): readonly ArchiElementCreateIntent[] {
     return [...this.elements.values()]
       .filter((element) => element.conceptType === conceptType && element.name === name)
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  findProfile(name: string, conceptType: ConceptType | string): ArchiProfile | undefined {
-    const id = createProfileId(conceptType, name);
+  findProfile(name: string, conceptType: ConceptType): ArchiProfileCreateIntent | undefined {
+    const id = ArchiProfile.computeId(conceptType, name);
     const profile = this.profiles.get(id);
     if (profile && profile.name === name && profile.conceptType === conceptType) {
       return profile;
@@ -188,11 +214,11 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
     return [...this.folders.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  listElements(): readonly ArchiElement[] {
+  listElements(): readonly ArchiElementCreateIntent[] {
     return [...this.elements.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  listProfiles(): readonly ArchiProfile[] {
+  listProfiles(): readonly ArchiProfileCreateIntent[] {
     return [...this.profiles.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
@@ -203,8 +229,8 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
 
 export class ArchiModelStore {
   private readonly folders = new Map<string, ArchiFolder>();
-  private readonly elements = new Map<string, ArchiElement>();
-  private readonly profiles = new Map<string, ArchiProfile>();
+  private readonly elements = new Map<string, ArchiElementCreateIntent>();
+  private readonly profiles = new Map<string, ArchiProfileCreateIntent>();
   private readonly globalIds = new Set<string>();
   private readonly predefinedFolderIds: Record<PredefinedFolderKey, string>;
   readonly modelName: string;
@@ -216,7 +242,7 @@ export class ArchiModelStore {
     this.predefinedFolderIds = {} as Record<PredefinedFolderKey, string>;
 
     for (const def of PREDEFINED_FOLDERS) {
-      const id = createRootFolderId(def.key);
+      const id = ArchiFolderIds.rootIdFor(def.key);
       this.predefinedFolderIds[def.key] = id;
       this.addFolderRecord(
         {
@@ -229,6 +255,10 @@ export class ArchiModelStore {
     }
   }
 
+  static computeModelId(absoluteOutputPath: string): string {
+    return computeArchiId("Model", absoluteOutputPath);
+  }
+
   getPredefinedFolderId(key: PredefinedFolderKey): string {
     return this.predefinedFolderIds[key];
   }
@@ -239,7 +269,7 @@ export class ArchiModelStore {
       throw new Error(`Parent folder not found: ${parentFolderId}`);
     }
 
-    const id = createNestedFolderId(parentFolderId, folderName);
+    const id = ArchiFolderIds.nestedId(parentFolderId, folderName);
     return this.addFolderRecord(
       {
         id,
@@ -250,16 +280,16 @@ export class ArchiModelStore {
     );
   }
 
-  createProfile(name: string, conceptType: ConceptType | string): ArchiProfile {
-    const id = createProfileId(conceptType, name);
-    if (this.profiles.has(id) || this.globalIds.has(id)) {
-      throw new Error(`Duplicate profile: ${name} (${conceptType})`);
+  registerProfile(profile: ArchiProfile): ArchiProfileCreateIntent {
+    const intent = profile.toCreateIntent();
+    if (this.profiles.has(intent.id) || this.globalIds.has(intent.id)) {
+      throw new Error(`Duplicate profile: ${intent.name} (${intent.conceptType})`);
     }
 
-    const profile: ArchiProfile = Object.freeze({ id, name, conceptType });
-    this.profiles.set(id, profile);
-    this.globalIds.add(id);
-    return profile;
+    const frozen = Object.freeze({ ...intent });
+    this.profiles.set(intent.id, frozen);
+    this.globalIds.add(intent.id);
+    return frozen;
   }
 
   addCreateIntents(
@@ -280,14 +310,14 @@ export class ArchiModelStore {
     }
 
     if (intents.elements) {
-      for (const elementIntent of intents.elements) {
-        this.addElementIntent(groupId, elementIntent);
+      for (const elementRecord of intents.elements) {
+        this.addElementIntent(groupId, toArchiElementCreateIntent(elementRecord));
       }
     }
 
     if (intents.profiles) {
-      for (const profileIntent of intents.profiles) {
-        this.addProfileIntent(groupId, profileIntent);
+      for (const profileRecord of intents.profiles) {
+        this.addProfileIntent(groupId, toArchiProfileCreateIntent(profileRecord));
       }
     }
   }
@@ -307,11 +337,11 @@ export class ArchiModelStore {
     return [...this.folders.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  listElements(): readonly ArchiElement[] {
+  listElements(): readonly ArchiElementCreateIntent[] {
     return [...this.elements.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  listProfiles(): readonly ArchiProfile[] {
+  listProfiles(): readonly ArchiProfileCreateIntent[] {
     return [...this.profiles.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
@@ -348,7 +378,7 @@ export class ArchiModelStore {
       throw new Error(`Duplicate id: ${intent.id} (element: ${intent.conceptType})`);
     }
 
-    const element: ArchiElement = Object.freeze({ ...intent });
+    const element = Object.freeze({ ...intent });
     this.elements.set(intent.id, element);
     this.globalIds.add(intent.id);
   }
@@ -367,7 +397,7 @@ export class ArchiModelStore {
       throw new Error(`Duplicate profile: ${intent.name} (${intent.conceptType})`);
     }
 
-    const profile: ArchiProfile = Object.freeze({ ...intent });
+    const profile = Object.freeze({ ...intent });
     this.profiles.set(intent.id, profile);
     this.globalIds.add(intent.id);
   }
@@ -441,8 +471,8 @@ export class ArchiModelStore {
 
   private findProfileByNameAndType(
     name: string,
-    conceptType: ConceptType | string,
-  ): ArchiProfile | undefined {
+    conceptType: ConceptType,
+  ): ArchiProfileCreateIntent | undefined {
     return [...this.profiles.values()].find(
       (profile) => profile.name === name && profile.conceptType === conceptType,
     );

@@ -2,9 +2,9 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { archimateXsiType } from "./concept-types.js";
 import type { ArchiModelStore } from "./archi-model-store.js";
-import type { ArchiElement } from "./elements/archi-element.js";
+import type { ArchiElementCreateIntent } from "./elements/archi-element.js";
 import type { ArchiFolder } from "./folders/archi-folder.js";
-import type { ArchiProfile } from "./profiles/profile.js";
+import type { ArchiProfileCreateIntent } from "./profiles/profile.js";
 import { getLogger } from "../platform/logging/index.js";
 
 export interface ArchiModelWriteInput {
@@ -15,7 +15,7 @@ export interface ArchiModelWriteInput {
 interface FolderNode {
   readonly folder: ArchiFolder;
   children: FolderNode[];
-  elements: ArchiElement[];
+  elements: ArchiElementCreateIntent[];
 }
 
 export class ArchiModelWriter {
@@ -56,7 +56,7 @@ export class ArchiModelWriter {
 
   private buildFolderTree(
     folders: readonly ArchiFolder[],
-    elements: readonly ArchiElement[],
+    elements: readonly ArchiElementCreateIntent[],
   ): FolderNode[] {
     const nodes = new Map<string, FolderNode>(
       folders.map((folder) => [
@@ -117,7 +117,7 @@ export class ArchiModelWriter {
     return lines;
   }
 
-  private serializeElement(element: ArchiElement, indent: number): string {
+  private serializeElement(element: ArchiElementCreateIntent, indent: number): string {
     const pad = "  ".repeat(indent);
     const profilesAttr =
       element.profileIds && element.profileIds.length > 0
@@ -143,7 +143,7 @@ export class ArchiModelWriter {
     return lines.join("\n");
   }
 
-  private serializeProfile(profile: ArchiProfile, indent: number): string {
+  private serializeProfile(profile: ArchiProfileCreateIntent, indent: number): string {
     const pad = "  ".repeat(indent);
     return `${pad}<profile name="${escapeXml(profile.name)}" id="${escapeXml(
       profile.id,

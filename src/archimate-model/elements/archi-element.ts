@@ -5,9 +5,8 @@ export interface ArchiProperty {
   readonly value: string;
 }
 
-export interface ArchiElementCreateIntent {
+export interface ArchiElementFields {
   readonly id: string;
-  readonly conceptType: ConceptType;
   readonly name: string;
   readonly folderId: string;
   readonly documentation?: string;
@@ -15,32 +14,66 @@ export interface ArchiElementCreateIntent {
   readonly profileIds?: readonly string[];
 }
 
-export interface ArchiElement extends ArchiElementCreateIntent {}
+export interface ArchiElementCreateIntent extends ArchiElementFields {
+  readonly conceptType: ConceptType;
+}
 
-export class ArchiElementBuilder {
-  private readonly conceptType: ConceptType;
-  private idValue = "";
+export abstract class ArchiElement {
+  readonly id: string;
+  readonly conceptType: ConceptType;
+  readonly name: string;
+  readonly folderId: string;
+  readonly documentation?: string;
+  readonly properties?: readonly ArchiProperty[];
+  readonly profileIds?: readonly string[];
+
+  protected constructor(conceptType: ConceptType, fields: ArchiElementFields) {
+    this.conceptType = conceptType;
+    this.id = fields.id;
+    this.name = fields.name;
+    this.folderId = fields.folderId;
+    if (fields.documentation !== undefined) {
+      this.documentation = fields.documentation;
+    }
+    if (fields.properties !== undefined && fields.properties.length > 0) {
+      this.properties = [...fields.properties];
+    }
+    if (fields.profileIds !== undefined && fields.profileIds.length > 0) {
+      this.profileIds = [...fields.profileIds];
+    }
+  }
+
+  toCreateIntent(): ArchiElementCreateIntent {
+    return {
+      id: this.id,
+      conceptType: this.conceptType,
+      name: this.name,
+      folderId: this.folderId,
+      ...(this.documentation ? { documentation: this.documentation } : {}),
+      ...(this.properties && this.properties.length > 0
+        ? { properties: [...this.properties] }
+        : {}),
+      ...(this.profileIds && this.profileIds.length > 0
+        ? { profileIds: [...this.profileIds] }
+        : {}),
+    };
+  }
+}
+
+class ConceptElementBuilder<T extends ConceptType> {
   private nameValue = "";
   private folderIdValue = "";
   private documentationValue?: string;
   private propertiesValue: ArchiProperty[] = [];
   private profileIdsValue: string[] = [];
 
-  private constructor(conceptType: ConceptType) {
-    this.conceptType = conceptType;
-  }
+  constructor(
+    private readonly conceptType: T,
+    private readonly idValue: string,
+  ) {}
 
-  static forConcept(conceptType: ConceptType): ArchiElementBuilder {
-    return new ArchiElementBuilder(conceptType);
-  }
-
-  withId(id: string): this {
-    this.idValue = id;
-    return this;
-  }
-
-  name(name: string): this {
-    this.nameValue = name;
+  name(value: string): this {
+    this.nameValue = value;
     return this;
   }
 
@@ -49,8 +82,8 @@ export class ArchiElementBuilder {
     return this;
   }
 
-  documentation(documentation: string): this {
-    this.documentationValue = documentation;
+  documentation(value: string): this {
+    this.documentationValue = value;
     return this;
   }
 
@@ -64,7 +97,7 @@ export class ArchiElementBuilder {
     return this;
   }
 
-  build(): ArchiElement {
+  build(): ConceptElement<T> {
     if (!this.idValue) {
       throw new Error(`Element ${this.conceptType} is missing id`);
     }
@@ -75,109 +108,79 @@ export class ArchiElementBuilder {
       throw new Error(`Element ${this.conceptType} is missing folderId`);
     }
 
-    const element: ArchiElement = {
+    return new ConceptElement(this.conceptType, {
       id: this.idValue,
-      conceptType: this.conceptType,
       name: this.nameValue,
       folderId: this.folderIdValue,
       ...(this.documentationValue ? { documentation: this.documentationValue } : {}),
       ...(this.propertiesValue.length > 0 ? { properties: [...this.propertiesValue] } : {}),
       ...(this.profileIdsValue.length > 0 ? { profileIds: [...this.profileIdsValue] } : {}),
-    };
-
-    return Object.freeze(element);
+    });
   }
 }
 
-function defineConceptBuilder<T extends ConceptType>(conceptType: T) {
-  class ConceptBuilder {
-    readonly inner: ArchiElementBuilder;
+class ConceptElement<T extends ConceptType> extends ArchiElement {
+  constructor(conceptType: T, fields: ArchiElementFields) {
+    super(conceptType, fields);
+  }
+}
 
-    constructor(inner: ArchiElementBuilder) {
-      this.inner = inner;
+function defineConceptClass<T extends ConceptType>(conceptType: T) {
+  class TypedConceptElement extends ConceptElement<T> {
+    static readonly CONCEPT_TYPE = conceptType;
+
+    constructor(fields: ArchiElementFields) {
+      super(conceptType, fields);
     }
 
-    static withId(id: string): ConceptBuilder {
-      return new ConceptBuilder(
-        ArchiElementBuilder.forConcept(conceptType).withId(id),
-      );
-    }
-
-    name(value: string): this {
-      this.inner.name(value);
-      return this;
-    }
-
-    inFolder(folderId: string): this {
-      this.inner.inFolder(folderId);
-      return this;
-    }
-
-    documentation(value: string): this {
-      this.inner.documentation(value);
-      return this;
-    }
-
-    property(key: string, value: string): this {
-      this.inner.property(key, value);
-      return this;
-    }
-
-    profiles(...profileIds: string[]): this {
-      this.inner.profiles(...profileIds);
-      return this;
-    }
-
-    build(): ArchiElement {
-      return this.inner.build();
+    static withId(id: string): ConceptElementBuilder<T> {
+      return new ConceptElementBuilder(conceptType, id);
     }
   }
 
-  return ConceptBuilder;
+  return TypedConceptElement;
 }
 
-export const BusinessActorBuilder = defineConceptBuilder("BusinessActor");
-export const BusinessRoleBuilder = defineConceptBuilder("BusinessRole");
-export const BusinessCollaborationBuilder = defineConceptBuilder("BusinessCollaboration");
-export const BusinessInterfaceBuilder = defineConceptBuilder("BusinessInterface");
-export const BusinessProcessBuilder = defineConceptBuilder("BusinessProcess");
-export const BusinessFunctionBuilder = defineConceptBuilder("BusinessFunction");
-export const BusinessInteractionBuilder = defineConceptBuilder("BusinessInteraction");
-export const BusinessEventBuilder = defineConceptBuilder("BusinessEvent");
-export const BusinessServiceBuilder = defineConceptBuilder("BusinessService");
-export const BusinessObjectBuilder = defineConceptBuilder("BusinessObject");
-export const ContractBuilder = defineConceptBuilder("Contract");
-export const RepresentationBuilder = defineConceptBuilder("Representation");
-export const ProductBuilder = defineConceptBuilder("Product");
+export const BusinessActor = defineConceptClass("BusinessActor");
+export const BusinessRole = defineConceptClass("BusinessRole");
+export const BusinessCollaboration = defineConceptClass("BusinessCollaboration");
+export const BusinessInterface = defineConceptClass("BusinessInterface");
+export const BusinessProcess = defineConceptClass("BusinessProcess");
+export const BusinessFunction = defineConceptClass("BusinessFunction");
+export const BusinessInteraction = defineConceptClass("BusinessInteraction");
+export const BusinessEvent = defineConceptClass("BusinessEvent");
+export const BusinessService = defineConceptClass("BusinessService");
+export const BusinessObject = defineConceptClass("BusinessObject");
+export const Contract = defineConceptClass("Contract");
+export const Representation = defineConceptClass("Representation");
+export const Product = defineConceptClass("Product");
 
-export const ApplicationComponentBuilder = defineConceptBuilder("ApplicationComponent");
-export const ApplicationCollaborationBuilder =
-  defineConceptBuilder("ApplicationCollaboration");
-export const ApplicationInterfaceBuilder = defineConceptBuilder("ApplicationInterface");
-export const ApplicationFunctionBuilder = defineConceptBuilder("ApplicationFunction");
-export const ApplicationInteractionBuilder = defineConceptBuilder("ApplicationInteraction");
-export const ApplicationProcessBuilder = defineConceptBuilder("ApplicationProcess");
-export const ApplicationEventBuilder = defineConceptBuilder("ApplicationEvent");
-export const ApplicationServiceBuilder = defineConceptBuilder("ApplicationService");
-export const DataObjectBuilder = defineConceptBuilder("DataObject");
+export const ApplicationComponent = defineConceptClass("ApplicationComponent");
+export const ApplicationCollaboration = defineConceptClass("ApplicationCollaboration");
+export const ApplicationInterface = defineConceptClass("ApplicationInterface");
+export const ApplicationFunction = defineConceptClass("ApplicationFunction");
+export const ApplicationInteraction = defineConceptClass("ApplicationInteraction");
+export const ApplicationProcess = defineConceptClass("ApplicationProcess");
+export const ApplicationEvent = defineConceptClass("ApplicationEvent");
+export const ApplicationService = defineConceptClass("ApplicationService");
+export const DataObject = defineConceptClass("DataObject");
 
-export const NodeBuilder = defineConceptBuilder("Node");
-export const DeviceBuilder = defineConceptBuilder("Device");
-export const SystemSoftwareBuilder = defineConceptBuilder("SystemSoftware");
-export const TechnologyCollaborationBuilder =
-  defineConceptBuilder("TechnologyCollaboration");
-export const TechnologyInterfaceBuilder = defineConceptBuilder("TechnologyInterface");
-export const PathBuilder = defineConceptBuilder("Path");
-export const CommunicationNetworkBuilder = defineConceptBuilder("CommunicationNetwork");
-export const TechnologyFunctionBuilder = defineConceptBuilder("TechnologyFunction");
-export const TechnologyProcessBuilder = defineConceptBuilder("TechnologyProcess");
-export const TechnologyInteractionBuilder = defineConceptBuilder("TechnologyInteraction");
-export const TechnologyEventBuilder = defineConceptBuilder("TechnologyEvent");
-export const TechnologyServiceBuilder = defineConceptBuilder("TechnologyService");
-export const ArtifactBuilder = defineConceptBuilder("Artifact");
-export const EquipmentBuilder = defineConceptBuilder("Equipment");
-export const FacilityBuilder = defineConceptBuilder("Facility");
-export const DistributionNetworkBuilder = defineConceptBuilder("DistributionNetwork");
-export const MaterialBuilder = defineConceptBuilder("Material");
+export const Node = defineConceptClass("Node");
+export const Device = defineConceptClass("Device");
+export const SystemSoftware = defineConceptClass("SystemSoftware");
+export const TechnologyCollaboration = defineConceptClass("TechnologyCollaboration");
+export const TechnologyInterface = defineConceptClass("TechnologyInterface");
+export const Path = defineConceptClass("Path");
+export const CommunicationNetwork = defineConceptClass("CommunicationNetwork");
+export const TechnologyFunction = defineConceptClass("TechnologyFunction");
+export const TechnologyProcess = defineConceptClass("TechnologyProcess");
+export const TechnologyInteraction = defineConceptClass("TechnologyInteraction");
+export const TechnologyEvent = defineConceptClass("TechnologyEvent");
+export const TechnologyService = defineConceptClass("TechnologyService");
+export const Artifact = defineConceptClass("Artifact");
+export const Equipment = defineConceptClass("Equipment");
+export const Facility = defineConceptClass("Facility");
+export const DistributionNetwork = defineConceptClass("DistributionNetwork");
+export const Material = defineConceptClass("Material");
 
-export const ArchimateDiagramModelBuilder = defineConceptBuilder("ArchimateDiagramModel");
+export const ArchimateDiagramModel = defineConceptClass("ArchimateDiagramModel");

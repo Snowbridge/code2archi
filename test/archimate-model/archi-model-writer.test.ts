@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { ArchiModelStore } from "../../src/archimate-model/archi-model-store.js";
 import { ArchiModelWriter } from "../../src/archimate-model/archi-model-writer.js";
-import { createRootFolderId } from "../../src/archimate-model/create-archi-id.js";
+import { ArchiFolderIds } from "../../src/archimate-model/folders/archi-folder.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
 describe("ArchiModelWriter", () => {
@@ -27,6 +27,6 @@ describe("ArchiModelWriter", () => {
     assert.match(xml, /<folder name="Relations" id="[^"]+" type="relations">/);
     assert.match(xml, /<folder name="Views" id="[^"]+" type="diagrams">/);
     assert.doesNotMatch(xml, /<profile /);
-    assert.equal(createRootFolderId("business"), store.getPredefinedFolderId("business"));
+    assert.equal(ArchiFolderIds.rootIdFor("business"), store.getPredefinedFolderId("business"));
   });
 });
