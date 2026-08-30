@@ -111,6 +111,23 @@ export function isProcessorGroupId(value: string): value is ProcessorGroupId {
   return PROCESSOR_GROUP_ID_SET.has(value);
 }
 
+export const SCAN_PROCESSOR_GROUPS = [
+  "scan-scope",
+  "scan-tech",
+  "scan-app",
+] as const satisfies readonly ProcessorGroupId[];
+
+export type ScanProcessorGroupId = (typeof SCAN_PROCESSOR_GROUPS)[number];
+
+export type ScanScopeGroupId = Extract<ScanProcessorGroupId, "scan-scope">;
+
+export type ScanDiscoveryProcessorGroupId = Extract<
+  ScanProcessorGroupId,
+  "scan-tech" | "scan-app"
+>;
+
+export const SCAN_SCOPE_GROUP_ID: ScanScopeGroupId = "scan-scope";
+
 export const GENERATE_PROCESSOR_GROUPS = [
   "generate-biz",
   "generate-app",

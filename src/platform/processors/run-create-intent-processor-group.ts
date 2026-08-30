@@ -1,4 +1,4 @@
-import type { ProcessorGroupId } from "../../cli/processor-groups.js";
+import type { ScanDiscoveryProcessorGroupId } from "../../cli/processor-groups.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
@@ -26,7 +26,7 @@ function countCreateIntents(output: CreateIntents): number {
 }
 
 export function runCreateIntentProcessorGroup(
-  groupId: Extract<ProcessorGroupId, "scan-tech" | "scan-app">,
+  groupId: ScanDiscoveryProcessorGroupId,
   snapshot: DiscoveryModelSnapshot,
   filters: ProcessorFilters,
   store: RunEntityStore,

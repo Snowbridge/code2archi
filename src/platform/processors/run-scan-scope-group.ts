@@ -1,3 +1,4 @@
+import { SCAN_SCOPE_GROUP_ID } from "../../cli/processor-groups.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
@@ -10,10 +11,10 @@ export function runScanScopeGroup(
   store: RunEntityStore,
 ): void {
   const logger = getLogger("scan.scope");
-  logger.info("group start", { groupId: "scan-scope", sourceDirCount: input.length });
+  logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: input.length });
 
   const processors = processorRegistry.listFiltered<ScanScopeInput, ScanScopeOutput>(
-    "scan-scope",
+    SCAN_SCOPE_GROUP_ID,
     filters,
   );
 
@@ -32,7 +33,7 @@ export function runScanScopeGroup(
       continue;
     }
 
-    store.addCreateIntents("scan-scope", processor.id, {
+    store.addCreateIntents(SCAN_SCOPE_GROUP_ID, processor.id, {
       entities: {
         Repository: [...output],
       },
@@ -41,7 +42,7 @@ export function runScanScopeGroup(
   }
 
   logger.info("group completed", {
-    groupId: "scan-scope",
+    groupId: SCAN_SCOPE_GROUP_ID,
     repositoryCount: store.getEntities("Repository").length,
   });
 }
