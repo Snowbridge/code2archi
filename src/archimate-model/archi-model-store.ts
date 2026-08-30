@@ -26,6 +26,7 @@ import {
 
 const GENERATE_ELEMENTS_RELATION_TYPES: readonly RelationType[] = [
   "AccessRelationship",
+  "AggregationRelationship",
   "AssociationRelationship",
   "CompositionRelationship",
   "FlowRelationship",

@@ -93,7 +93,10 @@ function buildIndexes(entityMaps: Map<EntityType, Map<string, DiscoveryEntityRec
 } {
   const frozenEntitiesByType = new Map<EntityType, EntityBucket>();
   const globalIdIndex = new Map<string, DiscoveryEntityRecord>();
-  const refIndex = new Map<EntityType, Map<string, Map<string, DiscoveryEntityRecord[]>>>();
+  const refIndex = new Map<
+    EntityType,
+    ReadonlyMap<string, ReadonlyMap<string, readonly DiscoveryEntityRecord[]>>
+  >();
 
   for (const entityType of ENTITY_TYPES) {
     const bucket = entityMaps.get(entityType);

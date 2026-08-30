@@ -50,9 +50,9 @@ function defineNamedProfile<T extends ConceptType>(conceptType: T, profileName: 
 
 export const GitRepoProfile = defineNamedProfile("Artifact", "Git repo");
 export const BuildScriptProfile = defineNamedProfile("Artifact", "Build script");
-export const NpmModuleProfile = defineNamedProfile("Artifact", "NPM module");
-export const MavenModuleProfile = defineNamedProfile("Artifact", "Maven module");
-export const GradleModuleProfile = defineNamedProfile("Artifact", "Gradle module");
+export const NpmModuleProfile = defineNamedProfile("ApplicationComponent", "NPM module");
+export const MavenModuleProfile = defineNamedProfile("ApplicationComponent", "Maven module");
+export const GradleModuleProfile = defineNamedProfile("ApplicationComponent", "Gradle module");
 export const LibraryModuleProfile = defineNamedProfile(
   "ApplicationComponent",
   "Library module",
