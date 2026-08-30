@@ -12,7 +12,7 @@ function readSingleLogFile(dir: string): string {
 }
 
 class EchoProcessor extends AbstractProcessor<string, string> {
-  readonly id = { groupId: "scan-scope" as const, artifactId: "echo" };
+  readonly id = { groupId: "scan.scope", artifactId: "echo" };
 
   readonly version = "0.0.0";
 
@@ -34,7 +34,7 @@ describe("AbstractProcessor", () => {
     const content = readSingleLogFile(dir);
     assert.match(content, /enter process/);
     assert.match(content, /leave process/);
-    assert.match(content, /\[processor\.scan-scope\.echo\]/);
+    assert.match(content, /\[processor\.scan\.scope\.echo\]/);
   });
 
   it("does not write DEBUG trace at INFO log level", async () => {

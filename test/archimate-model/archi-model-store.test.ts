@@ -4,7 +4,7 @@ import { ArchiModelStore } from "../../src/archimate-model/archi-model-store.js"
 import { PREDEFINED_FOLDERS } from "../../src/archimate-model/concept-types.js";
 import {
   ApplicationComponent,
-  BusinessActor,
+  ArchimateDiagramModel,
 } from "../../src/archimate-model/elements/archi-element.js";
 import { ArchiFolderIds } from "../../src/archimate-model/folders/archi-folder.js";
 
@@ -30,22 +30,22 @@ describe("ArchiModelStore", () => {
       .name("service-a")
       .inFolder(applicationFolderId)
       .build();
-    const wrongConcept = BusinessActor.withId("biz-id")
-      .name("Actor")
+    const wrongConcept = ArchimateDiagramModel.withId("diagram-id")
+      .name("Diagram")
       .inFolder(applicationFolderId)
       .build();
 
     assert.throws(
       () =>
-        store.addCreateIntents("generate-app", { groupId: "generate-app", artifactId: "x" }, {
+        store.addCreateIntents("generate.elements", { groupId: "generate.elements", artifactId: "x" }, {
           elements: [wrongConcept],
         }),
-      /not allowed for processor group generate-app/,
+      /not allowed for processor group generate\.elements/,
     );
 
     store.addCreateIntents(
-      "generate-app",
-      { groupId: "generate-app", artifactId: "demo" },
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
       { elements: [element] },
     );
 
@@ -64,16 +64,16 @@ describe("ArchiModelStore", () => {
       .build();
 
     store.addCreateIntents(
-      "generate-app",
-      { groupId: "generate-app", artifactId: "demo" },
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
       { elements: [element] },
     );
 
     assert.throws(
       () =>
         store.addCreateIntents(
-          "generate-app",
-          { groupId: "generate-app", artifactId: "demo" },
+          "generate.elements",
+          { groupId: "generate.elements", artifactId: "demo" },
           { elements: [element] },
         ),
       /Duplicate id: duplicate-id/,
@@ -108,8 +108,8 @@ describe("ArchiModelStore", () => {
       .build();
 
     store.addCreateIntents(
-      "generate-app",
-      { groupId: "generate-app", artifactId: "demo" },
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
       { elements: [element] },
     );
 

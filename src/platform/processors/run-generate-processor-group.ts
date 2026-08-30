@@ -1,4 +1,4 @@
-import type { GenerateProcessorGroupId } from "../../cli/processor-groups.js";
+import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelStore } from "../../archimate-model/archi-model-store.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
@@ -16,16 +16,16 @@ function countArchiCreateIntents(output: ArchiCreateIntents): number {
 }
 
 export function runGenerateProcessorGroup(
-  groupId: GenerateProcessorGroupId,
+  builtInGroupId: BuiltInProcessorGroupId,
   discovery: DiscoveryModelSnapshot,
   archiStore: ArchiModelStore,
   filters: ProcessorFilters,
 ): void {
-  const logger = getLogger(`generate.${groupId}`);
-  logger.info("group start", { groupId });
+  const logger = getLogger(`generate.${builtInGroupId}`);
+  logger.info("group start", { groupId: builtInGroupId });
 
-  const processors = processorRegistry.listFiltered<GenerateProcessorInput, ArchiCreateIntents>(
-    groupId,
+  const processors = processorRegistry.listForBuiltInStep<GenerateProcessorInput, ArchiCreateIntents>(
+    builtInGroupId,
     filters,
   );
 
@@ -49,9 +49,9 @@ export function runGenerateProcessorGroup(
       continue;
     }
 
-    archiStore.addCreateIntents(groupId, processor.id, output);
+    archiStore.addCreateIntents(builtInGroupId, processor.id, output);
     processor.logCompleted(count);
   }
 
-  logger.info("group completed", { groupId });
+  logger.info("group completed", { groupId: builtInGroupId });
 }

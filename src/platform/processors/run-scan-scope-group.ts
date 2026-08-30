@@ -13,7 +13,7 @@ export function runScanScopeGroup(
   const logger = getLogger("scan.scope");
   logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: input.length });
 
-  const processors = processorRegistry.listFiltered<ScanScopeInput, ScanScopeOutput>(
+  const processors = processorRegistry.listForBuiltInStep<ScanScopeInput, ScanScopeOutput>(
     SCAN_SCOPE_GROUP_ID,
     filters,
   );

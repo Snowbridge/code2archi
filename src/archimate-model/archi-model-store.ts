@@ -1,4 +1,5 @@
-import type { ProcessorGroupId } from "../cli/processor-groups.js";
+import type { BuiltInProcessorGroupId } from "../cli/processor-groups.js";
+import { resolveBuiltInGroupId } from "../platform/processors/processor-coordinate.js";
 import type { ProcessorId } from "../platform/processors/processor.js";
 import { computeArchiId } from "./archi-id.js";
 import type { ArchiCreateIntents } from "./archi-create-intents.js";
@@ -6,6 +7,7 @@ import {
   type ConceptType,
   getConceptLayer,
   isConceptType,
+  CONCEPT_TYPES,
   PREDEFINED_FOLDERS,
   type PredefinedFolderKey,
 } from "./concept-types.js";
@@ -45,62 +47,28 @@ export interface ArchiModelStoreInit {
 }
 
 /** Mirror of documentation/specifications/archimate-model/in-memory-api.md */
-const GROUP_CONCEPT_ALLOWLIST: Partial<Record<ProcessorGroupId, readonly ConceptType[]>> = {
-  "generate-biz": [
-    "BusinessActor",
-    "BusinessRole",
-    "BusinessCollaboration",
-    "BusinessInterface",
-    "BusinessProcess",
-    "BusinessFunction",
-    "BusinessInteraction",
-    "BusinessEvent",
-    "BusinessService",
-    "BusinessObject",
-    "Contract",
-    "Representation",
-    "Product",
-  ],
-  "generate-app": [
-    "ApplicationComponent",
-    "ApplicationCollaboration",
-    "ApplicationInterface",
-    "ApplicationFunction",
-    "ApplicationInteraction",
-    "ApplicationProcess",
-    "ApplicationEvent",
-    "ApplicationService",
-    "DataObject",
-  ],
-  "generate-tech": [
-    "Node",
-    "Device",
-    "SystemSoftware",
-    "TechnologyCollaboration",
-    "TechnologyInterface",
-    "Path",
-    "CommunicationNetwork",
-    "TechnologyFunction",
-    "TechnologyProcess",
-    "TechnologyInteraction",
-    "TechnologyEvent",
-    "TechnologyService",
-    "Artifact",
-    "Equipment",
-    "Facility",
-    "DistributionNetwork",
-    "Material",
-  ],
-  "generate-view": ["ArchimateDiagramModel"],
+const GENERATE_ELEMENTS_CONCEPT_TYPES = CONCEPT_TYPES.filter(
+  (conceptType) => conceptType !== "ArchimateDiagramModel",
+);
+
+const GROUP_CONCEPT_ALLOWLIST: Partial<Record<BuiltInProcessorGroupId, readonly ConceptType[]>> = {
+  "generate.elements": GENERATE_ELEMENTS_CONCEPT_TYPES,
+  "generate.views": ["ArchimateDiagramModel"],
 };
 
+const ALL_PREDEFINED_FOLDER_KEYS: readonly PredefinedFolderKey[] = [
+  "business",
+  "application",
+  "technology",
+  "relations",
+  "diagrams",
+];
+
 const GROUP_FOLDER_ROOT_ALLOWLIST: Partial<
-  Record<ProcessorGroupId, readonly PredefinedFolderKey[]>
+  Record<BuiltInProcessorGroupId, readonly PredefinedFolderKey[]>
 > = {
-  "generate-biz": ["business"],
-  "generate-app": ["application"],
-  "generate-tech": ["technology"],
-  "generate-view": ["diagrams"],
+  "generate.elements": ALL_PREDEFINED_FOLDER_KEYS,
+  "generate.views": ["diagrams"],
 };
 
 function deepFreeze<T>(value: T): T {
@@ -293,31 +261,32 @@ export class ArchiModelStore {
   }
 
   addCreateIntents(
-    groupId: ProcessorGroupId,
+    builtInGroupId: BuiltInProcessorGroupId,
     processorId: ProcessorId,
     intents: ArchiCreateIntents,
   ): void {
-    if (processorId.groupId !== groupId) {
+    const processorBuiltInGroupId = resolveBuiltInGroupId(processorId.groupId);
+    if (processorBuiltInGroupId !== builtInGroupId) {
       throw new Error(
-        `Processor groupId mismatch: expected ${groupId}, got ${processorId.groupId}`,
+        `Processor groupId mismatch: expected built-in group ${builtInGroupId}, got ${processorId.groupId}`,
       );
     }
 
     if (intents.folders) {
       for (const folderIntent of intents.folders) {
-        this.addFolderIntent(groupId, folderIntent);
+        this.addFolderIntent(builtInGroupId, folderIntent);
       }
     }
 
     if (intents.elements) {
       for (const elementRecord of intents.elements) {
-        this.addElementIntent(groupId, toArchiElementCreateIntent(elementRecord));
+        this.addElementIntent(builtInGroupId, toArchiElementCreateIntent(elementRecord));
       }
     }
 
     if (intents.profiles) {
       for (const profileRecord of intents.profiles) {
-        this.addProfileIntent(groupId, toArchiProfileCreateIntent(profileRecord));
+        this.addProfileIntent(builtInGroupId, toArchiProfileCreateIntent(profileRecord));
       }
     }
   }
@@ -345,9 +314,9 @@ export class ArchiModelStore {
     return [...this.profiles.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  private addFolderIntent(groupId: ProcessorGroupId, intent: ArchiFolderCreateIntent): void {
+  private addFolderIntent(builtInGroupId: BuiltInProcessorGroupId, intent: ArchiFolderCreateIntent): void {
     if (intent.parentFolderId) {
-      this.assertFolderAllowedForGroup(groupId, intent.parentFolderId);
+      this.assertFolderAllowedForGroup(builtInGroupId, intent.parentFolderId);
     } else if (!this.folders.has(intent.id)) {
       throw new Error(`Custom root folders cannot be created via intents: ${intent.id}`);
     }
@@ -355,15 +324,15 @@ export class ArchiModelStore {
     this.addFolderRecord(intent, false);
   }
 
-  private addElementIntent(groupId: ProcessorGroupId, intent: ArchiElementCreateIntent): void {
+  private addElementIntent(builtInGroupId: BuiltInProcessorGroupId, intent: ArchiElementCreateIntent): void {
     if (!isConceptType(intent.conceptType)) {
       throw new Error(`Unknown concept type: ${intent.conceptType}`);
     }
 
-    const allowedConcepts = GROUP_CONCEPT_ALLOWLIST[groupId];
+    const allowedConcepts = GROUP_CONCEPT_ALLOWLIST[builtInGroupId];
     if (!allowedConcepts || !allowedConcepts.includes(intent.conceptType)) {
       throw new Error(
-        `Concept type ${intent.conceptType} is not allowed for processor group ${groupId}`,
+        `Concept type ${intent.conceptType} is not allowed for processor group ${builtInGroupId}`,
       );
     }
 
@@ -383,9 +352,9 @@ export class ArchiModelStore {
     this.globalIds.add(intent.id);
   }
 
-  private addProfileIntent(groupId: ProcessorGroupId, intent: ArchiProfileCreateIntent): void {
-    if (groupId === "generate-rel") {
-      throw new Error("Profiles are not allowed for processor group generate-rel");
+  private addProfileIntent(builtInGroupId: BuiltInProcessorGroupId, intent: ArchiProfileCreateIntent): void {
+    if (builtInGroupId === "generate.views") {
+      throw new Error("Profiles are not allowed for processor group generate.views");
     }
 
     if (this.globalIds.has(intent.id)) {
@@ -420,17 +389,20 @@ export class ArchiModelStore {
     return folder;
   }
 
-  private assertFolderAllowedForGroup(groupId: ProcessorGroupId, parentFolderId: string): void {
-    const allowedRoots = GROUP_FOLDER_ROOT_ALLOWLIST[groupId];
+  private assertFolderAllowedForGroup(
+    builtInGroupId: BuiltInProcessorGroupId,
+    parentFolderId: string,
+  ): void {
+    const allowedRoots = GROUP_FOLDER_ROOT_ALLOWLIST[builtInGroupId];
     if (!allowedRoots) {
-      throw new Error(`Folder create-intents are not allowed for processor group ${groupId}`);
+      throw new Error(`Folder create-intents are not allowed for processor group ${builtInGroupId}`);
     }
 
     const rootId = this.resolveRootFolderId(parentFolderId);
     const allowedRootIds = allowedRoots.map((key) => this.predefinedFolderIds[key]);
     if (!allowedRootIds.includes(rootId)) {
       throw new Error(
-        `Folder parent ${parentFolderId} is not under allowed roots for group ${groupId}`,
+        `Folder parent ${parentFolderId} is not under allowed roots for group ${builtInGroupId}`,
       );
     }
   }

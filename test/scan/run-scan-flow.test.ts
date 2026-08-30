@@ -13,7 +13,7 @@ import { runScanFlow } from "../../src/scan/run-scan-flow.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
 describe("runScanFlow", () => {
-  it("writes discovery-model after scan-scope", () => {
+  it("writes discovery-model after scan.scope", () => {
     const root = createTestTempDir("c2a-scan-flow-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
@@ -27,10 +27,9 @@ describe("runScanFlow", () => {
       scanId: "test-scan-id",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       processorFilters: {
-        withNone: [],
-        without: {},
-        with: { "scan-scope": ["unversioned-folders"] },
-        withOnly: {},
+        with: ["scan.scope.unversioned-folders"],
+        without: [],
+        withOnly: [],
       },
     });
 
@@ -56,7 +55,7 @@ describe("runScanFlow", () => {
     assert.equal(repositories[0]?.name, "src");
   });
 
-  it("writes application modules after scan-app for maven repository", () => {
+  it("writes application modules after scan.source for maven repository", () => {
     const root = createTestTempDir("c2a-scan-flow-maven-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
@@ -87,10 +86,9 @@ describe("runScanFlow", () => {
       scanId: "test-scan-maven",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       processorFilters: {
-        withNone: [],
-        without: {},
-        with: { "scan-scope": ["unversioned-folders"] },
-        withOnly: {},
+        with: ["scan.scope.unversioned-folders"],
+        without: [],
+        withOnly: [],
       },
     });
 

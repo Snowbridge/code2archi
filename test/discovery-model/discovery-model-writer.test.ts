@@ -9,12 +9,12 @@ import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
 const GIT_REPOS_PROCESSOR = {
-  groupId: "scan-scope" as const,
+  groupId: "scan.scope",
   artifactId: "git-repos",
 };
 
-const SCAN_TECH_PROCESSOR = {
-  groupId: "scan-tech" as const,
+const SCAN_SOURCE_PROCESSOR = {
+  groupId: "scan.source",
   artifactId: "test-processor",
 };
 
@@ -47,7 +47,7 @@ describe("DiscoveryModelWriter", () => {
       runStartedAt: scannedAt,
     });
     store.addCreateIntents(
-      "scan-scope",
+      "scan.scope",
       GIT_REPOS_PROCESSOR,
       {
         entities: {
@@ -109,7 +109,7 @@ describe("DiscoveryModelWriter", () => {
       extractedAt: string;
     }>;
     assert.equal(writtenRepositories.length, 1);
-    assert.equal(writtenRepositories[0]?.scannerExtractor, "scan-scope:git-repos");
+    assert.equal(writtenRepositories[0]?.scannerExtractor, "scan.scope:git-repos");
     assert.equal(writtenRepositories[0]?.scannerSchema, packageVersion);
     assert.equal(writtenRepositories[0]?.extractedAt, "2026-08-27T15:00:00.000+03:00");
   });
@@ -153,7 +153,7 @@ describe("DiscoveryModelWriter", () => {
       scanId: "scan-3",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
-    store.addCreateIntents("scan-tech", SCAN_TECH_PROCESSOR, {
+    store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
       entities: {
         BuildScript: [{ id: "bs-1", name: "build.gradle" }],
       },

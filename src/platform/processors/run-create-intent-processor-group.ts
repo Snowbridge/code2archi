@@ -1,4 +1,4 @@
-import type { ScanDiscoveryProcessorGroupId } from "../../cli/processor-groups.js";
+import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
@@ -26,18 +26,18 @@ function countCreateIntents(output: CreateIntents): number {
 }
 
 export function runCreateIntentProcessorGroup(
-  groupId: ScanDiscoveryProcessorGroupId,
+  builtInGroupId: BuiltInProcessorGroupId,
   snapshot: DiscoveryModelSnapshot,
   filters: ProcessorFilters,
   store: RunEntityStore,
 ): void {
-  const logger = getLogger(`scan.${groupId}`);
-  logger.info("group start", { groupId });
+  const logger = getLogger(`scan.${builtInGroupId}`);
+  logger.info("group start", { groupId: builtInGroupId });
 
-  const processors = processorRegistry.listFiltered<
+  const processors = processorRegistry.listForBuiltInStep<
     DiscoveryModelSnapshot,
     CreateIntents
-  >(groupId, filters);
+  >(builtInGroupId, filters);
 
   for (const processor of processors) {
     processor.logStart();
@@ -55,9 +55,9 @@ export function runCreateIntentProcessorGroup(
       continue;
     }
 
-    store.addCreateIntents(groupId, processor.id, output);
+    store.addCreateIntents(builtInGroupId, processor.id, output);
     processor.logCompleted(count);
   }
 
-  logger.info("group completed", { groupId });
+  logger.info("group completed", { groupId: builtInGroupId });
 }

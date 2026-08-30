@@ -21,7 +21,7 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
   ScanAppOutput
 > {
   readonly id: ProcessorId = {
-    groupId: "scan-app",
+    groupId: "scan.source.npm",
     artifactId: "npm-modules-and-dependencies",
   };
 

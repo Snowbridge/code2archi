@@ -24,8 +24,8 @@ describe("logCalls", () => {
   });
 
   it("logs enter and leave at DEBUG level", async () => {
-    const tracedAdd = logCalls((a: number, b: number) => a + b, "processor.scan-scope.sample", "add");
-    const tracedNoop = logCalls((): void => undefined, "processor.scan-scope.sample", "noop");
+    const tracedAdd = logCalls((a: number, b: number) => a + b, "processor.scan.scope.sample", "add");
+    const tracedNoop = logCalls((): void => undefined, "processor.scan.scope.sample", "noop");
 
     const dir = await withTestLogging({ logLevel: "DEBUG", verbose: false }, () => {
       assert.equal(tracedAdd(2, 3), 5);
@@ -37,13 +37,13 @@ describe("logCalls", () => {
     assert.match(content, /leave add/);
     assert.match(content, /leave noop/);
     assert.match(content, /status=completed/);
-    assert.match(content, /\[processor\.scan-scope\.sample\]/);
+    assert.match(content, /\[processor\.scan\.scope\.sample\]/);
   });
 
   it("logs error and stack at DEBUG before rethrow", async () => {
     const tracedFail = logCalls((): never => {
       throw new Error("boom");
-    }, "processor.scan-scope.sample", "fail");
+    }, "processor.scan.scope.sample", "fail");
 
     const dir = await withTestLogging({ logLevel: "DEBUG", verbose: false }, () => {
       assert.throws(() => tracedFail(), /boom/);

@@ -1,9 +1,13 @@
 import {
+  GENERATE_ELEMENTS_GROUP_ID,
+  GENERATE_VIEWS_GROUP_ID,
+  type GlobalArgv,
+} from "../cli/processor-groups.js";
+import {
   type ProcessorFilters,
   resolveProcessorFilters,
 } from "../platform/processors/processor-registry.js";
 import { runGenerateProcessorGroup } from "../platform/processors/run-generate-processor-group.js";
-import type { GlobalArgv } from "../cli/processor-groups.js";
 import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
 import { ArchiModelWriter } from "../archimate-model/archi-model-writer.js";
 import { DiscoveryModelReader } from "../discovery-model/discovery-model-reader.js";
@@ -37,40 +41,20 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
     modelId: input.modelId,
   });
 
-  logger.info("step start", { step: 1, action: "business layer generation", groupId: "generate-biz" });
-  runGenerateProcessorGroup("generate-biz", discovery, archiStore, input.processorFilters);
+  logger.info("step start", { step: 1, action: "elements generation", groupId: GENERATE_ELEMENTS_GROUP_ID });
+  runGenerateProcessorGroup(GENERATE_ELEMENTS_GROUP_ID, discovery, archiStore, input.processorFilters);
   logger.info("step completed", { step: 1 });
 
-  logger.info("step start", {
-    step: 2,
-    action: "application layer generation",
-    groupId: "generate-app",
-  });
-  runGenerateProcessorGroup("generate-app", discovery, archiStore, input.processorFilters);
+  logger.info("step start", { step: 2, action: "views generation", groupId: GENERATE_VIEWS_GROUP_ID });
+  runGenerateProcessorGroup(GENERATE_VIEWS_GROUP_ID, discovery, archiStore, input.processorFilters);
   logger.info("step completed", { step: 2 });
 
-  logger.info("step start", {
-    step: 3,
-    action: "technology layer generation",
-    groupId: "generate-tech",
-  });
-  runGenerateProcessorGroup("generate-tech", discovery, archiStore, input.processorFilters);
-  logger.info("step completed", { step: 3 });
-
-  logger.info("step start", { step: 4, action: "relations generation", groupId: "generate-rel" });
-  runGenerateProcessorGroup("generate-rel", discovery, archiStore, input.processorFilters);
-  logger.info("step completed", { step: 4 });
-
-  logger.info("step start", { step: 5, action: "views generation", groupId: "generate-view" });
-  runGenerateProcessorGroup("generate-view", discovery, archiStore, input.processorFilters);
-  logger.info("step completed", { step: 5 });
-
-  logger.info("step start", { step: 6, action: "writing archimate-model", outputFile: input.outputFile });
+  logger.info("step start", { step: 3, action: "writing archimate-model", outputFile: input.outputFile });
   new ArchiModelWriter().write({
     outputFile: input.outputFile,
     store: archiStore,
   });
-  logger.info("step completed", { step: 6, outputFile: input.outputFile });
+  logger.info("step completed", { step: 3, outputFile: input.outputFile });
 
   logger.info("flow completed", { outputFile: input.outputFile });
 }

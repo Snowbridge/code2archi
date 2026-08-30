@@ -37,7 +37,7 @@ describe("DiscoveryModelReader", () => {
             id: "repo-id",
             url: "https://example.com/repo.git",
             localPath: "/repo",
-            scannerExtractor: "scan-scope:git-repos",
+            scannerExtractor: "scan.scope:git-repos",
             scannerSchema: "0.2.5",
             extractedAt: "2026-08-30T12:15:24.335+03:00",
           },

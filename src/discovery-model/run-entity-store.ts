@@ -1,5 +1,6 @@
 import path from "node:path";
-import type { ProcessorGroupId } from "../cli/processor-groups.js";
+import type { BuiltInProcessorGroupId } from "../cli/processor-groups.js";
+import { resolveBuiltInGroupId } from "../platform/processors/processor-coordinate.js";
 import { packageVersion } from "../package-version.js";
 import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import type { ProcessorId } from "../platform/processors/processor.js";
@@ -26,11 +27,12 @@ export interface RunEntityStoreInit {
 
 /** Mirror of documentation/specifications/discovery-model/entity-types.md */
 export const GROUP_ENTITY_ALLOWLIST: Partial<
-  Record<ProcessorGroupId, readonly EntityType[]>
+  Record<BuiltInProcessorGroupId, readonly EntityType[]>
 > = {
-  "scan-scope": ["Repository"],
-  "scan-tech": ["BuildScript", "RuntimeEnvironment"],
-  "scan-app": [
+  "scan.scope": ["Repository"],
+  "scan.source": [
+    "BuildScript",
+    "RuntimeEnvironment",
     "ApplicationModule",
     "ApplicationModuleDependency",
     "RestController",
@@ -41,10 +43,10 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 };
 
 function isEntityTypeAllowedForGroup(
-  groupId: ProcessorGroupId,
+  builtInGroupId: BuiltInProcessorGroupId,
   entityType: EntityType,
 ): boolean {
-  return (GROUP_ENTITY_ALLOWLIST[groupId] ?? []).includes(entityType);
+  return (GROUP_ENTITY_ALLOWLIST[builtInGroupId] ?? []).includes(entityType);
 }
 
 function formatScannerExtractor(processorId: ProcessorId): string {
@@ -137,14 +139,15 @@ export class RunEntityStore {
   }
 
   addCreateIntents(
-    groupId: ProcessorGroupId,
+    builtInGroupId: BuiltInProcessorGroupId,
     processorId: ProcessorId,
     intents: CreateIntents,
     extractedAt: Date = new Date(),
   ): void {
-    if (processorId.groupId !== groupId) {
+    const processorBuiltInGroupId = resolveBuiltInGroupId(processorId.groupId);
+    if (processorBuiltInGroupId !== builtInGroupId) {
       throw new Error(
-        `Processor groupId mismatch: expected ${groupId}, got ${processorId.groupId}`,
+        `Processor groupId mismatch: expected built-in group ${builtInGroupId}, got ${processorId.groupId}`,
       );
     }
 
@@ -155,9 +158,9 @@ export class RunEntityStore {
         }
 
         const entityType = entityTypeKey as EntityType;
-        if (!isEntityTypeAllowedForGroup(groupId, entityType)) {
+        if (!isEntityTypeAllowedForGroup(builtInGroupId, entityType)) {
           throw new Error(
-            `Entity type ${entityType} is not allowed for processor group ${groupId}`,
+            `Entity type ${entityType} is not allowed for processor group ${builtInGroupId}`,
           );
         }
 

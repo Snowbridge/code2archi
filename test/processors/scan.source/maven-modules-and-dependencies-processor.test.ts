@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
-import { MavenModulesAndDependenciesProcessor } from "../../../src/processors/scan-app/maven-modules-and-dependencies-processor.js";
+import { MavenModulesAndDependenciesProcessor } from "../../../src/processors/scan.source/maven-modules-and-dependencies-processor.js";
 import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
@@ -42,8 +42,8 @@ describe("MavenModulesAndDependenciesProcessor", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
     store.addCreateIntents(
-      "scan-scope",
-      { groupId: "scan-scope", artifactId: "test" },
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
       {
         entities: {
           Repository: [repository],
@@ -103,8 +103,8 @@ describe("MavenModulesAndDependenciesProcessor", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
     store.addCreateIntents(
-      "scan-scope",
-      { groupId: "scan-scope", artifactId: "test" },
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
       {
         entities: {
           Repository: [repository],
@@ -118,7 +118,7 @@ describe("MavenModulesAndDependenciesProcessor", () => {
 
     assert.equal(dependencies.length, 1);
     assert.equal(dependencies[0]?.artifactId, "lib");
-    store.addCreateIntents("scan-app", processor.id, output);
+    store.addCreateIntents("scan.source", processor.id, output);
   });
 
   it("skips repositories without maven build system", () => {
@@ -131,8 +131,8 @@ describe("MavenModulesAndDependenciesProcessor", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
     store.addCreateIntents(
-      "scan-scope",
-      { groupId: "scan-scope", artifactId: "test" },
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
       {
         entities: {
           Repository: [

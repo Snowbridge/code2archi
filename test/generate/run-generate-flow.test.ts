@@ -15,31 +15,9 @@ function emptyGlobalArgv(): GlobalArgv {
     threads: 1,
     sync: false,
     continueOnError: false,
-    withNone: [],
-    withScanScope: [],
-    withScanTech: [],
-    withScanApp: [],
-    withGenerateBiz: [],
-    withGenerateApp: [],
-    withGenerateTech: [],
-    withGenerateRel: [],
-    withGenerateView: [],
-    withoutScanScope: [],
-    withoutScanTech: [],
-    withoutScanApp: [],
-    withoutGenerateBiz: [],
-    withoutGenerateApp: [],
-    withoutGenerateTech: [],
-    withoutGenerateRel: [],
-    withoutGenerateView: [],
-    withOnlyScanScope: [],
-    withOnlyScanTech: [],
-    withOnlyScanApp: [],
-    withOnlyGenerateBiz: [],
-    withOnlyGenerateApp: [],
-    withOnlyGenerateTech: [],
-    withOnlyGenerateRel: [],
-    withOnlyGenerateView: [],
+    with: [],
+    without: [],
+    withOnly: [],
   };
 }
 
@@ -75,10 +53,9 @@ describe("runGenerateFlow", () => {
     runGenerateFlow({
       ...generateArgs,
       processorFilters: {
-        withNone: [],
-        without: {},
-        with: {},
-        withOnly: {},
+        with: [],
+        without: [],
+        withOnly: [],
       },
     });
 

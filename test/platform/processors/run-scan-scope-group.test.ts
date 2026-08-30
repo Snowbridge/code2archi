@@ -11,13 +11,13 @@ import { processorRegistry } from "../../../src/platform/processors/processor-re
 import { runScanScopeGroup } from "../../../src/platform/processors/run-scan-scope-group.js";
 
 class StubRepositoryProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
-  readonly id: { groupId: "scan-scope"; artifactId: string };
+  readonly id: { groupId: string; artifactId: string };
   readonly version = "0.0.0";
   readonly executionPolicy = "ALWAYS" as const;
   readonly description = "Stub processor for tests.";
 
   constructor(
-    id: { groupId: "scan-scope"; artifactId: string },
+    id: { groupId: string; artifactId: string },
     private readonly repositories: RepositoryCreateIntent[],
   ) {
     super();
@@ -35,9 +35,9 @@ const STUB_STORE = "test-stub-store";
 
 describe("runScanScopeGroup", () => {
   after(() => {
-    processorRegistry.unregister("scan-scope", STUB_ONE);
-    processorRegistry.unregister("scan-scope", STUB_TWO);
-    processorRegistry.unregister("scan-scope", STUB_STORE);
+    processorRegistry.unregister("scan.scope", STUB_ONE);
+    processorRegistry.unregister("scan.scope", STUB_TWO);
+    processorRegistry.unregister("scan.scope", STUB_STORE);
   });
 
   it("unions repositories by id and throws on duplicate id", () => {
@@ -51,10 +51,10 @@ describe("runScanScopeGroup", () => {
     };
 
     processorRegistry.register(
-      new StubRepositoryProcessor({ groupId: "scan-scope", artifactId: STUB_ONE }, [repository]),
+      new StubRepositoryProcessor({ groupId: "scan.scope", artifactId: STUB_ONE }, [repository]),
     );
     processorRegistry.register(
-      new StubRepositoryProcessor({ groupId: "scan-scope", artifactId: STUB_TWO }, [repository]),
+      new StubRepositoryProcessor({ groupId: "scan.scope", artifactId: STUB_TWO }, [repository]),
     );
 
     const store = new RunEntityStore({
@@ -68,10 +68,9 @@ describe("runScanScopeGroup", () => {
         runScanScopeGroup(
           ["/tmp"],
           {
-            withNone: [],
-            without: {},
-            with: {},
-            withOnly: { "scan-scope": [STUB_ONE, STUB_TWO] },
+            with: [],
+            without: [],
+            withOnly: [`scan.scope.${STUB_ONE}`, `scan.scope.${STUB_TWO}`],
           },
           store,
         ),
@@ -90,7 +89,7 @@ describe("runScanScopeGroup", () => {
     };
 
     processorRegistry.register(
-      new StubRepositoryProcessor({ groupId: "scan-scope", artifactId: STUB_STORE }, [repository]),
+      new StubRepositoryProcessor({ groupId: "scan.scope", artifactId: STUB_STORE }, [repository]),
     );
 
     const store = new RunEntityStore({
@@ -102,10 +101,9 @@ describe("runScanScopeGroup", () => {
     runScanScopeGroup(
       ["/tmp"],
       {
-        withNone: [],
-        without: {},
-        with: {},
-        withOnly: { "scan-scope": [STUB_STORE] },
+        with: [],
+        without: [],
+        withOnly: [`scan.scope.${STUB_STORE}`],
       },
       store,
     );
@@ -114,7 +112,7 @@ describe("runScanScopeGroup", () => {
     assert.equal(store.getEntities("Repository")[0]?.name, "a");
     assert.equal(
       store.getEntities("Repository")[0]?.scannerExtractor,
-      `scan-scope:${STUB_STORE}`,
+      `scan.scope:${STUB_STORE}`,
     );
   });
 });

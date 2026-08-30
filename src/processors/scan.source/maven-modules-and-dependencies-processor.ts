@@ -20,7 +20,7 @@ export class MavenModulesAndDependenciesProcessor extends AbstractProcessor<
   ScanAppOutput
 > {
   readonly id: ProcessorId = {
-    groupId: "scan-app",
+    groupId: "scan.source.maven",
     artifactId: "maven-modules-and-dependencies",
   };
 

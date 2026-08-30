@@ -1,4 +1,3 @@
-import type { ProcessorGroupId } from "../../cli/processor-groups.js";
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelSnapshot } from "../../archimate-model/archi-model-store.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
@@ -7,7 +6,7 @@ import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-st
 import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
 
 export interface ProcessorId {
-  readonly groupId: ProcessorGroupId;
+  readonly groupId: string;
   readonly artifactId: string;
 }
 

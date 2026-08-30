@@ -1,9 +1,7 @@
 import { CliError } from "./cli-error.js";
-import {
-  PROCESSOR_GROUP_DEFS,
-  isProcessorGroupId,
-  type GlobalArgv,
-} from "./processor-groups.js";
+import type { GlobalArgv } from "./processor-groups.js";
+import { parseCoordinate, validateFilterPattern } from "../platform/processors/processor-coordinate.js";
+import { processorRegistry } from "../platform/processors/processor-registry.js";
 
 function asStringArray(value: unknown): string[] {
   if (value === undefined || value === null) {
@@ -15,60 +13,58 @@ function asStringArray(value: unknown): string[] {
   return [String(value)];
 }
 
+function collectExactCoordinates(patterns: readonly string[]): string[] {
+  return patterns.filter((pattern) => !pattern.endsWith(".*"));
+}
+
 export function validateGlobalArgv(
   argv: Record<string, unknown>,
 ): asserts argv is GlobalArgv & Record<string, unknown> {
-  const withNone = asStringArray(argv.withNone);
+  const withRequested = asStringArray(argv.with);
+  const without = asStringArray(argv.without);
+  const withOnly = asStringArray(argv.withOnly);
 
-  for (const groupId of withNone) {
-    if (!isProcessorGroupId(groupId)) {
-      throw new CliError(`Invalid --with-none groupId: "${groupId}"`);
+  for (const pattern of [...withRequested, ...without, ...withOnly]) {
+    try {
+      validateFilterPattern(pattern);
+    } catch (error) {
+      throw new CliError(
+        error instanceof Error ? error.message : `Invalid processor filter pattern: "${pattern}"`,
+      );
     }
   }
 
-  for (const def of PROCESSOR_GROUP_DEFS) {
-    const without = asStringArray(argv[def.withoutArgvKey]);
-    const withRequested = asStringArray(argv[def.withArgvKey]);
-    const withOnly = asStringArray(argv[def.withOnlyArgvKey]);
-    const none = withNone.includes(def.groupId);
+  if (withOnly.length > 0 && withRequested.length > 0) {
+    throw new CliError(
+      "Conflicting processor filters: --with-only and --with cannot be used together",
+    );
+  }
 
-    if (none && withOnly.length > 0) {
+  const denied = new Set(without);
+  for (const coordinate of collectExactCoordinates(withRequested)) {
+    if (denied.has(coordinate)) {
       throw new CliError(
-        `Conflicting processor filters for group "${def.groupId}": --with-none and --with-only-${def.groupId}`,
+        `Conflicting processor filters: --with and --without both list "${coordinate}"`,
       );
     }
+  }
 
-    if (none && withRequested.length > 0) {
+  for (const coordinate of collectExactCoordinates(withOnly)) {
+    if (denied.has(coordinate)) {
       throw new CliError(
-        `Conflicting processor filters for group "${def.groupId}": --with-none and --with-${def.groupId}`,
+        `Conflicting processor filters: --with-only and --without both list "${coordinate}"`,
       );
     }
+  }
 
-    if (withOnly.length > 0 && withRequested.length > 0) {
-      throw new CliError(
-        `Conflicting processor filters for group "${def.groupId}": --with-only-${def.groupId} and --with-${def.groupId}`,
-      );
-    }
-
-    if (withOnly.length > 0 && without.length > 0) {
-      throw new CliError(
-        `Conflicting processor filters for group "${def.groupId}": --with-only-${def.groupId} and --without-${def.groupId}`,
-      );
-    }
-
-    if (none && without.length > 0) {
-      throw new CliError(
-        `Conflicting processor filters for group "${def.groupId}": --with-none and --without-${def.groupId}`,
-      );
-    }
-
-    const denied = new Set(without);
-    for (const artifactId of withRequested) {
-      if (denied.has(artifactId)) {
-        throw new CliError(
-          `Conflicting processor filters for group "${def.groupId}": --with-${def.groupId} and --without-${def.groupId} both list "${artifactId}"`,
-        );
-      }
+  for (const coordinate of [
+    ...collectExactCoordinates(withRequested),
+    ...collectExactCoordinates(without),
+    ...collectExactCoordinates(withOnly),
+  ]) {
+    const { groupId, artifactId } = parseCoordinate(coordinate);
+    if (!processorRegistry.hasCoordinate(groupId, artifactId)) {
+      throw new CliError(`Unknown processor coordinate: "${coordinate}"`);
     }
   }
 }

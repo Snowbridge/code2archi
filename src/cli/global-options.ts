@@ -25,12 +25,11 @@ export function coerceThreads(value: unknown): number {
   return parsed;
 }
 
-function arrayOption(description: string): Options {
+function processorFilterOption(description: string): Options {
   return {
     type: "array",
     string: true,
     default: [],
-    hidden: true,
     describe: description,
   };
 }
@@ -70,34 +69,13 @@ export const globalOptions: Record<string, Options> = {
     default: false,
     describe: "Do not abort worker pool on error; aggregate report",
   },
-  "with-none": {
-    type: "array",
-    string: true,
-    default: [],
-    describe: "Disable all processors for listed groupIds",
-  },
-  "with-scan-scope": arrayOption("Enable ON_DEMAND scan-scope processors by artifactId"),
-  "with-scan-tech": arrayOption("Enable ON_DEMAND scan-tech processors by artifactId"),
-  "with-scan-app": arrayOption("Enable ON_DEMAND scan-app processors by artifactId"),
-  "with-generate-biz": arrayOption("Enable ON_DEMAND generate-biz processors by artifactId"),
-  "with-generate-app": arrayOption("Enable ON_DEMAND generate-app processors by artifactId"),
-  "with-generate-tech": arrayOption("Enable ON_DEMAND generate-tech processors by artifactId"),
-  "with-generate-rel": arrayOption("Enable ON_DEMAND generate-rel processors by artifactId"),
-  "with-generate-view": arrayOption("Enable ON_DEMAND generate-view processors by artifactId"),
-  "without-scan-scope": arrayOption("Exclude scan-scope processors by artifactId"),
-  "without-scan-tech": arrayOption("Exclude scan-tech processors by artifactId"),
-  "without-scan-app": arrayOption("Exclude scan-app processors by artifactId"),
-  "without-generate-biz": arrayOption("Exclude generate-biz processors by artifactId"),
-  "without-generate-app": arrayOption("Exclude generate-app processors by artifactId"),
-  "without-generate-tech": arrayOption("Exclude generate-tech processors by artifactId"),
-  "without-generate-rel": arrayOption("Exclude generate-rel processors by artifactId"),
-  "without-generate-view": arrayOption("Exclude generate-view processors by artifactId"),
-  "with-only-scan-scope": arrayOption("Run only listed scan-scope processors"),
-  "with-only-scan-tech": arrayOption("Run only listed scan-tech processors"),
-  "with-only-scan-app": arrayOption("Run only listed scan-app processors"),
-  "with-only-generate-biz": arrayOption("Run only listed generate-biz processors"),
-  "with-only-generate-app": arrayOption("Run only listed generate-app processors"),
-  "with-only-generate-tech": arrayOption("Run only listed generate-tech processors"),
-  "with-only-generate-rel": arrayOption("Run only listed generate-rel processors"),
-  "with-only-generate-view": arrayOption("Run only listed generate-view processors"),
+  with: processorFilterOption(
+    "Enable ON_DEMAND processors by coordinate (groupId.artifactId) or wildcard prefix.*",
+  ),
+  without: processorFilterOption(
+    "Exclude processors by coordinate (groupId.artifactId) or wildcard prefix.*",
+  ),
+  "with-only": processorFilterOption(
+    "Global allow-list: run only processors matching coordinate or wildcard prefix.*",
+  ),
 };

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import "../src/platform/processors/builtin-processors.js";
 import { CliError } from "../src/cli/cli-error.js";
 import { ExitCode } from "../src/cli/exit-codes.js";
 import { coerceLogLevel, coerceThreads } from "../src/cli/global-options.js";
@@ -13,31 +14,9 @@ function baseArgv(): Record<string, unknown> {
     threads: 2,
     sync: false,
     continueOnError: false,
-    withNone: [],
-    withScanScope: [],
-    withScanTech: [],
-    withScanApp: [],
-    withGenerateBiz: [],
-    withGenerateApp: [],
-    withGenerateTech: [],
-    withGenerateRel: [],
-    withGenerateView: [],
-    withoutScanScope: [],
-    withoutScanTech: [],
-    withoutScanApp: [],
-    withoutGenerateBiz: [],
-    withoutGenerateApp: [],
-    withoutGenerateTech: [],
-    withoutGenerateRel: [],
-    withoutGenerateView: [],
-    withOnlyScanScope: [],
-    withOnlyScanTech: [],
-    withOnlyScanApp: [],
-    withOnlyGenerateBiz: [],
-    withOnlyGenerateApp: [],
-    withOnlyGenerateTech: [],
-    withOnlyGenerateRel: [],
-    withOnlyGenerateView: [],
+    with: [],
+    without: [],
+    withOnly: [],
   };
 }
 
@@ -55,101 +34,63 @@ describe("validateGlobalArgv", () => {
     assert.doesNotThrow(() =>
       validateGlobalArgv({
         ...baseArgv(),
-        withNone: ["scan-app"],
-        withOnlyScanTech: ["build-system-npm-workspace"],
+        without: ["scan.source.*"],
+        withOnly: ["scan.scope.git-repos"],
       }),
     );
   });
 
-  it("rejects unknown groupId in --with-none", () => {
+  it("rejects unknown processor coordinate", () => {
     expectCliError(
       () =>
         validateGlobalArgv({
           ...baseArgv(),
-          withNone: ["unknown-group"],
+          with: ["scan.scope.unknown-processor"],
         }),
-      'Invalid --with-none groupId: "unknown-group"',
+      'Unknown processor coordinate: "scan.scope.unknown-processor"',
     );
   });
 
-  it("rejects --with-none with --with-only for the same group", () => {
+  it("rejects --with-only with --with", () => {
     expectCliError(
       () =>
         validateGlobalArgv({
           ...baseArgv(),
-          withNone: ["scan-app"],
-          withOnlyScanApp: ["processor-a"],
+          withOnly: ["scan.scope.git-repos"],
+          with: ["scan.scope.unversioned-folders"],
         }),
-      'Conflicting processor filters for group "scan-app"',
+      "--with-only and --with cannot be used together",
     );
   });
 
-  it("rejects --with-only with --without for the same group", () => {
+  it("rejects the same coordinate in --with and --without", () => {
     expectCliError(
       () =>
         validateGlobalArgv({
           ...baseArgv(),
-          withOnlyScanTech: ["processor-a"],
-          withoutScanTech: ["processor-b"],
+          with: ["scan.scope.unversioned-folders"],
+          without: ["scan.scope.unversioned-folders"],
         }),
-      'Conflicting processor filters for group "scan-tech"',
+      'both list "scan.scope.unversioned-folders"',
     );
   });
 
-  it("rejects --with-none with --without for the same group", () => {
+  it("rejects invalid wildcard pattern", () => {
     expectCliError(
       () =>
         validateGlobalArgv({
           ...baseArgv(),
-          withNone: ["scan-scope"],
-          withoutScanScope: ["processor-a"],
+          without: ["scan.*.source"],
         }),
-      'Conflicting processor filters for group "scan-scope"',
+      'Invalid processor filter pattern',
     );
   });
 
-  it("rejects --with-none with --with for the same group", () => {
-    expectCliError(
-      () =>
-        validateGlobalArgv({
-          ...baseArgv(),
-          withNone: ["scan-scope"],
-          withScanScope: ["unversioned-folders"],
-        }),
-      'Conflicting processor filters for group "scan-scope"',
-    );
-  });
-
-  it("rejects --with-only with --with for the same group", () => {
-    expectCliError(
-      () =>
-        validateGlobalArgv({
-          ...baseArgv(),
-          withOnlyScanScope: ["git-repos"],
-          withScanScope: ["unversioned-folders"],
-        }),
-      'Conflicting processor filters for group "scan-scope"',
-    );
-  });
-
-  it("rejects the same artifactId in --with and --without", () => {
-    expectCliError(
-      () =>
-        validateGlobalArgv({
-          ...baseArgv(),
-          withScanScope: ["unversioned-folders"],
-          withoutScanScope: ["unversioned-folders"],
-        }),
-      'both list "unversioned-folders"',
-    );
-  });
-
-  it("allows conflicting filters across different groups", () => {
+  it("allows wildcard patterns without registry lookup", () => {
     assert.doesNotThrow(() =>
       validateGlobalArgv({
         ...baseArgv(),
-        withNone: ["scan-app"],
-        withoutScanTech: ["processor-a"],
+        without: ["generate.elements.*"],
       }),
     );
   });

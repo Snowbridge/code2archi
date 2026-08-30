@@ -1,17 +1,17 @@
+import type { BuiltInProcessorGroupId, GlobalArgv } from "../../cli/processor-groups.js";
 import {
-  PROCESSOR_GROUP_DEFS,
-  type GlobalArgv,
-  type ProcessorGroupId,
-} from "../../cli/processor-groups.js";
+  isUnderBuiltInGroup,
+  isValidProcessorGroupId,
+  matchesPattern,
+} from "./processor-coordinate.js";
 import type { ProcessorId } from "./processor.js";
 import { processorKey } from "./processor.js";
 import type { AbstractProcessor } from "./processor.js";
 
 export interface ProcessorFilters {
-  readonly withNone: readonly ProcessorGroupId[];
-  readonly without: Readonly<Partial<Record<ProcessorGroupId, readonly string[]>>>;
-  readonly with: Readonly<Partial<Record<ProcessorGroupId, readonly string[]>>>;
-  readonly withOnly: Readonly<Partial<Record<ProcessorGroupId, readonly string[]>>>;
+  readonly with: readonly string[];
+  readonly without: readonly string[];
+  readonly withOnly: readonly string[];
 }
 
 function asStringArray(value: unknown): string[] {
@@ -25,40 +25,43 @@ function asStringArray(value: unknown): string[] {
 }
 
 export function resolveProcessorFilters(argv: GlobalArgv): ProcessorFilters {
-  const without: Partial<Record<ProcessorGroupId, string[]>> = {};
-  const withRequested: Partial<Record<ProcessorGroupId, string[]>> = {};
-  const withOnly: Partial<Record<ProcessorGroupId, string[]>> = {};
+  return {
+    with: asStringArray(argv.with),
+    without: asStringArray(argv.without),
+    withOnly: asStringArray(argv.withOnly),
+  };
+}
 
-  for (const def of PROCESSOR_GROUP_DEFS) {
-    const denied = asStringArray(argv[def.withoutArgvKey]);
-    if (denied.length > 0) {
-      without[def.groupId] = denied;
-    }
-
-    const enabled = asStringArray(argv[def.withArgvKey]);
-    if (enabled.length > 0) {
-      withRequested[def.groupId] = enabled;
-    }
-
-    const allowed = asStringArray(argv[def.withOnlyArgvKey]);
-    if (allowed.length > 0) {
-      withOnly[def.groupId] = allowed;
-    }
+export function isProcessorSelected(
+  processor: AbstractProcessor<unknown, unknown>,
+  filters: ProcessorFilters,
+): boolean {
+  if (filters.withOnly.length > 0) {
+    return filters.withOnly.some((pattern) => matchesPattern(processor.id, pattern));
   }
 
-  return {
-    withNone: asStringArray(argv.withNone) as ProcessorGroupId[],
-    without,
-    with: withRequested,
-    withOnly,
-  };
+  if (filters.without.some((pattern) => matchesPattern(processor.id, pattern))) {
+    return false;
+  }
+
+  if (processor.executionPolicy === "ON_DEMAND") {
+    return filters.with.some((pattern) => matchesPattern(processor.id, pattern));
+  }
+
+  return true;
 }
 
 export class ProcessorRegistry {
   private readonly processors = new Map<string, AbstractProcessor<unknown, unknown>>();
-  private readonly groupOrder = new Map<ProcessorGroupId, string[]>();
+  private readonly registrationOrder: string[] = [];
 
   register<TInput, TOutput>(processor: AbstractProcessor<TInput, TOutput>): void {
+    if (!isValidProcessorGroupId(processor.id.groupId)) {
+      throw new Error(
+        `Invalid processor groupId "${processor.id.groupId}": must start with a built-in group prefix`,
+      );
+    }
+
     const key = processorKey(processor.id);
     if (this.processors.has(key)) {
       throw new Error(
@@ -67,31 +70,23 @@ export class ProcessorRegistry {
     }
 
     this.processors.set(key, processor as AbstractProcessor<unknown, unknown>);
-
-    const order = this.groupOrder.get(processor.id.groupId) ?? [];
-    order.push(key);
-    this.groupOrder.set(processor.id.groupId, order);
+    this.registrationOrder.push(key);
   }
 
-  unregister(groupId: ProcessorGroupId, artifactId: string): void {
+  unregister(groupId: string, artifactId: string): void {
     const key = processorKey({ groupId, artifactId });
     if (!this.processors.delete(key)) {
       return;
     }
 
-    const order = this.groupOrder.get(groupId);
-    if (!order) {
-      return;
+    const index = this.registrationOrder.indexOf(key);
+    if (index >= 0) {
+      this.registrationOrder.splice(index, 1);
     }
-
-    this.groupOrder.set(
-      groupId,
-      order.filter((entry) => entry !== key),
-    );
   }
 
   get<TInput, TOutput>(
-    groupId: ProcessorGroupId,
+    groupId: string,
     artifactId: string,
   ): AbstractProcessor<TInput, TOutput> | undefined {
     return this.processors.get(processorKey({ groupId, artifactId })) as
@@ -99,56 +94,44 @@ export class ProcessorRegistry {
       | undefined;
   }
 
-  listByGroup<TInput, TOutput>(
-    groupId: ProcessorGroupId,
-  ): AbstractProcessor<TInput, TOutput>[] {
-    const order = this.groupOrder.get(groupId) ?? [];
-    return order
+  hasCoordinate(groupId: string, artifactId: string): boolean {
+    return this.processors.has(processorKey({ groupId, artifactId }));
+  }
+
+  listAll<TInput, TOutput>(): AbstractProcessor<TInput, TOutput>[] {
+    return this.registrationOrder
       .map((key) => this.processors.get(key))
       .filter((processor) => processor !== undefined) as AbstractProcessor<TInput, TOutput>[];
   }
 
-  listFiltered<TInput, TOutput>(
-    groupId: ProcessorGroupId,
+  listForBuiltInStep<TInput, TOutput>(
+    builtInGroupId: BuiltInProcessorGroupId,
     filters: ProcessorFilters,
   ): AbstractProcessor<TInput, TOutput>[] {
-    if (filters.withNone.includes(groupId)) {
-      return [];
-    }
-
-    const registered = this.listByGroup<TInput, TOutput>(groupId);
-    const withOnly = filters.withOnly[groupId];
-    if (withOnly && withOnly.length > 0) {
-      const allowed = new Set(withOnly);
-      return registered.filter((processor) => allowed.has(processor.id.artifactId));
-    }
-
-    const withRequested = filters.with[groupId];
-    const without = filters.without[groupId];
-    const denied = without ? new Set(without) : new Set<string>();
-    const onDemandEnabled = withRequested ? new Set(withRequested) : new Set<string>();
-
     const selected: AbstractProcessor<TInput, TOutput>[] = [];
     const seen = new Set<string>();
 
-    for (const processor of registered) {
+    for (const key of this.registrationOrder) {
+      const processor = this.processors.get(key);
+      if (!processor) {
+        continue;
+      }
+
+      if (!isUnderBuiltInGroup(processor.id.groupId, builtInGroupId)) {
+        continue;
+      }
+
       const artifactId = processor.id.artifactId;
       if (seen.has(artifactId)) {
         continue;
       }
 
-      if (processor.executionPolicy === "ON_DEMAND") {
-        if (onDemandEnabled.has(artifactId) && !denied.has(artifactId)) {
-          selected.push(processor);
-          seen.add(artifactId);
-        }
+      if (!isProcessorSelected(processor, filters)) {
         continue;
       }
 
-      if (!denied.has(artifactId)) {
-        selected.push(processor);
-        seen.add(artifactId);
-      }
+      selected.push(processor as AbstractProcessor<TInput, TOutput>);
+      seen.add(artifactId);
     }
 
     return selected;

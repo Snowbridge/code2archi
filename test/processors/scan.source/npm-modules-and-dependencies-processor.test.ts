@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
-import { NpmModulesAndDependenciesProcessor } from "../../../src/processors/scan-app/npm-modules-and-dependencies-processor.js";
+import { NpmModulesAndDependenciesProcessor } from "../../../src/processors/scan.source/npm-modules-and-dependencies-processor.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
 describe("NpmModulesAndDependenciesProcessor", () => {
@@ -26,8 +26,8 @@ describe("NpmModulesAndDependenciesProcessor", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
     store.addCreateIntents(
-      "scan-scope",
-      { groupId: "scan-scope", artifactId: "test" },
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
       {
         entities: {
           Repository: [

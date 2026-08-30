@@ -11,12 +11,15 @@ import {
 } from "../../../src/platform/processors/processor-registry.js";
 
 class StubProcessor extends AbstractProcessor<string, string[]> {
-  readonly id: { groupId: "scan-scope"; artifactId: string };
+  readonly id: { groupId: string; artifactId: string };
   readonly version = "0.0.0";
   readonly executionPolicy: ProcessorExecutionPolicy;
   readonly description = "Stub processor for tests.";
 
-  constructor(id: { groupId: "scan-scope"; artifactId: string }, executionPolicy: ProcessorExecutionPolicy = "ALWAYS") {
+  constructor(
+    id: { groupId: string; artifactId: string },
+    executionPolicy: ProcessorExecutionPolicy = "ALWAYS",
+  ) {
     super();
     this.id = id;
     this.executionPolicy = executionPolicy;
@@ -35,31 +38,9 @@ function emptyGlobalArgv(overrides: Partial<GlobalArgv> = {}): GlobalArgv {
     threads: 1,
     sync: false,
     continueOnError: false,
-    withNone: [],
-    withScanScope: [],
-    withScanTech: [],
-    withScanApp: [],
-    withGenerateBiz: [],
-    withGenerateApp: [],
-    withGenerateTech: [],
-    withGenerateRel: [],
-    withGenerateView: [],
-    withoutScanScope: [],
-    withoutScanTech: [],
-    withoutScanApp: [],
-    withoutGenerateBiz: [],
-    withoutGenerateApp: [],
-    withoutGenerateTech: [],
-    withoutGenerateRel: [],
-    withoutGenerateView: [],
-    withOnlyScanScope: [],
-    withOnlyScanTech: [],
-    withOnlyScanApp: [],
-    withOnlyGenerateBiz: [],
-    withOnlyGenerateApp: [],
-    withOnlyGenerateTech: [],
-    withOnlyGenerateRel: [],
-    withOnlyGenerateView: [],
+    with: [],
+    without: [],
+    withOnly: [],
     ...overrides,
   };
 }
@@ -68,10 +49,9 @@ function emptyFilters(
   overrides: Partial<ReturnType<typeof resolveProcessorFilters>> = {},
 ) {
   return {
-    withNone: [],
-    without: {},
-    with: {},
-    withOnly: {},
+    with: [],
+    without: [],
+    withOnly: [],
     ...overrides,
   };
 }
@@ -80,98 +60,101 @@ describe("resolveProcessorFilters", () => {
   it("maps global argv to processor filters", () => {
     const filters = resolveProcessorFilters(
       emptyGlobalArgv({
-        withNone: ["scan-app"],
-        withoutScanScope: ["git-repos"],
-        withScanScope: ["unversioned-folders"],
-        withOnlyScanTech: ["build-system-maven-single-module"],
+        without: ["scan.scope.git-repos"],
+        with: ["scan.scope.unversioned-folders"],
+        withOnly: ["scan.source.maven-modules-and-dependencies"],
       }),
     );
 
-    assert.deepEqual(filters.withNone, ["scan-app"]);
-    assert.deepEqual(filters.without["scan-scope"], ["git-repos"]);
-    assert.deepEqual(filters.with["scan-scope"], ["unversioned-folders"]);
-    assert.deepEqual(filters.withOnly["scan-tech"], [
-      "build-system-maven-single-module",
-    ]);
+    assert.deepEqual(filters.without, ["scan.scope.git-repos"]);
+    assert.deepEqual(filters.with, ["scan.scope.unversioned-folders"]);
+    assert.deepEqual(filters.withOnly, ["scan.source.maven-modules-and-dependencies"]);
   });
 });
 
-describe("ProcessorRegistry.listFiltered", () => {
+describe("ProcessorRegistry.listForBuiltInStep", () => {
   it("returns ALWAYS processors by default and excludes ON_DEMAND", () => {
     const registry = new ProcessorRegistry();
-    const always = new StubProcessor({ groupId: "scan-scope", artifactId: "alpha" });
+    const always = new StubProcessor({ groupId: "scan.scope", artifactId: "alpha" });
     const onDemand = new StubProcessor(
-      { groupId: "scan-scope", artifactId: "beta" },
+      { groupId: "scan.scope", artifactId: "beta" },
       "ON_DEMAND",
     );
     registry.register(always);
     registry.register(onDemand);
 
-    const result = registry.listFiltered("scan-scope", emptyFilters());
+    const result = registry.listForBuiltInStep("scan.scope", emptyFilters());
 
     assert.deepEqual(result, [always]);
   });
 
-  it("returns empty list for with-none", () => {
+  it("includes custom subgroup processors for built-in step", () => {
     const registry = new ProcessorRegistry();
-    registry.register(new StubProcessor({ groupId: "scan-scope", artifactId: "alpha" }));
+    const builtIn = new StubProcessor({ groupId: "scan.source", artifactId: "alpha" });
+    const custom = new StubProcessor({ groupId: "scan.source.maven", artifactId: "beta" });
+    registry.register(builtIn);
+    registry.register(custom);
 
-    const result = registry.listFiltered(
-      "scan-scope",
-      emptyFilters({ withNone: ["scan-scope"] }),
+    const result = registry.listForBuiltInStep("scan.source", emptyFilters());
+
+    assert.deepEqual(result, [builtIn, custom]);
+  });
+
+  it("applies global with-only filter", () => {
+    const registry = new ProcessorRegistry();
+    const scope = new StubProcessor({ groupId: "scan.scope", artifactId: "alpha" });
+    const source = new StubProcessor({ groupId: "scan.source", artifactId: "beta" });
+    registry.register(scope);
+    registry.register(source);
+
+    const result = registry.listForBuiltInStep(
+      "scan.scope",
+      emptyFilters({ withOnly: ["scan.scope.alpha"] }),
+    );
+
+    assert.deepEqual(result, [scope]);
+  });
+
+  it("applies wildcard without filter", () => {
+    const registry = new ProcessorRegistry();
+    const alpha = new StubProcessor({ groupId: "scan.source", artifactId: "alpha" });
+    const beta = new StubProcessor({ groupId: "scan.source", artifactId: "beta" });
+    registry.register(alpha);
+    registry.register(beta);
+
+    const result = registry.listForBuiltInStep(
+      "scan.source",
+      emptyFilters({ without: ["scan.source.*"] }),
     );
 
     assert.deepEqual(result, []);
   });
 
-  it("applies with-only filter for ALWAYS and ON_DEMAND", () => {
+  it("enables ON_DEMAND processors via with filter", () => {
     const registry = new ProcessorRegistry();
-    const always = new StubProcessor({ groupId: "scan-scope", artifactId: "alpha" });
+    const always = new StubProcessor({ groupId: "scan.scope", artifactId: "alpha" });
     const onDemand = new StubProcessor(
-      { groupId: "scan-scope", artifactId: "beta" },
+      { groupId: "scan.scope", artifactId: "beta" },
       "ON_DEMAND",
     );
     registry.register(always);
     registry.register(onDemand);
 
-    const result = registry.listFiltered(
-      "scan-scope",
-      emptyFilters({ withOnly: { "scan-scope": ["beta"] } }),
-    );
-
-    assert.deepEqual(result, [onDemand]);
-  });
-
-  it("enables ON_DEMAND processors via with filter alongside ALWAYS", () => {
-    const registry = new ProcessorRegistry();
-    const always = new StubProcessor({ groupId: "scan-scope", artifactId: "alpha" });
-    const onDemand = new StubProcessor(
-      { groupId: "scan-scope", artifactId: "beta" },
-      "ON_DEMAND",
-    );
-    registry.register(always);
-    registry.register(onDemand);
-
-    const result = registry.listFiltered(
-      "scan-scope",
-      emptyFilters({ with: { "scan-scope": ["beta"] } }),
+    const result = registry.listForBuiltInStep(
+      "scan.scope",
+      emptyFilters({ with: ["scan.scope.beta"] }),
     );
 
     assert.deepEqual(result, [always, onDemand]);
   });
 
-  it("applies without filter to ALWAYS processors", () => {
+  it("rejects invalid groupId on register", () => {
     const registry = new ProcessorRegistry();
-    const alpha = new StubProcessor({ groupId: "scan-scope", artifactId: "alpha" });
-    const beta = new StubProcessor({ groupId: "scan-scope", artifactId: "beta" });
-    registry.register(alpha);
-    registry.register(beta);
+  const invalid = new StubProcessor({ groupId: "invalid.group", artifactId: "alpha" });
 
-    const result = registry.listFiltered(
-      "scan-scope",
-      emptyFilters({ without: { "scan-scope": ["alpha"] } }),
+    assert.throws(
+      () => registry.register(invalid),
+      /Invalid processor groupId/,
     );
-
-    assert.deepEqual(result, [beta]);
   });
 });

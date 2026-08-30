@@ -9,7 +9,7 @@ import { GitWorkingCopy } from "../../utils/git-working-copy.js";
 
 export class GitReposProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id: ProcessorId = {
-    groupId: "scan-scope",
+    groupId: "scan.scope",
     artifactId: "git-repos",
   };
 

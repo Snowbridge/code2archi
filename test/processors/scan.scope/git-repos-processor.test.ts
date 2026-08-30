@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { GitReposProcessor } from "../../../src/processors/scan-scope/git-repos-processor.js";
+import { GitReposProcessor } from "../../../src/processors/scan.scope/git-repos-processor.js";
 import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
@@ -16,11 +16,11 @@ function posixNamespace(from: string, to: string): string {
 }
 
 describe("GitReposProcessor", () => {
-  it("exposes scan-scope coordinates", () => {
+  it("exposes scan.scope coordinates", () => {
     const processor = new GitReposProcessor();
 
     assert.deepEqual(processor.id, {
-      groupId: "scan-scope",
+      groupId: "scan.scope",
       artifactId: "git-repos",
     });
     assert.equal(processor.version, "0.2.0");

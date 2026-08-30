@@ -12,7 +12,7 @@ export class UnversionedFoldersProcessor extends AbstractProcessor<
   ScanScopeOutput
 > {
   readonly id: ProcessorId = {
-    groupId: "scan-scope",
+    groupId: "scan.scope",
     artifactId: "unversioned-folders",
   };
 

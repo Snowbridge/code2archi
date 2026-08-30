@@ -7,12 +7,12 @@ import {
 import { packageVersion } from "../../src/package-version.js";
 
 const SCAN_SCOPE_PROCESSOR = {
-  groupId: "scan-scope" as const,
+  groupId: "scan.scope",
   artifactId: "test-processor",
 };
 
-const SCAN_TECH_PROCESSOR = {
-  groupId: "scan-tech" as const,
+const SCAN_SOURCE_PROCESSOR = {
+  groupId: "scan.source",
   artifactId: "test-processor",
 };
 
@@ -40,8 +40,8 @@ describe("RunEntityStore", () => {
 
     const extractedAt = new Date("2026-08-28T09:49:00.123Z");
     store.addCreateIntents(
-      "scan-scope",
-      { groupId: "scan-scope", artifactId: "git-repos" },
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "git-repos" },
       {
         entities: {
           Repository: [{ id: "repo-1", name: "a" }],
@@ -53,7 +53,7 @@ describe("RunEntityStore", () => {
     const repository = store.getEntities("Repository")[0];
     assert.equal(store.getEntities("Repository").length, 1);
     assert.equal(repository?.name, "a");
-    assert.equal(repository?.scannerExtractor, "scan-scope:git-repos");
+    assert.equal(repository?.scannerExtractor, "scan.scope:git-repos");
     assert.equal(repository?.scannerSchema, packageVersion);
     assert.equal(repository?.extractedAt, "2026-08-28T12:49:00.123+03:00");
   });
@@ -65,7 +65,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-tech", { groupId: "scan-tech", artifactId: "maven-module" }, {
+    store.addCreateIntents("scan.source", { groupId: "scan.source", artifactId: "maven-module" }, {
       entities: {
         BuildScript: [{ id: "bs-1" }],
       },
@@ -73,7 +73,7 @@ describe("RunEntityStore", () => {
 
     assert.equal(
       store.getEntities("BuildScript")[0]?.scannerExtractor,
-      "scan-tech:maven-module",
+      "scan.source:maven-module",
     );
   });
 
@@ -86,12 +86,12 @@ describe("RunEntityStore", () => {
 
     assert.throws(
       () =>
-        store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
+        store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
           entities: {
             BuildScript: [{ id: "bs-1" }],
           },
         }),
-      /not allowed for processor group scan-scope/,
+      /not allowed for processor group scan\.scope/,
     );
   });
 
@@ -102,7 +102,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
+    store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
       entities: {
         Repository: [{ id: "same-id", name: "a" }],
       },
@@ -110,7 +110,7 @@ describe("RunEntityStore", () => {
 
     assert.throws(
       () =>
-        store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
+        store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
           entities: {
             Repository: [{ id: "same-id", name: "b" }],
           },
@@ -126,7 +126,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
+    store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
       entities: {
         Repository: [{ id: "shared-id", name: "repo" }],
       },
@@ -134,7 +134,7 @@ describe("RunEntityStore", () => {
 
     assert.throws(
       () =>
-        store.addCreateIntents("scan-tech", SCAN_TECH_PROCESSOR, {
+        store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
           entities: {
             BuildScript: [{ id: "shared-id", script: "build" }],
           },
@@ -150,7 +150,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan-scope", SCAN_SCOPE_PROCESSOR, {
+    store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
       entities: {
         Repository: [{ id: "repo-1", name: "a" }],
       },
@@ -166,12 +166,10 @@ describe("RunEntityStore", () => {
   });
 
   it("mirrors group allowlist from specifications", () => {
-    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan-scope"], ["Repository"]);
-    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan-tech"], [
+    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.scope"], ["Repository"]);
+    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.source"], [
       "BuildScript",
       "RuntimeEnvironment",
-    ]);
-    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan-app"], [
       "ApplicationModule",
       "ApplicationModuleDependency",
       "RestController",
