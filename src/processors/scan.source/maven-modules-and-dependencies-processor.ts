@@ -24,7 +24,7 @@ export class MavenModulesAndDependenciesProcessor extends AbstractProcessor<
     artifactId: "maven-modules-and-dependencies",
   };
 
-  readonly version = "0.1.0";
+  readonly version = "0.2.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
@@ -72,6 +72,11 @@ export class MavenModulesAndDependenciesProcessor extends AbstractProcessor<
         artifactId: dependency.artifactId,
         version: dependency.version,
       })),
+      buildToolVersion: module.buildToolVersion,
+      javaVersion: module.javaVersion,
+      kotlinJvmTarget: module.kotlinJvmTarget,
+      kotlinCompilerVersion: module.kotlinCompilerVersion,
+      nodeVersion: module.nodeVersion,
     }));
   }
 }

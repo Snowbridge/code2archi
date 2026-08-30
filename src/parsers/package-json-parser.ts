@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { mergeNpmChildVersions, parseNpmBuildVersions } from "./build-tool-versions.js";
 import { parseNpmName } from "./npm-name.js";
 
 export interface NpmModuleParseResult {
@@ -12,6 +13,11 @@ export interface NpmModuleParseResult {
   readonly parentName?: string;
   readonly dependencies: Readonly<Record<string, string>>;
   readonly isMultimodule: boolean;
+  readonly buildToolVersion: string;
+  readonly javaVersion: string;
+  readonly kotlinJvmTarget: string;
+  readonly kotlinCompilerVersion: string;
+  readonly nodeVersion: string;
 }
 
 export function parseNpmRepository(
@@ -40,6 +46,8 @@ export function parseNpmRepository(
   const rootBuildScript = rootPackageRelativePath.replace(/\\/g, "/");
   const rootParts = parseNpmName(rootName);
 
+  const rootBuildVersions = parseNpmBuildVersions(rootPackage);
+
   results.push({
     name: rootName,
     groupId: rootParts.groupId,
@@ -49,6 +57,7 @@ export function parseNpmRepository(
     repoPath: posixDirname(rootBuildScript),
     dependencies: readDependencies(rootPackage),
     isMultimodule,
+    ...rootBuildVersions,
   });
 
   if (!isMultimodule) {
@@ -65,6 +74,7 @@ export function parseNpmRepository(
 
     const parts = parseNpmName(pkg.name);
     const normalizedPath = packageRelativePath.replace(/\\/g, "/");
+    const childBuildVersions = mergeNpmChildVersions(pkg, rootPackage);
     results.push({
       name: pkg.name,
       groupId: parts.groupId,
@@ -75,6 +85,7 @@ export function parseNpmRepository(
       parentName: rootName,
       dependencies: readDependencies(pkg),
       isMultimodule: false,
+      ...childBuildVersions,
     });
   }
 

@@ -126,6 +126,7 @@ function defineRelationClass<T extends RelationType>(relationType: T) {
 
 export const AccessRelationship = defineRelationClass("AccessRelationship");
 export const AggregationRelationship = defineRelationClass("AggregationRelationship");
+export const AssignmentRelationship = defineRelationClass("AssignmentRelationship");
 export const AssociationRelationship = defineRelationClass("AssociationRelationship");
 export const CompositionRelationship = defineRelationClass("CompositionRelationship");
 export const FlowRelationship = defineRelationClass("FlowRelationship");

@@ -51,6 +51,11 @@ export function buildModuleDiscoveryIntents(
       repoPath: module.repoPath,
       buildScript: module.buildScript,
       isMultimodule: module.isMultimodule,
+      buildToolVersion: module.buildToolVersion,
+      javaVersion: module.javaVersion,
+      kotlinJvmTarget: module.kotlinJvmTarget,
+      kotlinCompilerVersion: module.kotlinCompilerVersion,
+      nodeVersion: module.nodeVersion,
       ...(module.parentModuleId ? { parentId: module.parentModuleId } : {}),
     });
 

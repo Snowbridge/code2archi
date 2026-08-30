@@ -80,7 +80,7 @@ describe("CodeRepositoriesWithModulesProcessor", () => {
     const archi = createArchiStore().snapshot();
     const output = new CodeRepositoriesWithModulesProcessor().process({ discovery, archi });
 
-    assert.equal(output.profiles?.length, 6);
+    assert.equal(output.profiles?.length, 7);
     assert.equal(output.elements?.length, 5);
     assert.equal(output.relations?.length, 6);
 
@@ -239,6 +239,71 @@ describe("CodeRepositoriesWithModulesProcessor", () => {
     });
 
     assert.equal(output.profiles?.some((profile) => profile.name === "Git repo"), false);
-    assert.equal(output.profiles?.length, 5);
+    assert.equal(output.profiles?.length, 6);
+  });
+
+  it("creates SystemSoftware and Assignment relations for build tool and runtimes", () => {
+    const repository = new Repository({
+      url: "",
+      localPath: "/repo/app",
+      name: "app-repo",
+      namespace: "/app",
+      buildSystems: ["gradle"],
+    });
+    const module = new ApplicationModule({
+      repositoryId: repository.id,
+      buildSystem: "gradle",
+      groupId: "com.example",
+      artifactId: "app",
+      version: "1.0.0",
+      name: "app",
+      repoPath: ".",
+      buildScript: "build.gradle",
+      isMultimodule: false,
+      buildToolVersion: "8.5",
+      javaVersion: "17",
+      kotlinJvmTarget: "17",
+      kotlinCompilerVersion: "1.9.22",
+      nodeVersion: "unknown",
+    });
+
+    const discovery = createDiscoveryStore(repository, [module]).snapshot();
+    const archi = createArchiStore().snapshot();
+    const output = new CodeRepositoriesWithModulesProcessor().process({ discovery, archi });
+
+    const gradleId = computeArchiId("SystemSoftware", "gradle", "8.5");
+    const javaId = computeArchiId("SystemSoftware", "java", "17");
+    const kotlinId = computeArchiId("SystemSoftware", "kotlin", "1.9.22");
+    const buildScriptId = computeArchiId("BuildScript", repository.id, "build.gradle");
+
+    assert.ok(output.elements?.some((element) => element.id === gradleId && element.name === "Gradle 8.5"));
+    assert.ok(output.elements?.some((element) => element.id === javaId && element.name === "Java 17"));
+    assert.ok(output.elements?.some((element) => element.id === kotlinId && element.name === "Kotlin 1.9.22"));
+
+    const assignments = output.relations?.filter(
+      (relation) => relation.relationType === "AssignmentRelationship",
+    );
+    assert.equal(assignments?.length, 3);
+    assert.ok(
+      assignments?.some(
+        (relation) => relation.sourceId === gradleId && relation.targetId === buildScriptId,
+      ),
+    );
+    assert.ok(
+      assignments?.some(
+        (relation) =>
+          relation.sourceId === javaId &&
+          relation.targetId === module.id &&
+          relation.profileIds?.length === 1,
+      ),
+    );
+    assert.ok(
+      assignments?.some(
+        (relation) =>
+          relation.sourceId === kotlinId &&
+          relation.targetId === module.id &&
+          relation.profileIds?.length === 1,
+      ),
+    );
   });
 });

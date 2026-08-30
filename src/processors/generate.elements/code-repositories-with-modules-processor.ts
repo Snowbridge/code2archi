@@ -3,7 +3,7 @@ import type {
   ArchiRelationshipRecord,
 } from "../../archimate-model/archi-create-intents.js";
 import { computeArchiId } from "../../archimate-model/archi-id.js";
-import { ApplicationComponent, Artifact } from "../../archimate-model/elements/archi-element.js";
+import { ApplicationComponent, Artifact, SystemSoftware } from "../../archimate-model/elements/archi-element.js";
 import type { ArchiModelSnapshot } from "../../archimate-model/archi-model-store.js";
 import {
   BuildScriptProfile,
@@ -12,17 +12,20 @@ import {
   LibraryModuleProfile,
   MavenModuleProfile,
   NpmModuleProfile,
+  RunsOnProfile,
   type ArchiProfile,
 } from "../../archimate-model/profiles/profile.js";
 import {
   AggregationRelationship,
+  AssignmentRelationship,
   AssociationRelationship,
   CompositionRelationship,
   RealizationRelationship,
 } from "../../archimate-model/relationships/archi-relationship.js";
+import { UNKNOWN_VERSION } from "../../parsers/build-tool-versions.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/discovery-model-snapshot.js";
 import type { ApplicationModuleDependencyRecord } from "../../discovery-model/entities/application-module-dependency.js";
-import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
+import type { ApplicationModuleRecord, BuildSystem } from "../../discovery-model/entities/application-module.js";
 import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
 import type { DiscoveryEntityRecord } from "../../discovery-model/entities/entity-types.js";
 import { packageVersion } from "../../package-version.js";
@@ -38,6 +41,8 @@ const GENERATOR = "generate.elements:code-repositories-with-modules";
 type ModuleRecord = ApplicationModuleRecord & DiscoveryEntityRecord;
 type DependencyRecord = ApplicationModuleDependencyRecord & DiscoveryEntityRecord;
 
+type SystemSoftwareKind = "gradle" | "maven" | "npm" | "java" | "kotlin" | "node";
+
 export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
   GenerateProcessorInput,
   GenerateProcessorOutput
@@ -47,12 +52,12 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     artifactId: "code-repositories-with-modules",
   };
 
-  readonly version = "0.1.0";
+  readonly version = "0.2.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps Repository and ApplicationModule discovery entities to Git repo, build script, and module ArchiMate elements with relations.";
+    "Maps Repository and ApplicationModule discovery entities to Git repo, build script, module ArchiMate elements, system software, and relations.";
 
   protected doProcess(input: GenerateProcessorInput): GenerateProcessorOutput {
     const { discovery, archi } = input;
@@ -72,12 +77,61 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     const elements: ArchiElementRecord[] = [];
     const relations: ArchiRelationshipRecord[] = [];
     const emittedBuildScriptIds = new Set<string>();
+    const systemSoftwareByKey = new Map<string, string>();
 
     const technologyFolderId = archi.getPredefinedFolderId("technology");
     const applicationFolderId = archi.getPredefinedFolderId("application");
     const gitRepoProfileId = GitRepoProfile.create().id;
     const buildScriptProfileId = BuildScriptProfile.create().id;
     const libraryModuleProfileId = LibraryModuleProfile.create().id;
+    const runsOnProfileId = RunsOnProfile.create().id;
+
+    const ensureSystemSoftware = (kind: SystemSoftwareKind, version: string): string | undefined => {
+      if (version === UNKNOWN_VERSION) {
+        return undefined;
+      }
+
+      const key = `${kind}\u0001${version}`;
+      const existingId = systemSoftwareByKey.get(key);
+      if (existingId) {
+        return existingId;
+      }
+
+      const id = computeArchiId("SystemSoftware", kind, version);
+      const name = this.systemSoftwareName(kind, version);
+      systemSoftwareByKey.set(key, id);
+      elements.push(
+        SystemSoftware.withId(id)
+          .name(name)
+          .inFolder(technologyFolderId)
+          .property("c2a:Id", name)
+          .property("c2a:confidence", "confirmed")
+          .property("c2a:schema", packageVersion)
+          .property("c2a:generator", GENERATOR)
+          .build(),
+      );
+      return id;
+    };
+
+    const emitAssignment = (
+      sourceId: string,
+      targetId: string,
+      logicalId: string,
+      profileIds: readonly string[] = [],
+    ): void => {
+      const relationId = computeArchiId("Assignment", sourceId, targetId, logicalId);
+      relations.push(
+        AssignmentRelationship.withId(relationId)
+          .source(sourceId)
+          .target(targetId)
+          .profiles(...profileIds)
+          .property("c2a:Id", logicalId)
+          .property("c2a:confidence", "confirmed")
+          .property("c2a:schema", packageVersion)
+          .property("c2a:generator", GENERATOR)
+          .build(),
+      );
+    };
 
     for (const repository of this.asRepositories(discovery.listEntities("Repository"))) {
       const moduleCount = discovery.listEntitiesByRef(
@@ -160,6 +214,21 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
           .property("c2a:generator", GENERATOR)
           .build(),
       );
+
+      const buildToolSoftwareId = ensureSystemSoftware(
+        module.buildSystem,
+        module.buildToolVersion,
+      );
+      if (buildToolSoftwareId) {
+        emitAssignment(buildToolSoftwareId, buildScriptId, `${buildToolSoftwareId}:${buildScriptId}`);
+      }
+
+      this.emitRuntimeAssignments(
+        module,
+        ensureSystemSoftware,
+        emitAssignment,
+        runsOnProfileId,
+      );
     }
 
     for (const module of modules) {
@@ -225,6 +294,85 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     };
   }
 
+  private emitRuntimeAssignments(
+    module: ModuleRecord,
+    ensureSystemSoftware: (kind: SystemSoftwareKind, version: string) => string | undefined,
+    emitAssignment: (
+      sourceId: string,
+      targetId: string,
+      logicalId: string,
+      profileIds?: readonly string[],
+    ) => void,
+    runsOnProfileId: string,
+  ): void {
+    const javaIds = new Set<string>();
+
+    const javaSoftwareId = ensureSystemSoftware("java", module.javaVersion);
+    if (javaSoftwareId) {
+      javaIds.add(javaSoftwareId);
+      emitAssignment(
+        javaSoftwareId,
+        module.id,
+        `${javaSoftwareId}:${module.id}:RunsOn`,
+        [runsOnProfileId],
+      );
+    }
+
+    if (
+      module.kotlinJvmTarget !== UNKNOWN_VERSION &&
+      module.kotlinJvmTarget !== module.javaVersion
+    ) {
+      const kotlinJvmSoftwareId = ensureSystemSoftware("java", module.kotlinJvmTarget);
+      if (kotlinJvmSoftwareId && !javaIds.has(kotlinJvmSoftwareId)) {
+        emitAssignment(
+          kotlinJvmSoftwareId,
+          module.id,
+          `${kotlinJvmSoftwareId}:${module.id}:RunsOn`,
+          [runsOnProfileId],
+        );
+      }
+    }
+
+    const kotlinCompilerSoftwareId = ensureSystemSoftware("kotlin", module.kotlinCompilerVersion);
+    if (kotlinCompilerSoftwareId) {
+      emitAssignment(
+        kotlinCompilerSoftwareId,
+        module.id,
+        `${kotlinCompilerSoftwareId}:${module.id}:RunsOn`,
+        [runsOnProfileId],
+      );
+    }
+
+    const nodeSoftwareId = ensureSystemSoftware("node", module.nodeVersion);
+    if (nodeSoftwareId) {
+      emitAssignment(
+        nodeSoftwareId,
+        module.id,
+        `${nodeSoftwareId}:${module.id}:RunsOn`,
+        [runsOnProfileId],
+      );
+    }
+  }
+
+  private systemSoftwareName(kind: SystemSoftwareKind, version: string): string {
+    switch (kind) {
+      case "gradle":
+        return `Gradle ${version}`;
+      case "maven":
+        return `Maven ${version}`;
+      case "npm":
+        return `npm ${version}`;
+      case "java":
+        return `Java ${version}`;
+      case "kotlin":
+        return `Kotlin ${version}`;
+      case "node":
+        return `Node ${version}`;
+      default:
+        throw new Error(`Unsupported system software kind: ${String(kind)}`);
+    }
+  }
+
   private asRepositories(entities: readonly DiscoveryEntityRecord[]): readonly RepositoryRecord[] {
     return entities as unknown as RepositoryRecord[];
   }
@@ -273,7 +421,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     return computeArchiId("BuildScript", repositoryId, buildScript);
   }
 
-  private profileForBuildSystem(buildSystem: ModuleRecord["buildSystem"]): ArchiProfile {
+  private profileForBuildSystem(buildSystem: BuildSystem): ArchiProfile {
     switch (buildSystem) {
       case "npm":
         return NpmModuleProfile.create();
@@ -318,6 +466,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
         { name: "Maven module", factory: () => MavenModuleProfile.create() },
         { name: "Gradle module", factory: () => GradleModuleProfile.create() },
         { name: "Library module", factory: () => LibraryModuleProfile.create() },
+        { name: "Runs on", factory: () => RunsOnProfile.create() },
       ];
 
     for (const candidate of candidates) {

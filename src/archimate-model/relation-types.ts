@@ -1,6 +1,7 @@
 export const RELATION_TYPES = [
   "AccessRelationship",
   "AggregationRelationship",
+  "AssignmentRelationship",
   "AssociationRelationship",
   "CompositionRelationship",
   "FlowRelationship",

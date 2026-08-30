@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { mergeGradleModuleVersions } from "./build-tool-versions.js";
+
 export interface GradleCoordinates {
   readonly groupId: string;
   readonly artifactId: string;
@@ -17,6 +19,11 @@ export interface GradleModuleParseResult {
   readonly childModulePaths: readonly string[];
   readonly dependencies: readonly GradleDependency[];
   readonly isMultimodule: boolean;
+  readonly buildToolVersion: string;
+  readonly javaVersion: string;
+  readonly kotlinJvmTarget: string;
+  readonly kotlinCompilerVersion: string;
+  readonly nodeVersion: string;
 }
 
 const SETTINGS_FILES = ["settings.gradle.kts", "settings.gradle"] as const;
@@ -60,6 +67,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
 
     const content = readFileSync(absoluteBuildScript, "utf8");
     const coordinates = parseCoordinates(content, modulePath === "." ? rootProjectName : path.posix.basename(modulePath));
+    const buildVersions = mergeGradleModuleVersions(repoRoot, content);
     const includesInFile = parseIncludes(content);
     const includes =
       modulePath === "." ? [...new Set([...includesInFile, ...uniqueIncludes])] : includesInFile;
@@ -73,6 +81,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
       childModulePaths,
       dependencies: parseImplementationDependencies(content),
       isMultimodule: includes.length > 0,
+      ...buildVersions,
     });
 
     for (const childModulePath of childModulePaths) {

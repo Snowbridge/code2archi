@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { XMLParser } from "fast-xml-parser";
 
+import { mergeMavenModuleVersions } from "./build-tool-versions.js";
+
 export interface MavenCoordinates {
   readonly groupId: string;
   readonly artifactId: string;
@@ -21,6 +23,11 @@ export interface MavenModuleParseResult {
   readonly childModulePaths: readonly string[];
   readonly dependencies: readonly MavenDependency[];
   readonly isMultimodule: boolean;
+  readonly buildToolVersion: string;
+  readonly javaVersion: string;
+  readonly kotlinJvmTarget: string;
+  readonly kotlinCompilerVersion: string;
+  readonly nodeVersion: string;
 }
 
 interface PomDocument {
@@ -70,7 +77,9 @@ export function parseMavenRepository(
       return;
     }
 
+    const pomContent = readFileSync(absolutePomPath, "utf8");
     const effective = buildEffectivePom(repoRoot, normalized);
+    const buildVersions = mergeMavenModuleVersions(repoRoot, effective.properties, pomContent);
     const childModulePaths = effective.modules.map((moduleName) => {
       const moduleDir = path.posix.join(posixDirname(normalized), moduleName);
       return path.posix.join(moduleDir, "pom.xml");
@@ -90,6 +99,7 @@ export function parseMavenRepository(
       childModulePaths,
       dependencies: effective.dependencies,
       isMultimodule: effective.modules.length > 0,
+      ...buildVersions,
     });
 
     for (const childPath of childModulePaths) {
@@ -107,6 +117,7 @@ function buildEffectivePom(repoRoot: string, pomRelativePath: string): {
   readonly version: string;
   readonly modules: readonly string[];
   readonly dependencies: readonly MavenDependency[];
+  readonly properties: Record<string, string>;
 } {
   const chain = loadParentChain(repoRoot, pomRelativePath);
   const mergedProperties: Record<string, string> = {};
@@ -139,6 +150,7 @@ function buildEffectivePom(repoRoot: string, pomRelativePath: string): {
     version: coordinates.version,
     modules: leaf.modules ?? [],
     dependencies,
+    properties: mergedProperties,
   };
 }
 

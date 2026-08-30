@@ -1,5 +1,6 @@
 import type { DiscoveryEntityBase } from "./entity-base.js";
 import { Entity } from "./entity.js";
+import { UNKNOWN_VERSION } from "../../parsers/build-tool-versions.js";
 
 export type BuildSystem = "maven" | "gradle" | "npm";
 
@@ -14,6 +15,11 @@ export interface ApplicationModuleCreateIntent {
   readonly repoPath: string;
   readonly buildScript: string;
   readonly isMultimodule: boolean;
+  readonly buildToolVersion: string;
+  readonly javaVersion: string;
+  readonly kotlinJvmTarget: string;
+  readonly kotlinCompilerVersion: string;
+  readonly nodeVersion: string;
   readonly parentId?: string;
 }
 
@@ -27,6 +33,11 @@ export interface ApplicationModuleNaturalKeys {
   readonly repoPath: string;
   readonly buildScript: string;
   readonly isMultimodule: boolean;
+  readonly buildToolVersion?: string;
+  readonly javaVersion?: string;
+  readonly kotlinJvmTarget?: string;
+  readonly kotlinCompilerVersion?: string;
+  readonly nodeVersion?: string;
   readonly parentId?: string;
 }
 
@@ -42,6 +53,11 @@ export class ApplicationModule extends Entity {
   readonly repoPath: string;
   readonly buildScript: string;
   readonly isMultimodule: boolean;
+  readonly buildToolVersion: string;
+  readonly javaVersion: string;
+  readonly kotlinJvmTarget: string;
+  readonly kotlinCompilerVersion: string;
+  readonly nodeVersion: string;
   readonly parentId?: string;
 
   constructor(naturalKeys: ApplicationModuleNaturalKeys) {
@@ -60,6 +76,11 @@ export class ApplicationModule extends Entity {
     this.repoPath = naturalKeys.repoPath;
     this.buildScript = naturalKeys.buildScript;
     this.isMultimodule = naturalKeys.isMultimodule;
+    this.buildToolVersion = naturalKeys.buildToolVersion ?? UNKNOWN_VERSION;
+    this.javaVersion = naturalKeys.javaVersion ?? UNKNOWN_VERSION;
+    this.kotlinJvmTarget = naturalKeys.kotlinJvmTarget ?? UNKNOWN_VERSION;
+    this.kotlinCompilerVersion = naturalKeys.kotlinCompilerVersion ?? UNKNOWN_VERSION;
+    this.nodeVersion = naturalKeys.nodeVersion ?? UNKNOWN_VERSION;
     if (naturalKeys.parentId !== undefined) {
       this.parentId = naturalKeys.parentId;
     }
@@ -96,6 +117,11 @@ export class ApplicationModule extends Entity {
       repoPath: this.repoPath,
       buildScript: this.buildScript,
       isMultimodule: this.isMultimodule,
+      buildToolVersion: this.buildToolVersion,
+      javaVersion: this.javaVersion,
+      kotlinJvmTarget: this.kotlinJvmTarget,
+      kotlinCompilerVersion: this.kotlinCompilerVersion,
+      nodeVersion: this.nodeVersion,
       ...(this.parentId !== undefined ? { parentId: this.parentId } : {}),
     };
   }

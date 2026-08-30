@@ -1,24 +1,27 @@
 import { computeArchiId } from "../archi-id.js";
 import type { ConceptType } from "../concept-types.js";
+import type { RelationType } from "../relation-types.js";
+
+export type ProfileConceptType = ConceptType | RelationType;
 
 export interface ArchiProfileCreateIntent {
   readonly id: string;
   readonly name: string;
-  readonly conceptType: ConceptType;
+  readonly conceptType: ProfileConceptType;
 }
 
 export abstract class ArchiProfile {
   readonly id: string;
   readonly name: string;
-  readonly conceptType: ConceptType;
+  readonly conceptType: ProfileConceptType;
 
-  protected constructor(conceptType: ConceptType, name: string) {
+  protected constructor(conceptType: ProfileConceptType, name: string) {
     this.conceptType = conceptType;
     this.name = name;
     this.id = ArchiProfile.computeId(conceptType, name);
   }
 
-  static computeId(conceptType: ConceptType, name: string): string {
+  static computeId(conceptType: ProfileConceptType, name: string): string {
     return computeArchiId("Profile", conceptType, name);
   }
 
@@ -52,6 +55,12 @@ abstract class ApplicationServiceProfile extends ArchiProfile {
 abstract class ApplicationInterfaceProfile extends ArchiProfile {
   protected constructor(name: string) {
     super("ApplicationInterface", name);
+  }
+}
+
+abstract class AssignmentRelationshipProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("AssignmentRelationship", name);
   }
 }
 
@@ -123,6 +132,23 @@ function defineApplicationInterfaceProfile(profileName: string) {
   return NamedProfile;
 }
 
+function defineAssignmentRelationshipProfile(profileName: string) {
+  class NamedProfile extends AssignmentRelationshipProfile {
+    static readonly CONCEPT_TYPE = "AssignmentRelationship" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
 export const GitRepoProfile = defineArtifactProfile("Git repo");
 export const BuildScriptProfile = defineArtifactProfile("Build script");
 export const NpmModuleProfile = defineApplicationComponentProfile("NPM module");
@@ -131,3 +157,4 @@ export const GradleModuleProfile = defineApplicationComponentProfile("Gradle mod
 export const LibraryModuleProfile = defineApplicationComponentProfile("Library module");
 export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
 export const RestClientProfile = defineApplicationInterfaceProfile("REST Client");
+export const RunsOnProfile = defineAssignmentRelationshipProfile("Runs on");

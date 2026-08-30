@@ -17,7 +17,7 @@ import {
   type ArchiFolder,
   type ArchiFolderCreateIntent,
 } from "./folders/archi-folder.js";
-import { ArchiProfile, type ArchiProfileCreateIntent } from "./profiles/profile.js";
+import { ArchiProfile, type ArchiProfileCreateIntent, type ProfileConceptType } from "./profiles/profile.js";
 import { isRelationType, type RelationType } from "./relation-types.js";
 import {
   ArchiRelationship,
@@ -27,6 +27,7 @@ import {
 const GENERATE_ELEMENTS_RELATION_TYPES: readonly RelationType[] = [
   "AccessRelationship",
   "AggregationRelationship",
+  "AssignmentRelationship",
   "AssociationRelationship",
   "CompositionRelationship",
   "FlowRelationship",
@@ -52,7 +53,7 @@ export interface ArchiModelSnapshot {
     conceptType: ConceptType,
     name: string,
   ): readonly ArchiElementCreateIntent[];
-  findProfile(name: string, conceptType: ConceptType): ArchiProfileCreateIntent | undefined;
+  findProfile(name: string, conceptType: ProfileConceptType): ArchiProfileCreateIntent | undefined;
   listFolders(): readonly ArchiFolder[];
   listElements(): readonly ArchiElementCreateIntent[];
   listProfiles(): readonly ArchiProfileCreateIntent[];
@@ -215,7 +216,7 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  findProfile(name: string, conceptType: ConceptType): ArchiProfileCreateIntent | undefined {
+  findProfile(name: string, conceptType: ProfileConceptType): ArchiProfileCreateIntent | undefined {
     const id = ArchiProfile.computeId(conceptType, name);
     const profile = this.profiles.get(id);
     if (profile && profile.name === name && profile.conceptType === conceptType) {
@@ -551,7 +552,7 @@ export class ArchiModelStore {
 
   private findProfileByNameAndType(
     name: string,
-    conceptType: ConceptType,
+    conceptType: ProfileConceptType,
   ): ArchiProfileCreateIntent | undefined {
     return [...this.profiles.values()].find(
       (profile) => profile.name === name && profile.conceptType === conceptType,
