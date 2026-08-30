@@ -5,6 +5,8 @@ import type { ArchiModelStore } from "./archi-model-store.js";
 import type { ArchiElementCreateIntent } from "./elements/archi-element.js";
 import type { ArchiFolder } from "./folders/archi-folder.js";
 import type { ArchiProfileCreateIntent } from "./profiles/profile.js";
+import { archimateRelationXsiType } from "./relation-types.js";
+import type { ArchiRelationshipCreateIntent } from "./relationships/archi-relationship.js";
 import { getLogger } from "../platform/logging/index.js";
 
 export interface ArchiModelWriteInput {
@@ -16,6 +18,7 @@ interface FolderNode {
   readonly folder: ArchiFolder;
   children: FolderNode[];
   elements: ArchiElementCreateIntent[];
+  relations: ArchiRelationshipCreateIntent[];
 }
 
 export class ArchiModelWriter {
@@ -24,6 +27,7 @@ export class ArchiModelWriter {
     const absoluteOutput = path.resolve(input.outputFile);
     logger.info("writing archimate-model", { path: absoluteOutput });
 
+    input.store.validateForWrite();
     const xml = this.serialize(input.store);
     writeFileSync(absoluteOutput, xml, "utf8");
 
@@ -33,8 +37,10 @@ export class ArchiModelWriter {
   private serialize(store: ArchiModelStore): string {
     const folders = store.listFolders();
     const elements = store.listElements();
+    const relations = store.listRelations();
     const profiles = store.listProfiles();
-    const folderNodes = this.buildFolderTree(folders, elements);
+    const relationsFolderId = store.getPredefinedFolderId("relations");
+    const folderNodes = this.buildFolderTree(folders, elements, relations, relationsFolderId);
     const lines: string[] = [
       '<?xml version="1.0" encoding="UTF-8"?>',
       `<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="${escapeXml(
@@ -57,11 +63,13 @@ export class ArchiModelWriter {
   private buildFolderTree(
     folders: readonly ArchiFolder[],
     elements: readonly ArchiElementCreateIntent[],
+    relations: readonly ArchiRelationshipCreateIntent[],
+    relationsFolderId: string,
   ): FolderNode[] {
     const nodes = new Map<string, FolderNode>(
       folders.map((folder) => [
         folder.id,
-        { folder, children: [], elements: [] },
+        { folder, children: [], elements: [], relations: [] },
       ]),
     );
 
@@ -70,6 +78,11 @@ export class ArchiModelWriter {
       if (node) {
         node.elements.push(element);
       }
+    }
+
+    const relationsNode = nodes.get(relationsFolderId);
+    if (relationsNode) {
+      relationsNode.relations.push(...relations);
     }
 
     const roots: FolderNode[] = [];
@@ -92,6 +105,7 @@ export class ArchiModelWriter {
     for (const node of nodes.values()) {
       node.children.sort(sortNodes);
       node.elements.sort((a, b) => a.name.localeCompare(b.name));
+      node.relations.sort((a, b) => a.id.localeCompare(b.id));
     }
 
     roots.sort(sortNodes);
@@ -111,6 +125,10 @@ export class ArchiModelWriter {
 
     for (const element of node.elements) {
       lines.push(this.serializeElement(element, indent + 1));
+    }
+
+    for (const relation of node.relations) {
+      lines.push(this.serializeRelationship(relation, indent + 1));
     }
 
     lines.push(`${pad}</folder>`);
@@ -134,6 +152,30 @@ export class ArchiModelWriter {
     }
 
     for (const property of element.properties ?? []) {
+      lines.push(
+        `${pad}  <property key="${escapeXml(property.key)}" value="${escapeXml(property.value)}"/>`,
+      );
+    }
+
+    lines.push(`${pad}</element>`);
+    return lines.join("\n");
+  }
+
+  private serializeRelationship(relation: ArchiRelationshipCreateIntent, indent: number): string {
+    const pad = "  ".repeat(indent);
+    const profilesAttr =
+      relation.profileIds && relation.profileIds.length > 0
+        ? ` profiles="${escapeXml(relation.profileIds.join(" "))}"`
+        : "";
+    const lines = [
+      `${pad}<element xsi:type="${escapeXml(archimateRelationXsiType(relation.relationType))}" id="${escapeXml(
+        relation.id,
+      )}"${profilesAttr} source="${escapeXml(relation.sourceId)}" target="${escapeXml(
+        relation.targetId,
+      )}">`,
+    ];
+
+    for (const property of relation.properties ?? []) {
       lines.push(
         `${pad}  <property key="${escapeXml(property.key)}" value="${escapeXml(property.value)}"/>`,
       );

@@ -7,6 +7,7 @@ import {
   ArchimateDiagramModel,
 } from "../../src/archimate-model/elements/archi-element.js";
 import { ArchiFolderIds } from "../../src/archimate-model/folders/archi-folder.js";
+import { ServingRelationship } from "../../src/archimate-model/relationships/archi-relationship.js";
 
 describe("ArchiModelStore", () => {
   it("initializes predefined layer folders", () => {
@@ -121,5 +122,79 @@ describe("ArchiModelStore", () => {
 
   it("uses deterministic predefined folder ids", () => {
     assert.equal(ArchiFolderIds.rootIdFor("business"), ArchiFolderIds.rootIdFor("business"));
+  });
+
+  it("accepts relationship create-intents in the same bundle as elements", () => {
+    const store = new ArchiModelStore({
+      modelName: "Example",
+      modelId: "model-id",
+    });
+    const applicationFolderId = store.getPredefinedFolderId("application");
+    const source = ApplicationComponent.withId("source-id")
+      .name("service-a")
+      .inFolder(applicationFolderId)
+      .build();
+    const target = ApplicationComponent.withId("target-id")
+      .name("service-b")
+      .inFolder(applicationFolderId)
+      .build();
+    const relation = ServingRelationship.withId("relation-id")
+      .source("target-id")
+      .target("source-id")
+      .property("c2a:Id", "relation-id")
+      .build();
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
+      {
+        relations: [relation],
+        elements: [source, target],
+      },
+    );
+
+    assert.equal(store.listRelations().length, 1);
+    assert.equal(store.listRelations()[0]?.relationType, "ServingRelationship");
+    assert.equal(store.snapshot().getRelationship("relation-id")?.sourceId, "target-id");
+  });
+
+  it("defers relationship endpoint validation until validateForWrite", () => {
+    const store = new ArchiModelStore({
+      modelName: "Example",
+      modelId: "model-id",
+    });
+    const relation = ServingRelationship.withId("relation-id")
+      .source("missing-source")
+      .target("missing-target")
+      .build();
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
+      { relations: [relation] },
+    );
+
+    assert.throws(() => store.validateForWrite(), /missing source element: missing-source/);
+  });
+
+  it("rejects relationship create-intents for generate.views", () => {
+    const store = new ArchiModelStore({
+      modelName: "Example",
+      modelId: "model-id",
+    });
+    const relation = ServingRelationship.withId("relation-id")
+      .source("source-id")
+      .target("target-id")
+      .build();
+
+    assert.throws(
+      () =>
+        store.addCreateIntents(
+          "generate.views",
+          { groupId: "generate.views", artifactId: "demo" },
+          { relations: [relation] },
+        ),
+      /Relationship create-intents are not allowed for processor group generate\.views/,
+    );
   });
 });

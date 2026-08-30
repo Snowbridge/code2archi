@@ -11,7 +11,8 @@ function countArchiCreateIntents(output: ArchiCreateIntents): number {
   return (
     (output.folders?.length ?? 0) +
     (output.elements?.length ?? 0) +
-    (output.profiles?.length ?? 0)
+    (output.profiles?.length ?? 0) +
+    (output.relations?.length ?? 0)
   );
 }
 
@@ -44,7 +45,12 @@ export function runGenerateProcessorGroup(
     }
 
     const count = countArchiCreateIntents(output);
-    if (!output.folders?.length && !output.elements?.length && !output.profiles?.length) {
+    if (
+      !output.folders?.length &&
+      !output.elements?.length &&
+      !output.profiles?.length &&
+      !output.relations?.length
+    ) {
       processor.logCompleted(0);
       continue;
     }

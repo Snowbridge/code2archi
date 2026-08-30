@@ -18,12 +18,35 @@ import {
   type ArchiFolderCreateIntent,
 } from "./folders/archi-folder.js";
 import { ArchiProfile, type ArchiProfileCreateIntent } from "./profiles/profile.js";
+import { isRelationType, type RelationType } from "./relation-types.js";
+import {
+  ArchiRelationship,
+  type ArchiRelationshipCreateIntent,
+} from "./relationships/archi-relationship.js";
+
+const GENERATE_ELEMENTS_RELATION_TYPES: readonly RelationType[] = [
+  "AccessRelationship",
+  "AssociationRelationship",
+  "CompositionRelationship",
+  "FlowRelationship",
+  "RealizationRelationship",
+  "ServingRelationship",
+  "TriggeringRelationship",
+];
 
 export interface ArchiModelSnapshot {
   getFolder(id: string): ArchiFolder | undefined;
   findFolders(query: ArchiFolderQuery): readonly ArchiFolder[];
   getElement(id: string): ArchiElementCreateIntent | undefined;
-  findById(id: string): ArchiFolder | ArchiElementCreateIntent | ArchiProfileCreateIntent | undefined;
+  getRelationship(id: string): ArchiRelationshipCreateIntent | undefined;
+  findById(
+    id: string,
+  ):
+    | ArchiFolder
+    | ArchiElementCreateIntent
+    | ArchiProfileCreateIntent
+    | ArchiRelationshipCreateIntent
+    | undefined;
   findByConceptTypeAndName(
     conceptType: ConceptType,
     name: string,
@@ -32,6 +55,7 @@ export interface ArchiModelSnapshot {
   listFolders(): readonly ArchiFolder[];
   listElements(): readonly ArchiElementCreateIntent[];
   listProfiles(): readonly ArchiProfileCreateIntent[];
+  listRelations(): readonly ArchiRelationshipCreateIntent[];
   getPredefinedFolderId(key: PredefinedFolderKey): string;
 }
 
@@ -112,11 +136,22 @@ function toArchiProfileCreateIntent(
   return record;
 }
 
+function toArchiRelationshipCreateIntent(
+  record: ArchiRelationship | ArchiRelationshipCreateIntent,
+): ArchiRelationshipCreateIntent {
+  if (record instanceof ArchiRelationship) {
+    return record.toCreateIntent();
+  }
+
+  return record;
+}
+
 class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
   constructor(
     private readonly folders: ReadonlyMap<string, ArchiFolder>,
     private readonly elements: ReadonlyMap<string, ArchiElementCreateIntent>,
     private readonly profiles: ReadonlyMap<string, ArchiProfileCreateIntent>,
+    private readonly relations: ReadonlyMap<string, ArchiRelationshipCreateIntent>,
     private readonly predefinedFolderIds: Readonly<Record<PredefinedFolderKey, string>>,
   ) {}
 
@@ -150,11 +185,23 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
     return this.elements.get(id);
   }
 
+  getRelationship(id: string): ArchiRelationshipCreateIntent | undefined {
+    return this.relations.get(id);
+  }
+
   findById(
     id: string,
-  ): ArchiFolder | ArchiElementCreateIntent | ArchiProfileCreateIntent | undefined {
+  ):
+    | ArchiFolder
+    | ArchiElementCreateIntent
+    | ArchiProfileCreateIntent
+    | ArchiRelationshipCreateIntent
+    | undefined {
     return (
-      this.folders.get(id) ?? this.elements.get(id) ?? this.profiles.get(id)
+      this.folders.get(id) ??
+      this.elements.get(id) ??
+      this.profiles.get(id) ??
+      this.relations.get(id)
     );
   }
 
@@ -190,6 +237,10 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
     return [...this.profiles.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
+  listRelations(): readonly ArchiRelationshipCreateIntent[] {
+    return [...this.relations.values()].sort((a, b) => a.id.localeCompare(b.id));
+  }
+
   getPredefinedFolderId(key: PredefinedFolderKey): string {
     return this.predefinedFolderIds[key];
   }
@@ -199,6 +250,7 @@ export class ArchiModelStore {
   private readonly folders = new Map<string, ArchiFolder>();
   private readonly elements = new Map<string, ArchiElementCreateIntent>();
   private readonly profiles = new Map<string, ArchiProfileCreateIntent>();
+  private readonly relations = new Map<string, ArchiRelationshipCreateIntent>();
   private readonly globalIds = new Set<string>();
   private readonly predefinedFolderIds: Record<PredefinedFolderKey, string>;
   readonly modelName: string;
@@ -289,6 +341,27 @@ export class ArchiModelStore {
         this.addProfileIntent(builtInGroupId, toArchiProfileCreateIntent(profileRecord));
       }
     }
+
+    if (intents.relations) {
+      for (const relationRecord of intents.relations) {
+        this.addRelationIntent(builtInGroupId, toArchiRelationshipCreateIntent(relationRecord));
+      }
+    }
+  }
+
+  validateForWrite(): void {
+    for (const relation of this.relations.values()) {
+      if (!this.elements.has(relation.sourceId)) {
+        throw new Error(
+          `Relationship ${relation.id} references missing source element: ${relation.sourceId}`,
+        );
+      }
+      if (!this.elements.has(relation.targetId)) {
+        throw new Error(
+          `Relationship ${relation.id} references missing target element: ${relation.targetId}`,
+        );
+      }
+    }
   }
 
   snapshot(): ArchiModelSnapshot {
@@ -297,6 +370,7 @@ export class ArchiModelStore {
         deepFreeze(new Map(this.folders)),
         deepFreeze(new Map(this.elements)),
         deepFreeze(new Map(this.profiles)),
+        deepFreeze(new Map(this.relations)),
         deepFreeze({ ...this.predefinedFolderIds }),
       ),
     );
@@ -312,6 +386,10 @@ export class ArchiModelStore {
 
   listProfiles(): readonly ArchiProfileCreateIntent[] {
     return [...this.profiles.values()].sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  listRelations(): readonly ArchiRelationshipCreateIntent[] {
+    return [...this.relations.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
   private addFolderIntent(builtInGroupId: BuiltInProcessorGroupId, intent: ArchiFolderCreateIntent): void {
@@ -368,6 +446,35 @@ export class ArchiModelStore {
 
     const profile = Object.freeze({ ...intent });
     this.profiles.set(intent.id, profile);
+    this.globalIds.add(intent.id);
+  }
+
+  private addRelationIntent(
+    builtInGroupId: BuiltInProcessorGroupId,
+    intent: ArchiRelationshipCreateIntent,
+  ): void {
+    if (builtInGroupId !== "generate.elements") {
+      throw new Error(
+        `Relationship create-intents are not allowed for processor group ${builtInGroupId}`,
+      );
+    }
+
+    if (!isRelationType(intent.relationType)) {
+      throw new Error(`Unknown relationship type: ${intent.relationType}`);
+    }
+
+    if (!GENERATE_ELEMENTS_RELATION_TYPES.includes(intent.relationType)) {
+      throw new Error(
+        `Relationship type ${intent.relationType} is not allowed for processor group ${builtInGroupId}`,
+      );
+    }
+
+    if (this.globalIds.has(intent.id)) {
+      throw new Error(`Duplicate id: ${intent.id} (relationship: ${intent.relationType})`);
+    }
+
+    const relation = Object.freeze({ ...intent });
+    this.relations.set(intent.id, relation);
     this.globalIds.add(intent.id);
   }
 
