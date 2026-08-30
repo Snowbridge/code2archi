@@ -5,6 +5,7 @@ import {
   BuildScriptProfile,
   GitRepoProfile,
   LibraryModuleProfile,
+  RestControllerProfile,
 } from "../../src/archimate-model/profiles/profile.js";
 
 describe("ArchiProfile", () => {
@@ -36,5 +37,12 @@ describe("ArchiProfile", () => {
       name: "Library module",
       conceptType: "ApplicationComponent",
     });
+  });
+
+  it("fixes conceptType via intermediate profile base classes", () => {
+    assert.equal(GitRepoProfile.create().conceptType, "Artifact");
+    assert.equal(BuildScriptProfile.create().conceptType, "Artifact");
+    assert.equal(LibraryModuleProfile.create().conceptType, "ApplicationComponent");
+    assert.equal(RestControllerProfile.create().conceptType, "ApplicationService");
   });
 });

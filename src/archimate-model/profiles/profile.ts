@@ -31,13 +31,37 @@ export abstract class ArchiProfile {
   }
 }
 
-function defineNamedProfile<T extends ConceptType>(conceptType: T, profileName: string) {
-  class NamedProfile extends ArchiProfile {
-    static readonly CONCEPT_TYPE = conceptType;
+abstract class ArtifactProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("Artifact", name);
+  }
+}
+
+abstract class ApplicationComponentProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ApplicationComponent", name);
+  }
+}
+
+abstract class ApplicationServiceProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ApplicationService", name);
+  }
+}
+
+abstract class ApplicationInterfaceProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ApplicationInterface", name);
+  }
+}
+
+function defineArtifactProfile(profileName: string) {
+  class NamedProfile extends ArtifactProfile {
+    static readonly CONCEPT_TYPE = "Artifact" as const;
     static readonly PROFILE_NAME = profileName;
 
     constructor() {
-      super(conceptType, profileName);
+      super(profileName);
     }
 
     static create(): NamedProfile {
@@ -48,20 +72,62 @@ function defineNamedProfile<T extends ConceptType>(conceptType: T, profileName: 
   return NamedProfile;
 }
 
-export const GitRepoProfile = defineNamedProfile("Artifact", "Git repo");
-export const BuildScriptProfile = defineNamedProfile("Artifact", "Build script");
-export const NpmModuleProfile = defineNamedProfile("ApplicationComponent", "NPM module");
-export const MavenModuleProfile = defineNamedProfile("ApplicationComponent", "Maven module");
-export const GradleModuleProfile = defineNamedProfile("ApplicationComponent", "Gradle module");
-export const LibraryModuleProfile = defineNamedProfile(
-  "ApplicationComponent",
-  "Library module",
-);
-export const RestControllerProfile = defineNamedProfile(
-  "ApplicationService",
-  "REST Controller",
-);
-export const RestClientProfile = defineNamedProfile(
-  "ApplicationInterface",
-  "REST Client",
-);
+function defineApplicationComponentProfile(profileName: string) {
+  class NamedProfile extends ApplicationComponentProfile {
+    static readonly CONCEPT_TYPE = "ApplicationComponent" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
+function defineApplicationServiceProfile(profileName: string) {
+  class NamedProfile extends ApplicationServiceProfile {
+    static readonly CONCEPT_TYPE = "ApplicationService" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
+function defineApplicationInterfaceProfile(profileName: string) {
+  class NamedProfile extends ApplicationInterfaceProfile {
+    static readonly CONCEPT_TYPE = "ApplicationInterface" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
+export const GitRepoProfile = defineArtifactProfile("Git repo");
+export const BuildScriptProfile = defineArtifactProfile("Build script");
+export const NpmModuleProfile = defineApplicationComponentProfile("NPM module");
+export const MavenModuleProfile = defineApplicationComponentProfile("Maven module");
+export const GradleModuleProfile = defineApplicationComponentProfile("Gradle module");
+export const LibraryModuleProfile = defineApplicationComponentProfile("Library module");
+export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
+export const RestClientProfile = defineApplicationInterfaceProfile("REST Client");
