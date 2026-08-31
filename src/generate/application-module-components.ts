@@ -76,24 +76,31 @@ export function resolveModuleInRepository(
 
 export function collectLibraryModuleIds(
   dependencies: readonly ApplicationModuleDependencyRecord[],
-  modulesById: ReadonlyMap<string, ApplicationModuleRecord>,
-  coordinateIndex: ModulesByRepositoryAndCoordinates,
+  modules: readonly ApplicationModuleRecord[],
 ): ReadonlySet<string> {
+  const modulesByCoordinate = new Map<string, ApplicationModuleRecord[]>();
+
+  for (const module of modules) {
+    const coordinateKey = moduleCoordinateKey(module.groupId, module.artifactId);
+    const matches = modulesByCoordinate.get(coordinateKey);
+    if (matches === undefined) {
+      modulesByCoordinate.set(coordinateKey, [module]);
+      continue;
+    }
+    matches.push(module);
+  }
+
   const libraryModuleIds = new Set<string>();
 
   for (const dependency of dependencies) {
-    const consumer = modulesById.get(dependency.parentId);
-    if (consumer === undefined) {
+    const targetModules = modulesByCoordinate.get(
+      moduleCoordinateKey(dependency.groupId, dependency.artifactId),
+    );
+    if (targetModules === undefined) {
       continue;
     }
 
-    const targetModule = resolveModuleInRepository(
-      coordinateIndex,
-      consumer.repositoryId,
-      dependency.groupId,
-      dependency.artifactId,
-    );
-    if (targetModule !== undefined) {
+    for (const targetModule of targetModules) {
       libraryModuleIds.add(targetModule.id);
     }
   }

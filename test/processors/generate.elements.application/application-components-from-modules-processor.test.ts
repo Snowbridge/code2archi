@@ -247,6 +247,73 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     );
   });
 
+  it("assigns Library profile for cross-repository dependency without Aggregation", () => {
+    const consumerRepository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/consumer",
+      name: "consumer",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const libraryRepository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/library",
+      name: "library",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const consumer = moduleRecord({
+      repositoryId: consumerRepository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const library = moduleRecord({
+      repositoryId: libraryRepository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "lib",
+      version: "2",
+      name: "lib",
+      repoPath: "lib",
+      buildScript: "lib/pom.xml",
+      isMultimodule: false,
+    });
+    const dependency = dependencyRecord({
+      parentId: consumer.id,
+      groupId: "com.example",
+      artifactId: "lib",
+      version: "2.0.0",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedModuleArtifact(store, consumer);
+    seedModuleArtifact(store, library);
+
+    const processor = new ApplicationComponentsFromModulesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot(
+        [consumerRepository, libraryRepository],
+        [consumer, library],
+        [dependency],
+      ),
+      archi: store.snapshot(),
+    });
+
+    const libraryComponent = output.elements?.find(
+      (element) => element.id === applicationComponentIdForModule(library.id),
+    );
+    assert.deepEqual(libraryComponent?.profileIds, [LibraryModuleProfile.create().id]);
+    assert.equal(
+      output.relations?.some((relation) => relation.relationType === "AggregationRelationship"),
+      false,
+    );
+  });
+
   it("skips multimodule parent and skips external dependency aggregation", () => {
     const repository = repositoryRecord({
       url: "",

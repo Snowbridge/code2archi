@@ -99,11 +99,7 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
       .map((record) => record as unknown as ApplicationModuleDependencyRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
-    const libraryModuleIds = collectLibraryModuleIds(
-      dependencies,
-      modulesById,
-      coordinateIndex,
-    );
+    const libraryModuleIds = collectLibraryModuleIds(dependencies, allModules);
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
 
