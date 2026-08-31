@@ -1,9 +1,12 @@
 import type { ArchiProperty } from "../archimate-model/elements/archi-element.js";
 import { packageVersion } from "../package-version.js";
 
+export type GenerateConfidence = "confirmed" | "inferred" | "unknown";
+
 export interface StandardGenerateElementPropertiesInput {
   readonly logicalId: string;
   readonly generatorCoordinate: string;
+  readonly confidence?: GenerateConfidence;
 }
 
 export function standardGenerateElementProperties(
@@ -11,7 +14,7 @@ export function standardGenerateElementProperties(
 ): readonly ArchiProperty[] {
   return [
     { key: "c2a:Id", value: input.logicalId },
-    { key: "c2a:confidence", value: "confirmed" },
+    { key: "c2a:confidence", value: input.confidence ?? "confirmed" },
     { key: "c2a:schema", value: packageVersion },
     { key: "c2a:generator", value: input.generatorCoordinate },
   ];

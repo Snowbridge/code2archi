@@ -151,6 +151,9 @@ function defineAssignmentRelationshipProfile(profileName: string) {
 
 export const GitRepoProfile = defineArtifactProfile("Source code repo");
 export const BuildScriptProfile = defineArtifactProfile("Build script");
+export const MavenModuleArtifactProfile = defineArtifactProfile("Maven module");
+export const GradleModuleArtifactProfile = defineArtifactProfile("Gradle module");
+export const NpmModuleArtifactProfile = defineArtifactProfile("NPM module");
 export const NpmModuleProfile = defineApplicationComponentProfile("NPM module");
 export const MavenModuleProfile = defineApplicationComponentProfile("Maven module");
 export const GradleModuleProfile = defineApplicationComponentProfile("Gradle module");
@@ -158,3 +161,5 @@ export const LibraryModuleProfile = defineApplicationComponentProfile("Library m
 export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
 export const RestClientProfile = defineApplicationInterfaceProfile("REST Client");
 export const RunsOnProfile = defineAssignmentRelationshipProfile("Runs on");
+export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with");
+export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");
