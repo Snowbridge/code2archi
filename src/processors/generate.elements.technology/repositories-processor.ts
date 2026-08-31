@@ -13,6 +13,7 @@ import {
 } from "../../generate/archi-folder-path.js";
 import { standardGenerateElementProperties } from "../../generate/archi-element-properties.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
+import { decorateElementName } from "../../generate/element-name-decoration.js";
 import type { DiscoveryEntityRecord } from "../../discovery-model/entities/entity-types.js";
 import {
   AbstractProcessor,
@@ -81,7 +82,7 @@ export class RepositoriesProcessor extends AbstractProcessor<
       }
 
       let elementBuilder = Artifact.withId(repository.id)
-        .name(String(repository.name))
+        .name(decorateElementName("repo-artifact", String(repository.name), {}, input.options))
         .inFolder(targetFolder.folderId)
         .profiles(gitRepoProfile.id)
         .property("c2a:url", String(repository.url));

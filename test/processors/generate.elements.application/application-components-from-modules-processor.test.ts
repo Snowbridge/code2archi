@@ -22,6 +22,10 @@ import {
 import { ApplicationComponentsFromModulesProcessor } from "../../../src/processors/generate.elements.application/application-components-from-modules-processor.js";
 import { CODE_REPOSITORIES_FOLDER } from "../../../src/processors/generate.elements.technology/repositories-processor.js";
 import { APPLICATION_MODULES_FOLDER } from "../../../src/processors/generate.elements.technology/modules-build-systems-and-runtimes-processor.js";
+import {
+  defaultGenerateProcessorOptions,
+  undecoratedGenerateProcessorOptions,
+} from "../../generate/generate-processor-test-options.js";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -129,6 +133,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const componentId = applicationComponentIdForModule(module.id);
@@ -171,6 +176,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(output.elements?.length, 1);
@@ -221,6 +227,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [consumer, library], [dependency]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const libraryComponent = output.elements?.find(
@@ -302,6 +309,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
         [dependency],
       ),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const libraryComponent = output.elements?.find(
@@ -358,6 +366,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [parent, consumer], [externalDependency]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(output.elements?.length, 1);
@@ -394,6 +403,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     store.addCreateIntents(
@@ -417,5 +427,119 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     assert.ok(store.listFolders().some((folder) => folder.name === "bar"));
     assert.notEqual(CODE_REPOSITORIES_FOLDER, "application");
     assert.notEqual(GradleModuleArtifactProfile.create().id, MavenModuleProfile.create().id);
+  });
+
+  it("keeps raw library application component name when no-decorate option is enabled", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const consumer = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const library = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "shared-lib",
+      version: "1",
+      name: "shared-lib",
+      repoPath: "shared-lib",
+      buildScript: "shared-lib/pom.xml",
+      isMultimodule: false,
+    });
+    const dependency = dependencyRecord({
+      parentId: consumer.id,
+      groupId: "com.example",
+      artifactId: "shared-lib",
+      version: "1",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedModuleArtifact(store, consumer);
+    seedModuleArtifact(store, library);
+
+    const processor = new ApplicationComponentsFromModulesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [consumer, library], [dependency]),
+      archi: store.snapshot(),
+      options: undecoratedGenerateProcessorOptions,
+    });
+
+    const libraryComponent = output.elements?.find(
+      (element) => element.id === applicationComponentIdForModule(library.id),
+    );
+    const consumerComponent = output.elements?.find(
+      (element) => element.id === applicationComponentIdForModule(consumer.id),
+    );
+    assert.equal(libraryComponent?.name, "shared-lib");
+    assert.equal(consumerComponent?.name, "svc");
+  });
+
+  it("decorates library application component name by default", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const consumer = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const library = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "shared-lib",
+      version: "1",
+      name: "shared-lib",
+      repoPath: "shared-lib",
+      buildScript: "shared-lib/pom.xml",
+      isMultimodule: false,
+    });
+    const dependency = dependencyRecord({
+      parentId: consumer.id,
+      groupId: "com.example",
+      artifactId: "shared-lib",
+      version: "1",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedModuleArtifact(store, consumer);
+    seedModuleArtifact(store, library);
+
+    const processor = new ApplicationComponentsFromModulesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [consumer, library], [dependency]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    const libraryComponent = output.elements?.find(
+      (element) => element.id === applicationComponentIdForModule(library.id),
+    );
+    const consumerComponent = output.elements?.find(
+      (element) => element.id === applicationComponentIdForModule(consumer.id),
+    );
+    assert.equal(libraryComponent?.name, "shared-lib (lib)");
+    assert.equal(consumerComponent?.name, "svc");
   });
 });

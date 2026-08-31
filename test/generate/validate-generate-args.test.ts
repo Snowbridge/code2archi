@@ -7,6 +7,8 @@ import { ExitCode } from "../../src/cli/exit-codes.js";
 import { validateGenerateArgs } from "../../src/generate/validate-generate-args.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
+const defaultValidateArgs = { force: false, noDecorate: false };
+
 describe("validateGenerateArgs", () => {
   it("appends .archimate extension when missing", () => {
     const tempDir = createTestTempDir("c2a-generate-args-");
@@ -17,7 +19,7 @@ describe("validateGenerateArgs", () => {
     const args = validateGenerateArgs({
       outputFile: path.join(tempDir, "model"),
       discoveryModelDir: discoveryDir,
-      force: false,
+      ...defaultValidateArgs,
     });
 
     assert.equal(args.outputFile, path.join(tempDir, "model.archimate"));
@@ -36,7 +38,7 @@ describe("validateGenerateArgs", () => {
         validateGenerateArgs({
           outputFile,
           discoveryModelDir: discoveryDir,
-          force: false,
+          ...defaultValidateArgs,
         }),
       (error: unknown) => {
         assert.ok(error instanceof CliError);
@@ -56,9 +58,25 @@ describe("validateGenerateArgs", () => {
         validateGenerateArgs({
           outputFile: path.join(tempDir, "model.archimate"),
           discoveryModelDir: discoveryDir,
-          force: false,
+          ...defaultValidateArgs,
         }),
       /manifest not found/,
     );
+  });
+
+  it("passes no-decorate flag through", () => {
+    const tempDir = createTestTempDir("c2a-generate-args-no-decorate-");
+    const discoveryDir = path.join(tempDir, "discovery");
+    mkdirSync(discoveryDir);
+    writeFileSync(path.join(discoveryDir, "manifest.json"), "{}\n", "utf8");
+
+    const args = validateGenerateArgs({
+      outputFile: path.join(tempDir, "model.archimate"),
+      discoveryModelDir: discoveryDir,
+      force: false,
+      noDecorate: true,
+    });
+
+    assert.equal(args.noDecorate, true);
   });
 });

@@ -12,6 +12,8 @@ import { initLogging, resetLoggingForTests } from "../../src/platform/logging/in
 import "../../src/platform/processors/builtin-processors.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
+const defaultValidateArgs = { force: false, noDecorate: false };
+
 function emptyGlobalArgv(): GlobalArgv {
   return {
     logLevel: "INFO",
@@ -80,7 +82,7 @@ describe("runGenerateFlow", () => {
       const generateArgs = validateGenerateArgs({
         outputFile,
         discoveryModelDir: discoveryDir,
-        force: false,
+        ...defaultValidateArgs,
       });
 
       runGenerateFlow({
@@ -116,7 +118,7 @@ describe("runGenerateFlow", () => {
       const generateArgs = validateGenerateArgs({
         outputFile,
         discoveryModelDir: discoveryDir,
-        force: false,
+        ...defaultValidateArgs,
       });
 
       runGenerateFlow({
@@ -169,7 +171,7 @@ describe("runGenerateFlow", () => {
       const generateArgs = validateGenerateArgs({
         outputFile,
         discoveryModelDir: discoveryDir,
-        force: false,
+        ...defaultValidateArgs,
       });
 
       runGenerateFlow({
@@ -187,7 +189,53 @@ describe("runGenerateFlow", () => {
     const xml = readFileSync(outputFile, "utf8");
     assert.match(xml, /<folder name="Code repositories"/);
     assert.match(xml, /xsi:type="archimate:Artifact"/);
-    assert.match(xml, /name="flow-app"/);
+    assert.match(xml, /name="flow-app\.git"/);
     assert.match(xml, /<property key="c2a:url" value="https:\/\/example\.com\/flow-app\.git"\/>/);
+  });
+
+  it("keeps raw repository names when no-decorate is enabled", () => {
+    const tempDir = createTestTempDir("c2a-generate-flow-no-decorate-");
+    const discoveryDir = path.join(tempDir, "discovery");
+    mkdirSync(discoveryDir, { recursive: true });
+    const outputFile = path.join(tempDir, "model.archimate");
+    const repositoryRecord = {
+      ...new Repository({
+        url: "https://example.com/flow-app.git",
+        localPath: path.join(tempDir, "flow-app"),
+        name: "flow-app",
+        namespace: "",
+        buildSystems: ["maven"],
+      }).toCreateIntent(),
+      scannerExtractor: "scan.scope:git-repos",
+      scannerSchema: "0.2.6",
+      extractedAt: "2026-08-30T12:15:24.335+03:00",
+    };
+
+    writeDiscoveryManifest(discoveryDir, tempDir, [repositoryRecord]);
+
+    initLogging({ logLevel: "INFO", verbose: false, logDirectory: createTestTempDir("c2a-log-") });
+    try {
+      const generateArgs = validateGenerateArgs({
+        outputFile,
+        discoveryModelDir: discoveryDir,
+        force: false,
+        noDecorate: true,
+      });
+
+      runGenerateFlow({
+        ...generateArgs,
+        processorFilters: {
+          with: [],
+          without: [],
+          withOnly: [],
+        },
+      });
+    } finally {
+      resetLoggingForTests();
+    }
+
+    const xml = readFileSync(outputFile, "utf8");
+    assert.match(xml, /name="flow-app"/);
+    assert.doesNotMatch(xml, /name="flow-app\.git"/);
   });
 });

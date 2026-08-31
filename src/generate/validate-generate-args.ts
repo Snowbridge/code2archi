@@ -9,6 +9,7 @@ export interface GenerateArgs {
   outputFile: string;
   discoveryModelDir: string;
   force: boolean;
+  noDecorate: boolean;
   modelName: string;
   modelId: string;
 }
@@ -17,6 +18,7 @@ export interface ValidateGenerateArgsInput {
   outputFile: string;
   discoveryModelDir?: string;
   force: boolean;
+  noDecorate: boolean;
 }
 
 export function validateGenerateArgs(input: ValidateGenerateArgsInput): GenerateArgs {
@@ -56,6 +58,7 @@ export function validateGenerateArgs(input: ValidateGenerateArgsInput): Generate
     outputFile,
     discoveryModelDir,
     force: input.force,
+    noDecorate: input.noDecorate,
     modelName: path.basename(outputFile, ".archimate"),
     modelId: ArchiModelStore.computeModelId(outputFile),
   };

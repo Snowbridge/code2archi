@@ -27,6 +27,10 @@ import {
   repositoryModuleCompositionRelationshipId,
   systemSoftwareIdForEntry,
 } from "../../../src/generate/module-version-catalog.js";
+import {
+  defaultGenerateProcessorOptions,
+  undecoratedGenerateProcessorOptions,
+} from "../../generate/generate-processor-test-options.js";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -128,6 +132,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [parent, child]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const moduleArtifacts = output.elements?.filter((element) => element.conceptType === "Artifact");
@@ -162,6 +167,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const composition = output.relations?.find(
@@ -204,6 +210,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(
@@ -249,6 +256,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [moduleA, moduleB]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const java17Id = systemSoftwareIdForEntry("javaVersion", "17");
@@ -289,6 +297,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const javaRelation = output.relations?.find(
@@ -340,6 +349,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(
@@ -397,6 +407,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(
@@ -436,6 +447,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.ok(output.folders && output.folders.length > 1);
@@ -481,5 +493,67 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
       )
       ?.properties?.find((property) => property.key === "c2a:schema");
     assert.equal(schemaProperty?.value, packageVersion);
+  });
+
+  it("keeps raw module artifact name when no-decorate option is enabled", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new ModulesBuildSystemsAndRuntimesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module]),
+      archi: store.snapshot(),
+      options: undecoratedGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.find((element) => element.id === module.id)?.name, "svc");
+  });
+
+  it("decorates module artifact name by default", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new ModulesBuildSystemsAndRuntimesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.find((element) => element.id === module.id)?.name, "svc (maven)");
   });
 });

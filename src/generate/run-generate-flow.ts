@@ -43,11 +43,23 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
   });
 
   logger.info("step start", { step: 1, action: "elements generation", groupId: GENERATE_ELEMENTS_GROUP_ID });
-  runGenerateProcessorGroup(GENERATE_ELEMENTS_GROUP_ID, discovery, archiStore, input.processorFilters);
+  runGenerateProcessorGroup(
+    GENERATE_ELEMENTS_GROUP_ID,
+    discovery,
+    archiStore,
+    input.processorFilters,
+    { decorate: !input.noDecorate },
+  );
   logger.info("step completed", { step: 1 });
 
   logger.info("step start", { step: 2, action: "views generation", groupId: GENERATE_VIEWS_GROUP_ID });
-  runGenerateProcessorGroup(GENERATE_VIEWS_GROUP_ID, discovery, archiStore, input.processorFilters);
+  runGenerateProcessorGroup(
+    GENERATE_VIEWS_GROUP_ID,
+    discovery,
+    archiStore,
+    input.processorFilters,
+    { decorate: !input.noDecorate },
+  );
   logger.info("step completed", { step: 2 });
 
   logger.info("step start", { step: 3, action: "writing archimate-model", outputFile: input.outputFile });

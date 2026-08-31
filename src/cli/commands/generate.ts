@@ -28,6 +28,11 @@ export const generateCommand: CommandModule = {
         default: false,
         describe: "Overwrite existing output file",
       })
+      .option("no-decorate", {
+        type: "boolean",
+        default: false,
+        describe: "Do not decorate element names for visual distinction in Archi",
+      })
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
   handler: (argv) => {
     const logger = getLogger("cli.generate");
@@ -36,6 +41,7 @@ export const generateCommand: CommandModule = {
         outputFile: argv["output-file"] as string,
         discoveryModelDir: argv["discovery-model"] as string | undefined,
         force: argv.force as boolean,
+        noDecorate: argv["no-decorate"] as boolean,
       });
       logger.info("command start", {
         outputFile: generateArgs.outputFile,

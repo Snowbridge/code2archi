@@ -22,9 +22,14 @@ export type ScanScopeOutput = readonly Repository[];
 export type ScanAppInput = DiscoveryModelSnapshot;
 export type ScanAppOutput = CreateIntents;
 
+export interface GenerateOptions {
+  readonly decorate: boolean;
+}
+
 export interface GenerateProcessorInput {
   readonly discovery: DiscoveryModelSnapshot;
   readonly archi: ArchiModelSnapshot;
+  readonly options: GenerateOptions;
 }
 
 export type GenerateProcessorOutput = ArchiCreateIntents;

@@ -35,6 +35,7 @@ import {
   parseNamespaceSegments,
 } from "../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
+import { decorateElementName } from "../../generate/element-name-decoration.js";
 import { isEligibleApplicationModule } from "../../generate/module-version-catalog.js";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
 import type { ApplicationModuleDependencyRecord } from "../../discovery-model/entities/application-module-dependency.js";
@@ -121,7 +122,14 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
           : moduleApplicationComponentProfileFor(module.buildSystem);
 
         let elementBuilder = ApplicationComponent.withId(applicationComponentId)
-          .name(String(module.name))
+          .name(
+            decorateElementName(
+              "app-module-component",
+              String(module.name),
+              { isLibrary: libraryModuleIds.has(module.id) },
+              input.options,
+            ),
+          )
           .inFolder(targetFolder.folderId)
           .profiles(profile.id);
 

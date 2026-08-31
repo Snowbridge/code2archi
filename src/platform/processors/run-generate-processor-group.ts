@@ -2,7 +2,7 @@ import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelStore } from "../../archimate-model/archi-model-store.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
-import type { GenerateProcessorInput } from "./processor.js";
+import type { GenerateProcessorInput, GenerateOptions } from "./processor.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import { getLogger } from "../logging/index.js";
@@ -21,6 +21,7 @@ export function runGenerateProcessorGroup(
   discovery: DiscoveryModelSnapshot,
   archiStore: ArchiModelStore,
   filters: ProcessorFilters,
+  options: GenerateOptions,
 ): void {
   const logger = getLogger(`generate.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
@@ -36,6 +37,7 @@ export function runGenerateProcessorGroup(
     const input: GenerateProcessorInput = {
       discovery,
       archi: archiStore.snapshot(),
+      options,
     };
     const output = processor.process(input);
     if (output instanceof Promise) {

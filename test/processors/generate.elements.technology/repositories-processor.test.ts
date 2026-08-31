@@ -12,6 +12,10 @@ import {
   CODE_REPOSITORIES_FOLDER,
   RepositoriesProcessor,
 } from "../../../src/processors/generate.elements.technology/repositories-processor.js";
+import {
+  defaultGenerateProcessorOptions,
+  undecoratedGenerateProcessorOptions,
+} from "../../generate/generate-processor-test-options.js";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -55,6 +59,7 @@ describe("RepositoriesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(output.profiles?.length, 1);
@@ -63,7 +68,7 @@ describe("RepositoriesProcessor", () => {
     assert.equal(output.elements?.length, 1);
     assert.equal(output.elements?.[0]?.conceptType, "Artifact");
     assert.equal(output.elements?.[0]?.id, repository.id);
-    assert.equal(output.elements?.[0]?.name, "demo");
+    assert.equal(output.elements?.[0]?.name, "demo.git");
     assert.deepEqual(output.elements?.[0]?.profileIds, [GitRepoProfile.create().id]);
 
     const urlProperty = output.elements?.[0]?.properties?.find(
@@ -95,6 +100,7 @@ describe("RepositoriesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     const technologyFolderId = store.getPredefinedFolderId("technology");
@@ -140,6 +146,7 @@ describe("RepositoriesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(output.elements?.length ?? 0, 0);
@@ -161,6 +168,7 @@ describe("RepositoriesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot([repository]),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.equal(output.profiles?.length ?? 0, 0);
@@ -196,6 +204,7 @@ describe("RepositoriesProcessor", () => {
     const output = processor.process({
       discovery: discoverySnapshot(repositories),
       archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
     });
 
     assert.ok(output.folders && output.folders.length > 1);
@@ -209,5 +218,43 @@ describe("RepositoriesProcessor", () => {
     assert.equal(store.listElements().length, 3);
     assert.ok(store.listFolders().some((folder) => folder.name === "buzz"));
     assert.ok(store.listFolders().some((folder) => folder.name === CODE_REPOSITORIES_FOLDER));
+  });
+
+  it("keeps raw repository name when no-decorate option is enabled", () => {
+    const repository = repositoryRecord({
+      url: "https://example.com/demo.git",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new RepositoriesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository]),
+      archi: store.snapshot(),
+      options: undecoratedGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.[0]?.name, "demo");
+  });
+
+  it("does not double-append .git when repository name already ends with .git", () => {
+    const repository = repositoryRecord({
+      url: "https://example.com/demo.git",
+      localPath: "/workspace/demo.git",
+      name: "demo.git",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new RepositoriesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.[0]?.name, "demo.git");
   });
 });

@@ -24,6 +24,7 @@ import {
   dedupeAndSortFolderIntents,
 } from "../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
+import { decorateElementName } from "../../generate/element-name-decoration.js";
 import {
   assignmentLogicalId,
   assignmentRelationshipId,
@@ -136,7 +137,14 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
         module.buildSystem as "maven" | "gradle" | "npm",
       );
       let elementBuilder = Artifact.withId(module.id)
-        .name(String(module.name))
+        .name(
+          decorateElementName(
+            "module-artifact",
+            String(module.name),
+            { buildSystem: module.buildSystem as "maven" | "gradle" | "npm" },
+            input.options,
+          ),
+        )
         .inFolder(targetFolder.folderId)
         .profiles(moduleProfile.id);
 
