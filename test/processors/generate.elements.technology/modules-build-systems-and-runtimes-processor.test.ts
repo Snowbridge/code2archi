@@ -212,7 +212,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     assert.deepEqual(mavenRelation?.profileIds, [BuiltWithProfile.create().id]);
   });
 
-  it("creates shared Java unknown SystemSoftware with unknown confidence", () => {
+  it("skips SystemSoftware and Assignment for unknown version fields", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -231,6 +231,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
       javaVersion: UNKNOWN_VERSION,
+      nodeVersion: UNKNOWN_VERSION,
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
     const processor = new ModulesBuildSystemsAndRuntimesProcessor();
@@ -239,22 +240,12 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
       archi: store.snapshot(),
     });
 
-    const javaUnknownId = systemSoftwareIdForEntry("javaVersion", UNKNOWN_VERSION);
-    const javaUnknown = output.elements?.find((element) => element.id === javaUnknownId);
-    assert.equal(javaUnknown?.name, "Java unknown");
     assert.equal(
-      javaUnknown?.properties?.find((property) => property.key === "c2a:confidence")?.value,
-      "unknown",
+      output.elements?.filter((element) => element.conceptType === "SystemSoftware").length ?? 0,
+      0,
     );
-
-    const relation = output.relations?.find(
-      (relation) =>
-        relation.sourceId === javaUnknownId && relation.targetId === module.id,
-    );
-    assert.equal(
-      relation?.properties?.find((property) => property.key === "c2a:confidence")?.value,
-      "unknown",
-    );
+    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(output.elements?.filter((element) => element.conceptType === "Artifact").length, 1);
   });
 
   it("skips module element when id already exists in archi snapshot", () => {

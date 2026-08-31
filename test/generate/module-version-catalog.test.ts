@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   collectSystemSoftwareCatalog,
-  confidenceForVersion,
   isEligibleApplicationModule,
+  isKnownVersion,
   systemSoftwareDisplayName,
   systemSoftwareIdForEntry,
   systemSoftwareStableKey,
@@ -52,9 +52,9 @@ describe("module-version-catalog", () => {
     assert.equal(isEligibleApplicationModule(eligibilityRecord({ isMultimodule: false })), true);
   });
 
-  it("maps confidence for unknown versions", () => {
-    assert.equal(confidenceForVersion(UNKNOWN_VERSION), "unknown");
-    assert.equal(confidenceForVersion("17"), "confirmed");
+  it("treats unknown as not a known version", () => {
+    assert.equal(isKnownVersion(UNKNOWN_VERSION), false);
+    assert.equal(isKnownVersion("17"), true);
   });
 
   it("builds composite stable key for buildToolVersion", () => {
@@ -73,25 +73,21 @@ describe("module-version-catalog", () => {
     );
   });
 
-  it("includes unknown in catalog and deduplicates shared values", () => {
+  it("skips unknown in catalog and deduplicates shared values", () => {
     const catalog = collectSystemSoftwareCatalog([
       moduleSource({ javaVersion: UNKNOWN_VERSION }),
       moduleSource({ javaVersion: UNKNOWN_VERSION }),
       moduleSource({ javaVersion: "17" }),
     ]);
 
-    assert.equal(catalog.size, 8);
+    assert.equal(catalog.size, 1);
     const unknownJavaKey = systemSoftwareStableKey("javaVersion", UNKNOWN_VERSION);
-    const unknownJava = catalog.get(unknownJavaKey);
-    assert.ok(unknownJava);
-    assert.equal(unknownJava.displayName, "Java unknown");
-    assert.equal(unknownJava.confidence, "unknown");
-    assert.equal(
-      unknownJava.systemSoftwareId,
-      systemSoftwareIdForEntry("javaVersion", UNKNOWN_VERSION),
-    );
+    assert.equal(catalog.has(unknownJavaKey), false);
 
     const java17Key = systemSoftwareStableKey("javaVersion", "17");
-    assert.equal(catalog.get(java17Key)?.confidence, "confirmed");
+    assert.equal(
+      catalog.get(java17Key)?.systemSoftwareId,
+      systemSoftwareIdForEntry("javaVersion", "17"),
+    );
   });
 });

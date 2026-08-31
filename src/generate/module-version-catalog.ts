@@ -15,7 +15,6 @@ import {
   type ModuleVersionField,
   UNKNOWN_VERSION,
 } from "../parsers/build-tool-versions.js";
-import type { GenerateConfidence } from "./archi-element-properties.js";
 
 export interface ApplicationModuleVersionSource {
   readonly buildSystem: BuildSystem;
@@ -91,15 +90,14 @@ export interface SystemSoftwareCatalogEntry {
   readonly displayName: string;
   readonly stableKey: string;
   readonly systemSoftwareId: string;
-  readonly confidence: GenerateConfidence;
 }
 
 export function isEligibleApplicationModule(record: DiscoveryEntityRecord): boolean {
   return !(record.isMultimodule === true && record.parentId === undefined);
 }
 
-export function confidenceForVersion(value: string): GenerateConfidence {
-  return value === UNKNOWN_VERSION ? "unknown" : "confirmed";
+export function isKnownVersion(value: string): boolean {
+  return value !== UNKNOWN_VERSION;
 }
 
 export function moduleArtifactProfileFor(buildSystem: BuildSystem): ArchiProfile {
@@ -209,6 +207,9 @@ export function collectSystemSoftwareCatalog(
   for (const module of modules) {
     for (const field of MODULE_VERSION_FIELDS) {
       const value = versionValueForField(module, field);
+      if (!isKnownVersion(value)) {
+        continue;
+      }
       const buildSystem = field === "buildToolVersion" ? module.buildSystem : undefined;
       const stableKey = systemSoftwareStableKey(field, value, buildSystem);
       if (catalog.has(stableKey)) {
@@ -222,7 +223,6 @@ export function collectSystemSoftwareCatalog(
         displayName: systemSoftwareDisplayName(field, value, buildSystem),
         stableKey,
         systemSoftwareId: systemSoftwareIdForEntry(field, value, buildSystem),
-        confidence: confidenceForVersion(value),
       });
     }
   }

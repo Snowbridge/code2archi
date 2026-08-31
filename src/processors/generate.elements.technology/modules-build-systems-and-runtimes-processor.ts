@@ -171,7 +171,6 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
       for (const property of standardGenerateElementProperties({
         logicalId: entry.systemSoftwareId,
         generatorCoordinate: GENERATOR_COORDINATE,
-        confidence: entry.confidence,
       })) {
         elementBuilder = elementBuilder.property(property.key, property.value);
       }
@@ -212,7 +211,6 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
         for (const property of standardGenerateElementProperties({
           logicalId: assignmentLogicalId(field, catalogEntry.systemSoftwareId, module.id),
           generatorCoordinate: GENERATOR_COORDINATE,
-          confidence: catalogEntry.confidence,
         })) {
           relationBuilder = relationBuilder.property(property.key, property.value);
         }
