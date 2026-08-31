@@ -254,7 +254,7 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     );
   });
 
-  it("assigns Library profile for cross-repository dependency without Aggregation", () => {
+  it("assigns Library profile and Aggregation for cross-repository dependency", () => {
     const consumerRepository = repositoryRecord({
       url: "",
       localPath: "/workspace/consumer",
@@ -316,9 +316,23 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
       (element) => element.id === applicationComponentIdForModule(library.id),
     );
     assert.deepEqual(libraryComponent?.profileIds, [LibraryModuleProfile.create().id]);
+    const aggregation = output.relations?.find(
+      (relation) => relation.relationType === "AggregationRelationship",
+    );
+    assert.ok(aggregation);
+    assert.equal(aggregation?.sourceId, applicationComponentIdForModule(consumer.id));
+    assert.equal(aggregation?.targetId, applicationComponentIdForModule(library.id));
     assert.equal(
-      output.relations?.some((relation) => relation.relationType === "AggregationRelationship"),
-      false,
+      aggregation?.properties?.find((property) => property.key === "c2a:libraryVersion")?.value,
+      "2.0.0",
+    );
+    assert.equal(
+      aggregation?.id,
+      aggregationRelationshipId(
+        applicationComponentIdForModule(consumer.id),
+        applicationComponentIdForModule(library.id),
+        dependency.id,
+      ),
     );
   });
 

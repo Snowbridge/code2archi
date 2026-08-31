@@ -22,11 +22,12 @@ import {
   applicationComponentIdForModule,
   applicationComponentLogicalId,
   buildModulesByRepositoryAndCoordinates,
+  buildModulesByCoordinates,
   collectLibraryModuleIds,
   moduleApplicationComponentProfileFor,
   realizationLogicalId,
   realizationRelationshipId,
-  resolveModuleInRepository,
+  resolveModuleForDependency,
 } from "../../generate/application-module-components.js";
 import { standardGenerateElementProperties } from "../../generate/archi-element-properties.js";
 import {
@@ -95,6 +96,7 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
 
     const modulesById = new Map(modules.map((module) => [module.id, module]));
     const coordinateIndex = buildModulesByRepositoryAndCoordinates(allModules);
+    const modulesByCoordinate = buildModulesByCoordinates(allModules);
 
     const dependencies = [...input.discovery.listEntities("ApplicationModuleDependency")]
       .map((record) => record as unknown as ApplicationModuleDependencyRecord)
@@ -178,9 +180,10 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
         continue;
       }
 
-      const targetModule = resolveModuleInRepository(
+      const targetModule = resolveModuleForDependency(
         coordinateIndex,
-        consumer.repositoryId,
+        modulesByCoordinate,
+        consumer,
         dependency.groupId,
         dependency.artifactId,
       );

@@ -19,6 +19,8 @@ export type ModulesByRepositoryAndCoordinates = ReadonlyMap<
   ReadonlyMap<string, ApplicationModuleRecord>
 >;
 
+export type ModulesByCoordinates = ReadonlyMap<string, ApplicationModuleRecord[]>;
+
 export function applicationComponentIdForModule(moduleId: string): string {
   return computeArchiId(
     "ApplicationComponent",
@@ -65,6 +67,24 @@ export function buildModulesByRepositoryAndCoordinates(
   return byRepository;
 }
 
+export function buildModulesByCoordinates(
+  modules: readonly ApplicationModuleRecord[],
+): ModulesByCoordinates {
+  const modulesByCoordinate = new Map<string, ApplicationModuleRecord[]>();
+
+  for (const module of modules) {
+    const coordinateKey = moduleCoordinateKey(module.groupId, module.artifactId);
+    const matches = modulesByCoordinate.get(coordinateKey);
+    if (matches === undefined) {
+      modulesByCoordinate.set(coordinateKey, [module]);
+      continue;
+    }
+    matches.push(module);
+  }
+
+  return modulesByCoordinate;
+}
+
 export function resolveModuleInRepository(
   index: ModulesByRepositoryAndCoordinates,
   repositoryId: string,
@@ -72,6 +92,31 @@ export function resolveModuleInRepository(
   artifactId: string,
 ): ApplicationModuleRecord | undefined {
   return index.get(repositoryId)?.get(moduleCoordinateKey(groupId, artifactId));
+}
+
+export function resolveModuleForDependency(
+  index: ModulesByRepositoryAndCoordinates,
+  modulesByCoordinate: ModulesByCoordinates,
+  consumer: ApplicationModuleRecord,
+  groupId: string,
+  artifactId: string,
+): ApplicationModuleRecord | undefined {
+  const sameRepositoryModule = resolveModuleInRepository(
+    index,
+    consumer.repositoryId,
+    groupId,
+    artifactId,
+  );
+  if (sameRepositoryModule !== undefined) {
+    return sameRepositoryModule;
+  }
+
+  const candidates = modulesByCoordinate.get(moduleCoordinateKey(groupId, artifactId));
+  if (candidates === undefined || candidates.length === 0) {
+    return undefined;
+  }
+
+  return [...candidates].sort((left, right) => left.id.localeCompare(right.id))[0];
 }
 
 export function collectLibraryModuleIds(
