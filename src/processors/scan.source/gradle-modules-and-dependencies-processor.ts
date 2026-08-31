@@ -20,7 +20,7 @@ export class GradleModulesAndDependenciesProcessor extends AbstractProcessor<
   ScanAppOutput
 > {
   readonly id: ProcessorId = {
-    groupId: "scan.source.gradle",
+    groupId: "scan.source.assembly.gradle",
     artifactId: "gradle-modules-and-dependencies",
   };
 

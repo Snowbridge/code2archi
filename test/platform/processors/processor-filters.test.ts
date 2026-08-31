@@ -62,13 +62,13 @@ describe("resolveProcessorFilters", () => {
       emptyGlobalArgv({
         without: ["scan.scope.git-repos"],
         with: ["scan.scope.unversioned-folders"],
-        withOnly: ["scan.source.maven-modules-and-dependencies"],
+        withOnly: ["scan.source.assembly.maven-modules-and-dependencies"],
       }),
     );
 
     assert.deepEqual(filters.without, ["scan.scope.git-repos"]);
     assert.deepEqual(filters.with, ["scan.scope.unversioned-folders"]);
-    assert.deepEqual(filters.withOnly, ["scan.source.maven-modules-and-dependencies"]);
+    assert.deepEqual(filters.withOnly, ["scan.source.assembly.maven-modules-and-dependencies"]);
   });
 });
 
@@ -91,7 +91,7 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
   it("includes custom subgroup processors for built-in step", () => {
     const registry = new ProcessorRegistry();
     const builtIn = new StubProcessor({ groupId: "scan.source", artifactId: "alpha" });
-    const custom = new StubProcessor({ groupId: "scan.source.maven", artifactId: "beta" });
+    const custom = new StubProcessor({ groupId: "scan.source.assembly.maven", artifactId: "beta" });
     registry.register(builtIn);
     registry.register(custom);
 
