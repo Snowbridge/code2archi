@@ -150,6 +150,14 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
       realization?.id,
       realizationRelationshipId(module.id, componentId),
     );
+    assert.equal(
+      component?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "app-module-component",
+    );
+    assert.equal(
+      realization?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "module-artifact-realizes",
+    );
   });
 
   it("skips Realization when module Artifact is missing", () => {
@@ -243,6 +251,10 @@ describe("ApplicationComponentsFromModulesProcessor", () => {
     assert.equal(
       aggregation?.properties?.find((property) => property.key === "c2a:libraryVersion")?.value,
       "2.0.0",
+    );
+    assert.equal(
+      aggregation?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "module-lib-aggregation",
     );
     assert.equal(
       aggregation?.id,

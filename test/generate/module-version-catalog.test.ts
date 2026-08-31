@@ -6,6 +6,7 @@ import {
   isKnownVersion,
   systemSoftwareDisplayName,
   systemSoftwareIdForEntry,
+  systemSoftwareSlotForField,
   systemSoftwareStableKey,
 } from "../../src/generate/module-version-catalog.js";
 import { UNKNOWN_VERSION } from "../../src/parsers/build-tool-versions.js";
@@ -71,6 +72,14 @@ describe("module-version-catalog", () => {
       systemSoftwareDisplayName("buildToolVersion", "npm@10.0.0", "npm"),
       "npm 10.0.0",
     );
+  });
+
+  it("maps version fields to syssoft slots", () => {
+    assert.equal(systemSoftwareSlotForField("javaVersion"), "syssoft-runtime");
+    assert.equal(systemSoftwareSlotForField("nodeVersion"), "syssoft-runtime");
+    assert.equal(systemSoftwareSlotForField("buildToolVersion"), "syssoft-build-system");
+    assert.equal(systemSoftwareSlotForField("kotlinJvmTarget"), "syssoft-compiled");
+    assert.equal(systemSoftwareSlotForField("typescriptVersion"), "syssoft-compiled");
   });
 
   it("skips unknown in catalog and deduplicates shared values", () => {

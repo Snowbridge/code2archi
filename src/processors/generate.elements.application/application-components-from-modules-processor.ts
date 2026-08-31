@@ -138,6 +138,7 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
         for (const property of standardGenerateElementProperties({
           logicalId: applicationComponentLogicalId(module.id),
           generatorCoordinate: GENERATOR_COORDINATE,
+          slot: "app-module-component",
         })) {
           elementBuilder = elementBuilder.property(property.key, property.value);
         }
@@ -167,6 +168,7 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
       for (const property of standardGenerateElementProperties({
         logicalId: realizationLogicalId(module.id, applicationComponentId),
         generatorCoordinate: GENERATOR_COORDINATE,
+        slot: "module-artifact-realizes",
       })) {
         realizationBuilder = realizationBuilder.property(property.key, property.value);
       }
@@ -210,6 +212,7 @@ export class ApplicationComponentsFromModulesProcessor extends AbstractProcessor
       for (const property of standardGenerateElementProperties({
         logicalId: aggregationLogicalId(dependency.id),
         generatorCoordinate: GENERATOR_COORDINATE,
+        slot: "module-lib-aggregation",
       })) {
         aggregationBuilder = aggregationBuilder.property(property.key, property.value);
       }

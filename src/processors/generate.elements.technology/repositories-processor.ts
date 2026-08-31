@@ -90,6 +90,7 @@ export class RepositoriesProcessor extends AbstractProcessor<
       for (const property of standardGenerateElementProperties({
         logicalId: repository.id,
         generatorCoordinate: GENERATOR_COORDINATE,
+        slot: "repo-artifact",
       })) {
         elementBuilder = elementBuilder.property(property.key, property.value);
       }

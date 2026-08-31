@@ -85,6 +85,11 @@ describe("RepositoriesProcessor", () => {
       (property) => property.key === "c2a:schema",
     );
     assert.equal(schemaProperty?.value, packageVersion);
+
+    const slotProperty = output.elements?.[0]?.properties?.find(
+      (property) => property.key === "c2a:slot",
+    );
+    assert.equal(slotProperty?.value, "repo-artifact");
   });
 
   it("creates nested folders for namespace segments", () => {

@@ -1,4 +1,5 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
+import type { ElementSlotId } from "./archi-element-properties.js";
 import type { ArchiProfile } from "../archimate-model/profiles/profile.js";
 import {
   BuiltWithProfile,
@@ -250,4 +251,19 @@ export function versionFieldSpec(field: ModuleVersionField): VersionFieldSpec {
     throw new Error(`Unknown version field: ${field}`);
   }
   return spec;
+}
+
+export function systemSoftwareSlotForField(field: ModuleVersionField): ElementSlotId {
+  switch (field) {
+    case "javaVersion":
+    case "nodeVersion":
+      return "syssoft-runtime";
+    case "buildToolVersion":
+      return "syssoft-build-system";
+    case "kotlinJvmTarget":
+    case "kotlinCompilerVersion":
+    case "typescriptVersion":
+    case "tsxVersion":
+      return "syssoft-compiled";
+  }
 }

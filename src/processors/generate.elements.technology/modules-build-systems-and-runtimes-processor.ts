@@ -33,6 +33,7 @@ import {
   moduleArtifactProfileFor,
   repositoryModuleCompositionLogicalId,
   repositoryModuleCompositionRelationshipId,
+  systemSoftwareSlotForField,
   versionFieldSpec,
 } from "../../generate/module-version-catalog.js";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
@@ -151,6 +152,7 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
       for (const property of standardGenerateElementProperties({
         logicalId: module.id,
         generatorCoordinate: GENERATOR_COORDINATE,
+        slot: "module-artifact",
       })) {
         elementBuilder = elementBuilder.property(property.key, property.value);
       }
@@ -182,6 +184,7 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
       for (const property of standardGenerateElementProperties({
         logicalId: repositoryModuleCompositionLogicalId(repositoryId, module.id),
         generatorCoordinate: GENERATOR_COORDINATE,
+        slot: "repo-module-composition",
       })) {
         compositionBuilder = compositionBuilder.property(property.key, property.value);
       }
@@ -206,6 +209,7 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
       for (const property of standardGenerateElementProperties({
         logicalId: entry.systemSoftwareId,
         generatorCoordinate: GENERATOR_COORDINATE,
+        slot: systemSoftwareSlotForField(entry.field),
       })) {
         elementBuilder = elementBuilder.property(property.key, property.value);
       }
@@ -246,6 +250,7 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
         for (const property of standardGenerateElementProperties({
           logicalId: assignmentLogicalId(field, catalogEntry.systemSoftwareId, module.id),
           generatorCoordinate: GENERATOR_COORDINATE,
+          slot: "syssoft-assign",
         })) {
           relationBuilder = relationBuilder.property(property.key, property.value);
         }

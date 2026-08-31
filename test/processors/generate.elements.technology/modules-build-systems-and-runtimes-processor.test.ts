@@ -139,6 +139,10 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     assert.equal(moduleArtifacts?.length, 1);
     assert.equal(moduleArtifacts?.[0]?.id, child.id);
     assert.deepEqual(moduleArtifacts?.[0]?.profileIds, [MavenModuleArtifactProfile.create().id]);
+    assert.equal(
+      moduleArtifacts?.[0]?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "module-artifact",
+    );
   });
 
   it("creates Composition from repository Artifact to module Artifact", () => {
@@ -182,6 +186,10 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     assert.equal(
       composition?.properties?.find((property) => property.key === "c2a:generator")?.value,
       "generate.elements.technology:modules-build-systems-and-runtimes",
+    );
+    assert.equal(
+      composition?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "repo-module-composition",
     );
   });
 
@@ -321,6 +329,33 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
         relation.targetId === module.id,
     );
     assert.deepEqual(mavenRelation?.profileIds, [BuiltWithProfile.create().id]);
+
+    const javaSystemSoftware = output.elements?.find(
+      (element) => element.id === systemSoftwareIdForEntry("javaVersion", "17"),
+    );
+    assert.equal(
+      javaSystemSoftware?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "syssoft-runtime",
+    );
+    const kotlinSystemSoftware = output.elements?.find(
+      (element) => element.id === systemSoftwareIdForEntry("kotlinJvmTarget", "17"),
+    );
+    assert.equal(
+      kotlinSystemSoftware?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "syssoft-compiled",
+    );
+    const mavenSystemSoftware = output.elements?.find(
+      (element) =>
+        element.id === systemSoftwareIdForEntry("buildToolVersion", "3.9.7", "maven"),
+    );
+    assert.equal(
+      mavenSystemSoftware?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "syssoft-build-system",
+    );
+    assert.equal(
+      javaRelation?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "syssoft-assign",
+    );
   });
 
   it("skips SystemSoftware and Assignment for unknown version fields", () => {
