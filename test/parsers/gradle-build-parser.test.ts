@@ -47,4 +47,25 @@ dependencies {
     const modules = parseGradleRepository(root);
     assert.equal(modules[0]?.dependencies[0]?.artifactId, "guava");
   });
+
+  it("parses api, implementation, and legacy compile dependencies", () => {
+    const root = createTestTempDir("c2a-gradle-configs-");
+    writeFileSync(path.join(root, "settings.gradle"), `rootProject.name = 'configs'`);
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'com.example'
+version = '1.0.0'
+api 'com.api:api-lib:1.0.0'
+implementation 'com.impl:impl-lib:2.0.0'
+compile 'com.legacy:legacy-lib:3.0.0'
+testImplementation 'com.test:test-lib:4.0.0'
+runtimeOnly 'com.runtime:runtime-lib:5.0.0'
+runtime 'com.runtime:runtime-legacy:6.0.0'`,
+    );
+
+    const modules = parseGradleRepository(root);
+    const artifactIds = modules[0]?.dependencies.map((dependency) => dependency.artifactId);
+
+    assert.deepEqual(artifactIds, ["api-lib", "impl-lib", "legacy-lib"]);
+  });
 });

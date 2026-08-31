@@ -105,4 +105,106 @@ describe("maven-pom-parser", () => {
     const modules = parseMavenRepository(root);
     assert.equal(modules[0]?.dependencies[0]?.version, "3.3.3");
   });
+
+  it("excludes test and runtime scoped dependencies after effective resolve", () => {
+    const root = createTestTempDir("c2a-maven-scope-filter-");
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>scoped</artifactId>
+  <version>1.0.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>com.compile</groupId>
+      <artifactId>core</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.provided</groupId>
+      <artifactId>api</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.test</groupId>
+      <artifactId>junit</artifactId>
+      <version>5.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.runtime</groupId>
+      <artifactId>driver</artifactId>
+      <version>1.0.0</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>`,
+    );
+
+    const modules = parseMavenRepository(root);
+    const artifactIds = modules[0]?.dependencies.map((dependency) => dependency.artifactId);
+
+    assert.deepEqual(artifactIds, ["core", "api"]);
+  });
+
+  it("excludes dependency when test scope is inherited from dependencyManagement", () => {
+    const root = createTestTempDir("c2a-maven-dm-scope-");
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>managed-scope</artifactId>
+  <version>1.0.0</version>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.test</groupId>
+        <artifactId>junit</artifactId>
+        <version>5.0.0</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.test</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+  </dependencies>
+</project>`,
+    );
+
+    const modules = parseMavenRepository(root);
+    assert.equal(modules[0]?.dependencies.length, 0);
+  });
+
+  it("includes optional dependencies when scope passes filter", () => {
+    const root = createTestTempDir("c2a-maven-optional-");
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>optional-dep</artifactId>
+  <version>1.0.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>com.optional</groupId>
+      <artifactId>feature</artifactId>
+      <version>1.0.0</version>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+</project>`,
+    );
+
+    const modules = parseMavenRepository(root);
+    assert.equal(modules[0]?.dependencies[0]?.artifactId, "feature");
+  });
 });

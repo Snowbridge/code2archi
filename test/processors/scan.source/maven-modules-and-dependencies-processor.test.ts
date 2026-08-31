@@ -153,4 +153,60 @@ describe("MavenModulesAndDependenciesProcessor", () => {
     const output = processor.process(store.snapshot());
     assert.equal(output.entities?.ApplicationModule?.length ?? 0, 0);
   });
+
+  it("does not emit test scoped dependencies", () => {
+    const root = createTestTempDir("c2a-maven-proc-scope-");
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>com.dep</groupId>
+      <artifactId>lib</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>`,
+    );
+
+    const repository = new Repository({
+      url: "",
+      localPath: root,
+      name: "app",
+      namespace: "/app",
+      buildSystems: ["maven"],
+    });
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [repository],
+        },
+      },
+    );
+
+    const processor = new MavenModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const dependencies = output.entities?.ApplicationModuleDependency ?? [];
+
+    assert.equal(dependencies.length, 1);
+    assert.equal(dependencies[0]?.artifactId, "lib");
+  });
 });

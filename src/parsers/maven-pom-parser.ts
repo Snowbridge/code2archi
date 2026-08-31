@@ -15,6 +15,11 @@ export interface MavenDependency extends MavenCoordinates {
   readonly type?: string;
 }
 
+export function isIncludedMavenDependencyScope(scope?: string): boolean {
+  const effectiveScope = scope ?? "compile";
+  return effectiveScope !== "test" && effectiveScope !== "runtime";
+}
+
 export interface MavenModuleParseResult {
   readonly coordinates: MavenCoordinates;
   readonly buildScript: string;
@@ -142,9 +147,9 @@ function buildEffectivePom(repoRoot: string, pomRelativePath: string): {
 
   const leaf = chain[chain.length - 1]!;
   const coordinates = resolveCoordinates(chain, mergedProperties);
-  const dependencies = (leaf.dependencies ?? []).map((dependency) =>
-    resolveDependency(dependency, mergedProperties, managedDependencies),
-  );
+  const dependencies = (leaf.dependencies ?? [])
+    .map((dependency) => resolveDependency(dependency, mergedProperties, managedDependencies))
+    .filter((dependency) => isIncludedMavenDependencyScope(dependency.scope));
 
   return {
     groupId: coordinates.groupId,

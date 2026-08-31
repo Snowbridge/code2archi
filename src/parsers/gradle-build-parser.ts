@@ -28,6 +28,9 @@ export interface GradleModuleParseResult {
   readonly tsxVersion: string;
 }
 
+const GRADLE_APPLICATION_CONFIGURATIONS = ["api", "implementation", "compile"] as const;
+const GRADLE_APPLICATION_CONFIGURATION_PATTERN =
+  GRADLE_APPLICATION_CONFIGURATIONS.join("|");
 const SETTINGS_FILES = ["settings.gradle.kts", "settings.gradle"] as const;
 const BUILD_FILES = ["build.gradle.kts", "build.gradle"] as const;
 
@@ -81,7 +84,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
       repoPath: modulePath === "." ? "." : modulePath,
       parentCoordinates,
       childModulePaths,
-      dependencies: parseImplementationDependencies(content),
+      dependencies: parseApplicationDependencies(content),
       isMultimodule: includes.length > 0,
       ...buildVersions,
     });
@@ -163,10 +166,13 @@ function parseCoordinates(content: string, fallbackArtifactId: string): GradleCo
   };
 }
 
-function parseImplementationDependencies(content: string): GradleDependency[] {
+function parseApplicationDependencies(content: string): GradleDependency[] {
   const dependencies: GradleDependency[] = [];
 
-  const shortPattern = /implementation\s*\(?\s*['"]([^:'"]+):([^:'"]+):([^'"]+)['"]\s*\)?/g;
+  const shortPattern = new RegExp(
+    `(?:${GRADLE_APPLICATION_CONFIGURATION_PATTERN})\\s*\\(?\\s*['"]([^:'"]+):([^:'"]+):([^'"]+)['"]\\s*\\)?`,
+    "g",
+  );
   let shortMatch: RegExpExecArray | null;
   while ((shortMatch = shortPattern.exec(content)) !== null) {
     dependencies.push({
@@ -176,8 +182,10 @@ function parseImplementationDependencies(content: string): GradleDependency[] {
     });
   }
 
-  const mapPattern =
-    /implementation\s+group:\s*['"]([^'"]+)['"],\s*name:\s*['"]([^'"]+)['"],\s*version:\s*['"]([^'"]+)['"]/g;
+  const mapPattern = new RegExp(
+    `(?:${GRADLE_APPLICATION_CONFIGURATION_PATTERN})\\s+group:\\s*['"]([^'"]+)['"],\\s*name:\\s*['"]([^'"]+)['"],\\s*version:\\s*['"]([^'"]+)['"]`,
+    "g",
+  );
   let mapMatch: RegExpExecArray | null;
   while ((mapMatch = mapPattern.exec(content)) !== null) {
     dependencies.push({

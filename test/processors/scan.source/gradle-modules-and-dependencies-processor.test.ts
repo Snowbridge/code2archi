@@ -156,4 +156,47 @@ version = '1.0.0'`,
     assert.equal(service?.javaVersion, "17");
     assert.ok(service?.parentId);
   });
+
+  it("emits api dependencies and skips testImplementation", () => {
+    const root = createTestTempDir("c2a-gradle-proc-configs-");
+    writeFileSync(path.join(root, "settings.gradle"), `rootProject.name = 'demo'`);
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'com.gradle'
+version = '1.0.0'
+api 'com.api:api-lib:1.0.0'
+testImplementation 'com.test:test-lib:2.0.0'`,
+    );
+
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [
+            {
+              id: "repo-gradle",
+              name: "demo",
+              namespace: "/demo",
+              localPath: root,
+              url: "",
+              buildSystems: ["gradle"],
+            },
+          ],
+        },
+      },
+    );
+
+    const processor = new GradleModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const dependencies = output.entities?.ApplicationModuleDependency ?? [];
+
+    assert.equal(dependencies.length, 1);
+    assert.equal(dependencies[0]?.artifactId, "api-lib");
+  });
 });
