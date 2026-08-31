@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
@@ -100,5 +100,60 @@ implementation 'com.lib:core:1.0.0'`,
     assert.equal(dependencies.length, 1);
     assert.equal(dependencies[0]?.artifactId, "core");
     store.addCreateIntents("scan.source", processor.id, output);
+  });
+
+  it("inherits javaVersion from root when child build file has no sourceCompatibility", () => {
+    const root = createTestTempDir("c2a-gradle-inherit-");
+    writeFileSync(
+      path.join(root, "settings.gradle"),
+      `rootProject.name = 'demo'
+include 'service'`,
+    );
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'com.gradle'
+version = '1.0.0'
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+}`,
+    );
+    mkdirSync(path.join(root, "service"), { recursive: true });
+    writeFileSync(
+      path.join(root, "service", "build.gradle"),
+      `group = 'com.gradle'
+version = '1.0.0'`,
+    );
+
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [
+            {
+              id: "repo-gradle",
+              name: "demo",
+              namespace: "/demo",
+              localPath: root,
+              url: "",
+              buildSystems: ["gradle"],
+            },
+          ],
+        },
+      },
+    );
+
+    const processor = new GradleModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const modules = output.entities?.ApplicationModule ?? [];
+
+    const service = modules.find((module) => module.artifactId === "service");
+    assert.equal(service?.javaVersion, "17");
+    assert.ok(service?.parentId);
   });
 });

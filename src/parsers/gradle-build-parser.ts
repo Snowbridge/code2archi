@@ -24,6 +24,8 @@ export interface GradleModuleParseResult {
   readonly kotlinJvmTarget: string;
   readonly kotlinCompilerVersion: string;
   readonly nodeVersion: string;
+  readonly typescriptVersion: string;
+  readonly tsxVersion: string;
 }
 
 const SETTINGS_FILES = ["settings.gradle.kts", "settings.gradle"] as const;

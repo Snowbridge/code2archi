@@ -20,6 +20,8 @@ export interface ApplicationModuleCreateIntent {
   readonly kotlinJvmTarget: string;
   readonly kotlinCompilerVersion: string;
   readonly nodeVersion: string;
+  readonly typescriptVersion: string;
+  readonly tsxVersion: string;
   readonly parentId?: string;
 }
 
@@ -38,6 +40,8 @@ export interface ApplicationModuleNaturalKeys {
   readonly kotlinJvmTarget?: string;
   readonly kotlinCompilerVersion?: string;
   readonly nodeVersion?: string;
+  readonly typescriptVersion?: string;
+  readonly tsxVersion?: string;
   readonly parentId?: string;
 }
 
@@ -58,6 +62,8 @@ export class ApplicationModule extends Entity {
   readonly kotlinJvmTarget: string;
   readonly kotlinCompilerVersion: string;
   readonly nodeVersion: string;
+  readonly typescriptVersion: string;
+  readonly tsxVersion: string;
   readonly parentId?: string;
 
   constructor(naturalKeys: ApplicationModuleNaturalKeys) {
@@ -81,6 +87,8 @@ export class ApplicationModule extends Entity {
     this.kotlinJvmTarget = naturalKeys.kotlinJvmTarget ?? UNKNOWN_VERSION;
     this.kotlinCompilerVersion = naturalKeys.kotlinCompilerVersion ?? UNKNOWN_VERSION;
     this.nodeVersion = naturalKeys.nodeVersion ?? UNKNOWN_VERSION;
+    this.typescriptVersion = naturalKeys.typescriptVersion ?? UNKNOWN_VERSION;
+    this.tsxVersion = naturalKeys.tsxVersion ?? UNKNOWN_VERSION;
     if (naturalKeys.parentId !== undefined) {
       this.parentId = naturalKeys.parentId;
     }
@@ -122,6 +130,8 @@ export class ApplicationModule extends Entity {
       kotlinJvmTarget: this.kotlinJvmTarget,
       kotlinCompilerVersion: this.kotlinCompilerVersion,
       nodeVersion: this.nodeVersion,
+      typescriptVersion: this.typescriptVersion,
+      tsxVersion: this.tsxVersion,
       ...(this.parentId !== undefined ? { parentId: this.parentId } : {}),
     };
   }

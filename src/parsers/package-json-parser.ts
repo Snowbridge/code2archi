@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { mergeNpmChildVersions, parseNpmBuildVersions } from "./build-tool-versions.js";
+import { parseNpmBuildVersions } from "./build-tool-versions.js";
 import { parseNpmName } from "./npm-name.js";
 
 export interface NpmModuleParseResult {
@@ -18,6 +18,8 @@ export interface NpmModuleParseResult {
   readonly kotlinJvmTarget: string;
   readonly kotlinCompilerVersion: string;
   readonly nodeVersion: string;
+  readonly typescriptVersion: string;
+  readonly tsxVersion: string;
 }
 
 export function parseNpmRepository(
@@ -74,7 +76,7 @@ export function parseNpmRepository(
 
     const parts = parseNpmName(pkg.name);
     const normalizedPath = packageRelativePath.replace(/\\/g, "/");
-    const childBuildVersions = mergeNpmChildVersions(pkg, rootPackage);
+    const childBuildVersions = parseNpmBuildVersions(pkg);
     results.push({
       name: pkg.name,
       groupId: parts.groupId,

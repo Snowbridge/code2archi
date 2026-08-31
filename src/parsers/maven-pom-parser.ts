@@ -28,6 +28,8 @@ export interface MavenModuleParseResult {
   readonly kotlinJvmTarget: string;
   readonly kotlinCompilerVersion: string;
   readonly nodeVersion: string;
+  readonly typescriptVersion: string;
+  readonly tsxVersion: string;
 }
 
 interface PomDocument {

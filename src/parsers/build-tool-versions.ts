@@ -3,12 +3,26 @@ import path from "node:path";
 
 export const UNKNOWN_VERSION = "unknown";
 
+export const MODULE_VERSION_FIELDS = [
+  "buildToolVersion",
+  "javaVersion",
+  "kotlinJvmTarget",
+  "kotlinCompilerVersion",
+  "nodeVersion",
+  "typescriptVersion",
+  "tsxVersion",
+] as const;
+
+export type ModuleVersionField = (typeof MODULE_VERSION_FIELDS)[number];
+
 export interface ModuleBuildVersions {
   readonly buildToolVersion: string;
   readonly javaVersion: string;
   readonly kotlinJvmTarget: string;
   readonly kotlinCompilerVersion: string;
   readonly nodeVersion: string;
+  readonly typescriptVersion: string;
+  readonly tsxVersion: string;
 }
 
 export function unknownBuildVersions(): ModuleBuildVersions {
@@ -18,6 +32,8 @@ export function unknownBuildVersions(): ModuleBuildVersions {
     kotlinJvmTarget: UNKNOWN_VERSION,
     kotlinCompilerVersion: UNKNOWN_VERSION,
     nodeVersion: UNKNOWN_VERSION,
+    typescriptVersion: UNKNOWN_VERSION,
+    tsxVersion: UNKNOWN_VERSION,
   };
 }
 
@@ -53,6 +69,8 @@ export function parseGradleBuildVersions(content: string): ModuleBuildVersions {
     kotlinJvmTarget,
     kotlinCompilerVersion,
     nodeVersion: UNKNOWN_VERSION,
+    typescriptVersion: UNKNOWN_VERSION,
+    tsxVersion: UNKNOWN_VERSION,
   };
 }
 
@@ -133,6 +151,8 @@ export function parseMavenBuildVersions(
     kotlinJvmTarget,
     kotlinCompilerVersion,
     nodeVersion: UNKNOWN_VERSION,
+    typescriptVersion: UNKNOWN_VERSION,
+    tsxVersion: UNKNOWN_VERSION,
   };
 }
 
@@ -182,23 +202,8 @@ export function parseNpmBuildVersions(pkg: Record<string, unknown>): ModuleBuild
     kotlinJvmTarget: UNKNOWN_VERSION,
     kotlinCompilerVersion: UNKNOWN_VERSION,
     nodeVersion: engines.node ?? UNKNOWN_VERSION,
-  };
-}
-
-export function mergeNpmChildVersions(
-  childPkg: Record<string, unknown>,
-  rootPkg: Record<string, unknown>,
-): ModuleBuildVersions {
-  const child = parseNpmBuildVersions(childPkg);
-  const root = parseNpmBuildVersions(rootPkg);
-
-  return {
-    buildToolVersion:
-      child.buildToolVersion !== UNKNOWN_VERSION ? child.buildToolVersion : root.buildToolVersion,
-    javaVersion: UNKNOWN_VERSION,
-    kotlinJvmTarget: UNKNOWN_VERSION,
-    kotlinCompilerVersion: UNKNOWN_VERSION,
-    nodeVersion: child.nodeVersion !== UNKNOWN_VERSION ? child.nodeVersion : root.nodeVersion,
+    typescriptVersion: readNpmPackageVersion(pkg, "typescript"),
+    tsxVersion: readNpmPackageVersion(pkg, "tsx"),
   };
 }
 
@@ -213,6 +218,34 @@ function readEngines(pkg: Record<string, unknown>): { readonly node?: string; re
     ...(typeof record.node === "string" ? { node: record.node } : {}),
     ...(typeof record.npm === "string" ? { npm: record.npm } : {}),
   };
+}
+
+function readNpmPackageVersion(pkg: Record<string, unknown>, packageName: string): string {
+  const devDependencies = readDependencySection(pkg.devDependencies);
+  if (devDependencies[packageName]) {
+    return devDependencies[packageName];
+  }
+
+  const dependencies = readDependencySection(pkg.dependencies);
+  if (dependencies[packageName]) {
+    return dependencies[packageName];
+  }
+
+  return UNKNOWN_VERSION;
+}
+
+function readDependencySection(section: unknown): Record<string, string> {
+  if (!section || typeof section !== "object") {
+    return {};
+  }
+
+  const result: Record<string, string> = {};
+  for (const [name, version] of Object.entries(section as Record<string, unknown>)) {
+    if (typeof version === "string") {
+      result[name] = version;
+    }
+  }
+  return result;
 }
 
 function parseNpmToolVersion(

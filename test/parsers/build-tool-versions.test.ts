@@ -73,4 +73,25 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     assert.equal(versions.nodeVersion, ">=18.0.0");
     assert.equal(versions.javaVersion, UNKNOWN_VERSION);
   });
+
+  it("parses typescript and tsx from devDependencies", () => {
+    const versions = parseNpmBuildVersions({
+      devDependencies: {
+        typescript: "^5.4.0",
+        tsx: "4.7.0",
+      },
+    });
+    assert.equal(versions.typescriptVersion, "^5.4.0");
+    assert.equal(versions.tsxVersion, "4.7.0");
+  });
+
+  it("falls back to dependencies for typescript and tsx", () => {
+    const versions = parseNpmBuildVersions({
+      dependencies: {
+        typescript: "5.3.3",
+      },
+    });
+    assert.equal(versions.typescriptVersion, "5.3.3");
+    assert.equal(versions.tsxVersion, UNKNOWN_VERSION);
+  });
 });

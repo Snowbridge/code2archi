@@ -25,7 +25,7 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
     artifactId: "npm-modules-and-dependencies",
   };
 
-  readonly version = "0.2.0";
+  readonly version = "0.3.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
@@ -81,6 +81,8 @@ export class NpmModulesAndDependenciesProcessor extends AbstractProcessor<
         kotlinJvmTarget: module.kotlinJvmTarget,
         kotlinCompilerVersion: module.kotlinCompilerVersion,
         nodeVersion: module.nodeVersion,
+        typescriptVersion: module.typescriptVersion,
+        tsxVersion: module.tsxVersion,
       };
     });
   }
