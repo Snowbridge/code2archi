@@ -41,15 +41,16 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
     return [];
   }
 
-  const rootProjectName = settingsFile
-    ? parseRootProjectName(
-        readFileSync(path.join(repoRoot, settingsFile), "utf8"),
-        path.basename(repoRoot),
-      )
+  const settingsContent = settingsFile
+    ? readFileSync(path.join(repoRoot, settingsFile), "utf8")
+    : undefined;
+
+  const rootProjectName = settingsContent
+    ? parseRootProjectName(settingsContent, path.basename(repoRoot))
     : path.basename(repoRoot);
 
   const rootIncludes = [
-    ...(settingsFile ? parseIncludes(readFileSync(path.join(repoRoot, settingsFile), "utf8")) : []),
+    ...(settingsContent ? parseIncludes(settingsContent) : []),
     ...(rootBuildFile ? parseIncludes(readFileSync(path.join(repoRoot, rootBuildFile), "utf8")) : []),
   ];
 
@@ -75,7 +76,10 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
 
     const content = readFileSync(absoluteBuildScript, "utf8");
     const coordinates = parseCoordinates(content, modulePath === "." ? rootProjectName : path.posix.basename(modulePath));
-    const buildVersions = mergeGradleModuleVersions(repoRoot, content);
+    const buildVersions = mergeGradleModuleVersions(repoRoot, content, {
+      settingsContent,
+      modulePath: modulePath === "." ? "." : modulePath,
+    });
     const includesInFile = parseIncludes(content);
     const includes =
       modulePath === "." ? [...new Set([...includesInFile, ...uniqueIncludes])] : includesInFile;

@@ -157,6 +157,66 @@ version = '1.0.0'`,
     assert.ok(service?.parentId);
   });
 
+  it("resolves java and kotlin versions from gradle.properties", () => {
+    const root = createTestTempDir("c2a-gradle-props-proc-");
+    writeFileSync(
+      path.join(root, "settings.gradle.kts"),
+      `rootProject.name = "tracking-devices-crud"
+pluginManagement {
+    plugins {
+        kotlin("jvm") version versionKotlin
+    }
+}`,
+    );
+    writeFileSync(
+      path.join(root, "gradle.properties"),
+      `versionJava=1.8
+versionKotlin=1.4.21`,
+    );
+    writeFileSync(
+      path.join(root, "build.gradle.kts"),
+      `group = "online.oboz.tracking"
+version = "abc123"
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = versionJava
+}`,
+    );
+
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
+      {
+        entities: {
+          Repository: [
+            {
+              id: "repo-gradle",
+              name: "tracking-devices-crud",
+              namespace: "/tracking/devices-crud",
+              localPath: root,
+              url: "",
+              buildSystems: ["gradle"],
+            },
+          ],
+        },
+      },
+    );
+
+    const processor = new GradleModulesAndDependenciesProcessor();
+    const output = processor.process(store.snapshot());
+    const modules = output.entities?.ApplicationModule ?? [];
+    const rootModule = modules.find((module) => module.artifactId === "tracking-devices-crud");
+
+    assert.equal(rootModule?.kotlinJvmTarget, "1.8");
+    assert.equal(rootModule?.javaVersion, "1.8");
+    assert.equal(rootModule?.kotlinCompilerVersion, "1.4.21");
+  });
+
   it("emits api dependencies and skips testImplementation", () => {
     const root = createTestTempDir("c2a-gradle-proc-configs-");
     writeFileSync(path.join(root, "settings.gradle"), `rootProject.name = 'demo'`);

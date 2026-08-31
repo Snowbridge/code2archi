@@ -58,10 +58,113 @@ function readWrapperDistributionVersion(repoRoot: string, relativePath: string):
   return distributionMatch?.[1] ?? UNKNOWN_VERSION;
 }
 
+const GRADLE_JAVA_VERSION_PROPERTY_KEYS = ["versionJava", "javaVersion", "java.version"] as const;
+
+export interface MergeGradleModuleVersionsOptions {
+  readonly settingsContent?: string;
+  readonly modulePath?: string;
+}
+
+export function parseGradleProperties(content: string): Record<string, string> {
+  const properties: Record<string, string> = {};
+
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#") || trimmed.startsWith("!")) {
+      continue;
+    }
+
+    const equalsIndex = trimmed.indexOf("=");
+    if (equalsIndex <= 0) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, equalsIndex).trim();
+    const value = trimmed.slice(equalsIndex + 1).trim();
+    if (key !== "") {
+      properties[key] = value;
+    }
+  }
+
+  return properties;
+}
+
+export function readGradleProperties(repoRoot: string, modulePath = "."): Record<string, string> {
+  let merged: Record<string, string> = {};
+
+  const rootPropertiesPath = path.join(repoRoot, "gradle.properties");
+  if (existsSync(rootPropertiesPath)) {
+    merged = {
+      ...parseGradleProperties(readFileSync(rootPropertiesPath, "utf8")),
+    };
+  }
+
+  if (modulePath !== ".") {
+    const modulePropertiesPath = path.join(repoRoot, modulePath, "gradle.properties");
+    if (existsSync(modulePropertiesPath)) {
+      merged = {
+        ...merged,
+        ...parseGradleProperties(readFileSync(modulePropertiesPath, "utf8")),
+      };
+    }
+  }
+
+  return merged;
+}
+
+export function resolveGradleProperty(
+  name: string,
+  properties: Readonly<Record<string, string>>,
+): string | undefined {
+  const value = properties[name];
+  if (value === undefined || value.trim() === "") {
+    return undefined;
+  }
+
+  return value.trim();
+}
+
 export function parseGradleBuildVersions(content: string): ModuleBuildVersions {
-  const javaVersion = parseGradleJavaVersion(content);
-  const kotlinJvmTarget = parseGradleKotlinJvmTarget(content);
-  const kotlinCompilerVersion = parseGradleKotlinCompilerVersion(content);
+  return resolveGradleModuleVersions(content, {}, "");
+}
+
+export function mergeGradleModuleVersions(
+  repoRoot: string,
+  buildFileContent: string,
+  options?: MergeGradleModuleVersionsOptions,
+): ModuleBuildVersions {
+  const modulePath = options?.modulePath ?? ".";
+  const properties = readGradleProperties(repoRoot, modulePath);
+  const fromBuild = resolveGradleModuleVersions(
+    buildFileContent,
+    properties,
+    options?.settingsContent ?? "",
+  );
+  const wrapperVersion = readGradleWrapperVersion(repoRoot);
+  return {
+    ...fromBuild,
+    buildToolVersion: wrapperVersion !== UNKNOWN_VERSION ? wrapperVersion : fromBuild.buildToolVersion,
+  };
+}
+
+function resolveGradleModuleVersions(
+  buildFileContent: string,
+  properties: Readonly<Record<string, string>>,
+  settingsContent: string,
+): ModuleBuildVersions {
+  const kotlinJvmTarget = parseGradleKotlinJvmTarget(buildFileContent, properties);
+  const javaFromBuild = parseGradleJavaVersion(buildFileContent, properties);
+  const kotlinCompilerVersion = parseGradleKotlinCompilerVersion(
+    buildFileContent,
+    settingsContent,
+    properties,
+  );
+  const javaVersion =
+    firstNonUnknown(
+      javaFromBuild !== UNKNOWN_VERSION ? javaFromBuild : undefined,
+      kotlinJvmTarget !== UNKNOWN_VERSION ? kotlinJvmTarget : undefined,
+      ...GRADLE_JAVA_VERSION_PROPERTY_KEYS.map((key) => resolveGradleProperty(key, properties)),
+    ) ?? UNKNOWN_VERSION;
 
   return {
     buildToolVersion: UNKNOWN_VERSION,
@@ -74,49 +177,127 @@ export function parseGradleBuildVersions(content: string): ModuleBuildVersions {
   };
 }
 
-export function mergeGradleModuleVersions(
-  repoRoot: string,
+function parseGradleJavaVersion(
+  content: string,
+  properties: Readonly<Record<string, string>> = {},
+): string {
+  const toolchainLiteralMatch = content.match(/languageVersion\s*=\s*JavaLanguageVersion\.of\((\d+)\)/);
+  if (toolchainLiteralMatch?.[1]) {
+    return toolchainLiteralMatch[1];
+  }
+
+  const toolchainRefMatch = content.match(
+    /languageVersion\s*=\s*JavaLanguageVersion\.of\(([A-Za-z_][A-Za-z0-9_]*)\)/,
+  );
+  if (toolchainRefMatch?.[1]) {
+    const resolved = resolveGradleProperty(toolchainRefMatch[1], properties);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  const compatibilityVersion = parseGradleJavaCompatibility(content, properties);
+  if (compatibilityVersion !== UNKNOWN_VERSION) {
+    return compatibilityVersion;
+  }
+
+  return UNKNOWN_VERSION;
+}
+
+function parseGradleJavaCompatibility(
+  content: string,
+  properties: Readonly<Record<string, string>>,
+): string {
+  for (const field of ["sourceCompatibility", "targetCompatibility"] as const) {
+    const literalPattern = new RegExp(
+      `${field}\\s*=\\s*(?:JavaVersion\\.)?VERSION_(\\d+)(?:_(?:\\d+))?|${field}\\s*=\\s*['"](\\d+(?:\\.\\d+)?)['"]`,
+    );
+    const literalMatch = content.match(literalPattern);
+    const literalVersion = literalMatch?.[1] ?? literalMatch?.[2];
+    if (literalVersion) {
+      return literalVersion;
+    }
+
+    const refPattern = new RegExp(`${field}\\s*=\\s*([A-Za-z_][A-Za-z0-9_]*)`);
+    const refMatch = content.match(refPattern);
+    if (refMatch?.[1]) {
+      const resolved = resolveGradleProperty(refMatch[1], properties);
+      if (resolved) {
+        return resolved;
+      }
+    }
+  }
+
+  return UNKNOWN_VERSION;
+}
+
+function parseGradleKotlinJvmTarget(
+  content: string,
+  properties: Readonly<Record<string, string>> = {},
+): string {
+  const literalMatch = content.match(/jvmTarget\s*=\s*['"](\d+(?:\.\d+)?)['"]/);
+  if (literalMatch?.[1]) {
+    return literalMatch[1];
+  }
+
+  const refMatch = content.match(/jvmTarget\s*=\s*([A-Za-z_][A-Za-z0-9_]*)/);
+  if (refMatch?.[1]) {
+    const resolved = resolveGradleProperty(refMatch[1], properties);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return UNKNOWN_VERSION;
+}
+
+function parseGradleKotlinCompilerVersion(
   buildFileContent: string,
-): ModuleBuildVersions {
-  const fromBuild = parseGradleBuildVersions(buildFileContent);
-  const wrapperVersion = readGradleWrapperVersion(repoRoot);
-  return {
-    ...fromBuild,
-    buildToolVersion: wrapperVersion !== UNKNOWN_VERSION ? wrapperVersion : fromBuild.buildToolVersion,
-  };
-}
-
-function parseGradleJavaVersion(content: string): string {
-  const toolchainMatch = content.match(/languageVersion\s*=\s*JavaLanguageVersion\.of\((\d+)\)/);
-  if (toolchainMatch?.[1]) {
-    return toolchainMatch[1];
+  settingsContent: string,
+  properties: Readonly<Record<string, string>> = {},
+): string {
+  const fromBuild = parseGradleKotlinCompilerVersionFromContent(buildFileContent, properties);
+  if (fromBuild !== UNKNOWN_VERSION) {
+    return fromBuild;
   }
 
-  const sourceCompatMatch = content.match(
-    /sourceCompatibility\s*=\s*(?:JavaVersion\.)?VERSION_(\d+)(?:_(?:\d+))?|sourceCompatibility\s*=\s*['"](\d+)['"]/,
-  );
-  const version = sourceCompatMatch?.[1] ?? sourceCompatMatch?.[2];
-  if (version) {
-    return version;
-  }
-
-  const targetCompatMatch = content.match(
-    /targetCompatibility\s*=\s*(?:JavaVersion\.)?VERSION_(\d+)(?:_(?:\d+))?|targetCompatibility\s*=\s*['"](\d+)['"]/,
-  );
-  return targetCompatMatch?.[1] ?? targetCompatMatch?.[2] ?? UNKNOWN_VERSION;
+  return parseGradleKotlinCompilerVersionFromContent(settingsContent, properties);
 }
 
-function parseGradleKotlinJvmTarget(content: string): string {
-  const match = content.match(/jvmTarget\s*=\s*['"]?(\d+(?:\.\d+)?)['"]?/);
-  return match?.[1] ?? UNKNOWN_VERSION;
-}
-
-function parseGradleKotlinCompilerVersion(content: string): string {
-  const pluginMatch = content.match(
+function parseGradleKotlinCompilerVersionFromContent(
+  content: string,
+  properties: Readonly<Record<string, string>>,
+): string {
+  const pluginLiteralMatch = content.match(
     /(?:id|kotlin)\s*\(\s*['"]org\.jetbrains\.kotlin\.(?:jvm|multiplatform|android)['"]\s*\)\s*version\s*['"]([^'"]+)['"]/,
   );
-  if (pluginMatch?.[1]) {
-    return pluginMatch[1];
+  if (pluginLiteralMatch?.[1]) {
+    return pluginLiteralMatch[1];
+  }
+
+  const pluginRefMatch = content.match(
+    /(?:id|kotlin)\s*\(\s*['"]org\.jetbrains\.kotlin\.(?:jvm|multiplatform|android)['"]\s*\)\s*version\s+([A-Za-z_][A-Za-z0-9_]*)/,
+  );
+  if (pluginRefMatch?.[1]) {
+    const resolved = resolveGradleProperty(pluginRefMatch[1], properties);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  const kotlinJvmLiteralMatch = content.match(/kotlin\s*\(\s*['"]jvm['"]\s*\)\s*version\s*['"]([^'"]+)['"]/);
+  if (kotlinJvmLiteralMatch?.[1]) {
+    return kotlinJvmLiteralMatch[1];
+  }
+
+  const kotlinJvmRefMatch = content.match(
+    /kotlin\s*\(\s*['"]jvm['"]\s*\)\s*version\s+([A-Za-z_][A-Za-z0-9_]*)/,
+  );
+  if (kotlinJvmRefMatch?.[1]) {
+    const resolved = resolveGradleProperty(kotlinJvmRefMatch[1], properties);
+    if (resolved) {
+      return resolved;
+    }
   }
 
   const classpathMatch = content.match(/org\.jetbrains\.kotlin:kotlin-gradle-plugin:([^'"\s]+)/);

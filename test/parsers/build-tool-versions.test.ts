@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 import {
   mergeGradleModuleVersions,
   mergeMavenModuleVersions,
+  parseGradleProperties,
   parseNpmBuildVersions,
   readGradleWrapperVersion,
   UNKNOWN_VERSION,
@@ -41,6 +42,66 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     assert.equal(versions.javaVersion, "17");
     assert.equal(versions.kotlinJvmTarget, "17");
     assert.equal(versions.kotlinCompilerVersion, "1.9.22");
+  });
+
+  it("parses gradle.properties and ignores comments", () => {
+    const properties = parseGradleProperties(`
+# comment
+versionJava=1.8
+javaVersion=11
+! ignored
+`);
+    assert.equal(properties.versionJava, "1.8");
+    assert.equal(properties.javaVersion, "11");
+    assert.equal(properties.comment, undefined);
+  });
+
+  it("resolves version fields from gradle.properties via build file references (devices-crud pattern)", () => {
+    const root = createTestTempDir("c2a-gradle-props-devices-");
+    writeFileSync(
+      path.join(root, "gradle.properties"),
+      `versionJava=1.8
+versionKotlin=1.4.21`,
+    );
+    const buildContent = `
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = versionJava
+}
+`;
+    const settingsContent = `
+pluginManagement {
+    plugins {
+        kotlin("jvm") version versionKotlin
+    }
+}
+`;
+    const versions = mergeGradleModuleVersions(root, buildContent, { settingsContent });
+    assert.equal(versions.kotlinJvmTarget, "1.8");
+    assert.equal(versions.javaVersion, "1.8");
+    assert.equal(versions.kotlinCompilerVersion, "1.4.21");
+  });
+
+  it("resolves jvmTarget from javaVersion property (traccar-gateway pattern)", () => {
+    const root = createTestTempDir("c2a-gradle-props-traccar-");
+    writeFileSync(path.join(root, "gradle.properties"), "javaVersion=11\n");
+    const buildContent = `
+compileKotlin.kotlinOptions {
+    jvmTarget = javaVersion
+}
+`;
+    const versions = mergeGradleModuleVersions(root, buildContent);
+    assert.equal(versions.kotlinJvmTarget, "11");
+    assert.equal(versions.javaVersion, "11");
+  });
+
+  it("resolves arbitrary property names referenced in jvmTarget", () => {
+    const root = createTestTempDir("c2a-gradle-props-arbitrary-");
+    writeFileSync(path.join(root, "gradle.properties"), "sjdnhzz_one_two_ver=21\n");
+    const buildContent = `jvmTarget = sjdnhzz_one_two_ver`;
+    const versions = mergeGradleModuleVersions(root, buildContent);
+    assert.equal(versions.kotlinJvmTarget, "21");
+    assert.equal(versions.javaVersion, "21");
   });
 
   it("extracts java version from maven effective properties", () => {

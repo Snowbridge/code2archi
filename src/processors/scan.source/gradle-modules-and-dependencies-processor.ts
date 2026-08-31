@@ -24,7 +24,7 @@ export class GradleModulesAndDependenciesProcessor extends AbstractProcessor<
     artifactId: "gradle-modules-and-dependencies",
   };
 
-  readonly version = "0.4.0";
+  readonly version = "0.5.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
