@@ -192,6 +192,20 @@ export function assignmentRelationshipId(sourceId: string, targetId: string): st
   return computeArchiId("AssignmentRelationship", sourceId, targetId);
 }
 
+export function repositoryModuleCompositionLogicalId(
+  repositoryId: string,
+  moduleId: string,
+): string {
+  return `composition:repository:${repositoryId}:${moduleId}`;
+}
+
+export function repositoryModuleCompositionRelationshipId(
+  repositoryId: string,
+  moduleId: string,
+): string {
+  return computeArchiId("CompositionRelationship", repositoryId, moduleId);
+}
+
 function versionValueForField(
   module: ApplicationModuleVersionSource,
   field: ModuleVersionField,

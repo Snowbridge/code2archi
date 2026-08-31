@@ -14,7 +14,7 @@ import {
   NpmModuleArtifactProfile,
   RunsOnProfile,
 } from "../../archimate-model/profiles/profile.js";
-import { AssignmentRelationship } from "../../archimate-model/relationships/archi-relationship.js";
+import { AssignmentRelationship, CompositionRelationship } from "../../archimate-model/relationships/archi-relationship.js";
 import type { ArchiRelationshipCreateIntent } from "../../archimate-model/relationships/archi-relationship.js";
 import { standardGenerateElementProperties } from "../../generate/archi-element-properties.js";
 import {
@@ -30,6 +30,8 @@ import {
   collectSystemSoftwareCatalog,
   isEligibleApplicationModule,
   moduleArtifactProfileFor,
+  repositoryModuleCompositionLogicalId,
+  repositoryModuleCompositionRelationshipId,
   versionFieldSpec,
 } from "../../generate/module-version-catalog.js";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
@@ -72,7 +74,7 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps ApplicationModule entities to Technology Artifacts, SystemSoftware toolchain/runtime catalog, and Assignment relationships.";
+    "Maps ApplicationModule entities to Technology Artifacts, SystemSoftware toolchain/runtime catalog, Composition repo-to-module links, and Assignment relationships.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -152,6 +154,31 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
         },
       ]);
       elements.push(elementIntent);
+    }
+
+    for (const module of modules) {
+      const repositoryId = String(module.repositoryId);
+      if (input.archi.getElement(repositoryId) === undefined) {
+        continue;
+      }
+
+      const compositionId = repositoryModuleCompositionRelationshipId(repositoryId, module.id);
+      if (input.archi.getRelationship(compositionId)) {
+        continue;
+      }
+
+      let compositionBuilder = CompositionRelationship.withId(compositionId)
+        .source(repositoryId)
+        .target(module.id);
+
+      for (const property of standardGenerateElementProperties({
+        logicalId: repositoryModuleCompositionLogicalId(repositoryId, module.id),
+        generatorCoordinate: GENERATOR_COORDINATE,
+      })) {
+        compositionBuilder = compositionBuilder.property(property.key, property.value);
+      }
+
+      relations.push(compositionBuilder.build().toCreateIntent());
     }
 
     const catalog = collectSystemSoftwareCatalog(modules);

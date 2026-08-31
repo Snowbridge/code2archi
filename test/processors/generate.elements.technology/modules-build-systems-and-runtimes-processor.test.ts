@@ -7,6 +7,7 @@ import { Artifact } from "../../../src/archimate-model/elements/archi-element.js
 import {
   BuiltWithProfile,
   CompiledWithProfile,
+  GitRepoProfile,
   MavenModuleArtifactProfile,
   RunsOnProfile,
 } from "../../../src/archimate-model/profiles/profile.js";
@@ -15,6 +16,7 @@ import { ApplicationModule } from "../../../src/discovery-model/entities/applica
 import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { packageVersion } from "../../../src/package-version.js";
 import { UNKNOWN_VERSION } from "../../../src/parsers/build-tool-versions.js";
+import { CODE_REPOSITORIES_FOLDER } from "../../../src/processors/generate.elements.technology/repositories-processor.js";
 import {
   APPLICATION_MODULES_FOLDER,
   BUILD_TOOLS_AND_RUNTIMES_FOLDER,
@@ -22,6 +24,7 @@ import {
 } from "../../../src/processors/generate.elements.technology/modules-build-systems-and-runtimes-processor.js";
 import {
   assignmentRelationshipId,
+  repositoryModuleCompositionRelationshipId,
   systemSoftwareIdForEntry,
 } from "../../../src/generate/module-version-catalog.js";
 
@@ -50,6 +53,29 @@ function discoverySnapshot(
       ApplicationModule: modules,
     },
   });
+}
+
+function seedRepositoryArtifact(
+  store: ArchiModelStore,
+  repository: ReturnType<typeof repositoryRecord>,
+): void {
+  const technologyFolderId = store.getPredefinedFolderId("technology");
+  const codeReposId = ArchiFolderIds.nestedId(technologyFolderId, CODE_REPOSITORIES_FOLDER);
+  store.createFolder(technologyFolderId, CODE_REPOSITORIES_FOLDER);
+  store.addCreateIntents(
+    GENERATE_ELEMENTS_GROUP_ID,
+    { groupId: "generate.elements.technology", artifactId: "repositories" },
+    {
+      profiles: [GitRepoProfile.create()],
+      elements: [
+        Artifact.withId(repository.id)
+          .name(String(repository.name))
+          .inFolder(codeReposId)
+          .profiles(GitRepoProfile.create().id)
+          .build(),
+      ],
+    },
+  );
 }
 
 describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
@@ -108,6 +134,82 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
     assert.equal(moduleArtifacts?.length, 1);
     assert.equal(moduleArtifacts?.[0]?.id, child.id);
     assert.deepEqual(moduleArtifacts?.[0]?.profileIds, [MavenModuleArtifactProfile.create().id]);
+  });
+
+  it("creates Composition from repository Artifact to module Artifact", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRepositoryArtifact(store, repository);
+    const processor = new ModulesBuildSystemsAndRuntimesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module]),
+      archi: store.snapshot(),
+    });
+
+    const composition = output.relations?.find(
+      (relation) => relation.relationType === "CompositionRelationship",
+    );
+    assert.equal(composition?.sourceId, repository.id);
+    assert.equal(composition?.targetId, module.id);
+    assert.equal(
+      composition?.id,
+      repositoryModuleCompositionRelationshipId(repository.id, module.id),
+    );
+    assert.equal(
+      composition?.properties?.find((property) => property.key === "c2a:generator")?.value,
+      "generate.elements.technology:modules-build-systems-and-runtimes",
+    );
+  });
+
+  it("does not create Composition when repository Artifact is missing from archi", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new ModulesBuildSystemsAndRuntimesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module]),
+      archi: store.snapshot(),
+    });
+
+    assert.equal(
+      output.relations?.some((relation) => relation.relationType === "CompositionRelationship"),
+      false,
+    );
   });
 
   it("deduplicates SystemSoftware for shared Java version", () => {
@@ -269,6 +371,7 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
       javaVersion: "17",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRepositoryArtifact(store, repository);
     const technologyFolderId = store.getPredefinedFolderId("technology");
     const modulesFolderId = ArchiFolderIds.nestedId(technologyFolderId, APPLICATION_MODULES_FOLDER);
     store.createFolder(technologyFolderId, APPLICATION_MODULES_FOLDER);
@@ -301,6 +404,11 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
       0,
     );
     assert.ok((output.elements?.length ?? 0) > 0);
+    assert.equal(
+      output.relations?.filter((relation) => relation.relationType === "CompositionRelationship")
+        .length,
+      1,
+    );
   });
 
   it("creates technology folders parent-first for store merge", () => {
