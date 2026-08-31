@@ -10,11 +10,6 @@ function createGitRepo(dir: string): void {
   mkdirSync(path.join(dir, ".git"), { recursive: true });
 }
 
-function posixNamespace(from: string, to: string): string {
-  const relative = path.relative(path.resolve(from), path.resolve(to));
-  return `/${relative.split(path.sep).join("/")}`;
-}
-
 describe("GitReposProcessor", () => {
   it("exposes scan.scope coordinates", () => {
     const processor = new GitReposProcessor();
@@ -67,7 +62,7 @@ describe("GitReposProcessor", () => {
     );
   });
 
-  it("strips common path prefix from sourceDirs into namespace", () => {
+  it("leaves namespace empty on scan.scope", () => {
     const workspaceRoot = createTestTempDir("c2a-ns-");
     const workspaceA = path.join(workspaceRoot, "a");
     const workspaceB = path.join(workspaceRoot, "b");
@@ -79,37 +74,7 @@ describe("GitReposProcessor", () => {
     const processor = new GitReposProcessor();
     const [repository] = processor.process([workspaceA, workspaceB]);
 
-    assert.equal(
-      repository?.namespace,
-      posixNamespace(workspaceRoot, path.resolve(repo)),
-    );
-  });
-
-  it("uses full localPath as namespace when sourceDirs share only filesystem root", () => {
-    const fsRoot = path.parse(createTestTempDir("c2a-ns-root-")).root;
-    const foo = path.join(fsRoot, "c2a-ns-foo", "foo");
-    const bar = path.join(fsRoot, "c2a-ns-bar", "bar");
-    const repo = path.join(foo, "repo");
-    mkdirSync(bar, { recursive: true });
-    mkdirSync(repo, { recursive: true });
-    createGitRepo(repo);
-
-    const processor = new GitReposProcessor();
-    const [repository] = processor.process([foo, bar]);
-
-    assert.equal(repository?.namespace, path.resolve(repo));
-  });
-
-  it("strips a single source directory prefix into namespace", () => {
-    const sourceDir = createTestTempDir("c2a-ns-single-");
-    const repo = path.join(sourceDir, "my-app");
-    mkdirSync(repo, { recursive: true });
-    createGitRepo(repo);
-
-    const processor = new GitReposProcessor();
-    const [repository] = processor.process([sourceDir]);
-
-    assert.equal(repository?.namespace, posixNamespace(sourceDir, path.resolve(repo)));
+    assert.equal(repository?.namespace, "");
   });
 
   it("detects maven, gradle, and npm build systems in repository root", () => {

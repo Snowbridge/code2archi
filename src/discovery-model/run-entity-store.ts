@@ -4,6 +4,10 @@ import { resolveBuiltInGroupId } from "../platform/processors/processor-coordina
 import { packageVersion } from "../package-version.js";
 import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import type { ProcessorId } from "../platform/processors/processor.js";
+import {
+  computeRepositoryCommonRoot,
+  computeRepositoryNamespace,
+} from "../scan/repository-discovery-root.js";
 import { buildDiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 import type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 import type { CreateIntents } from "./entities/create-intents.js";
@@ -81,17 +85,46 @@ export class RunEntityStore {
   private readonly entities = new Map<EntityType, Map<string, DiscoveryEntityRecord>>();
   private readonly globalIds = new Set<string>();
   private readonly sourceDirs: readonly string[];
+  private repositoryCommonRoot = "";
   readonly scanId: string;
   readonly runStartedAt: Date;
 
   constructor(init: RunEntityStoreInit) {
-    this.sourceDirs = init.sourceDirs;
+    this.sourceDirs = init.sourceDirs.map((sourceDir) => path.resolve(sourceDir));
     this.scanId = init.scanId;
     this.runStartedAt = init.runStartedAt;
   }
 
+  get resolvedSourceDirs(): readonly string[] {
+    return this.sourceDirs;
+  }
+
   get sourceRoot(): string {
     return RunEntityStore.computeSourceRoot(this.sourceDirs);
+  }
+
+  finalizeRepositoryNamespaces(): string {
+    const repositories = this.getEntities("Repository");
+    const localPaths = repositories.map((repository) => String(repository.localPath));
+    this.repositoryCommonRoot = computeRepositoryCommonRoot(localPaths);
+
+    const bucket = this.entities.get("Repository");
+    if (!bucket) {
+      return this.repositoryCommonRoot;
+    }
+
+    for (const repository of repositories) {
+      const namespace = computeRepositoryNamespace(
+        this.repositoryCommonRoot,
+        String(repository.localPath),
+      );
+      bucket.set(repository.id, {
+        ...repository,
+        namespace,
+      });
+    }
+
+    return this.repositoryCommonRoot;
   }
 
   addCreateIntents(
@@ -146,6 +179,8 @@ export class RunEntityStore {
     return buildDiscoveryModelSnapshot({
       scanId: this.scanId,
       sourceRoot: this.sourceRoot,
+      sourceDirs: this.sourceDirs,
+      repositoryCommonRoot: this.repositoryCommonRoot,
       runStartedAt: this.runStartedAt,
       entityMaps: this.entities,
     });

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import {
   GROUP_ENTITY_ALLOWLIST,
   RunEntityStore,
 } from "../../src/discovery-model/run-entity-store.js";
 import { packageVersion } from "../../src/package-version.js";
+import { createTestTempDir } from "../test-temp-dir.js";
 
 const SCAN_SCOPE_PROCESSOR = {
   groupId: "scan.scope",
@@ -215,6 +217,55 @@ describe("RunEntityStore", () => {
       ["module-a"],
     );
     assert.deepEqual(snapshot.listEntitiesByRef("Repository", "name", "repo"), []);
+  });
+
+  it("finalizes repository namespaces from common root of discovered repos", () => {
+    const root = createTestTempDir("c2a-store-ns-");
+    const repoOne = path.join(root, "fizz", "fuzz", "bar", "buzz", "repo-one");
+    const repoTwo = path.join(root, "fizz", "other", "branch", "repo-two");
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    store.addCreateIntents("scan.scope", SCAN_SCOPE_PROCESSOR, {
+      entities: {
+        Repository: [
+          {
+            id: "repo-1",
+            name: "repo-one",
+            namespace: "",
+            localPath: repoOne,
+            url: "",
+            buildSystems: ["maven"],
+          },
+          {
+            id: "repo-2",
+            name: "repo-two",
+            namespace: "",
+            localPath: repoTwo,
+            url: "",
+            buildSystems: ["maven"],
+          },
+        ],
+      },
+    });
+
+    const commonRoot = store.finalizeRepositoryNamespaces();
+    const snapshot = store.snapshot();
+
+    assert.equal(commonRoot, path.join(root, "fizz"));
+    assert.equal(snapshot.repositoryCommonRoot, path.join(root, "fizz"));
+    assert.deepEqual(snapshot.sourceDirs, [path.resolve(root)]);
+    assert.equal(
+      snapshot.getEntity("Repository", "repo-1")?.namespace,
+      "fuzz/bar/buzz",
+    );
+    assert.equal(
+      snapshot.getEntity("Repository", "repo-2")?.namespace,
+      "other/branch",
+    );
   });
 
   it("mirrors group allowlist from specifications", () => {

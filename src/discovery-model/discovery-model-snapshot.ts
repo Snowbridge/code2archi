@@ -5,6 +5,8 @@ import { ENTITY_TYPES } from "./entities/entity-types.js";
 export interface DiscoveryModelSnapshot {
   readonly scanId: string;
   readonly sourceRoot: string;
+  readonly sourceDirs: readonly string[];
+  readonly repositoryCommonRoot: string;
   readonly runStartedAt: Date;
   listEntities(entityType: EntityType): readonly DiscoveryEntityRecord[];
   getEntity(entityType: EntityType, id: string): DiscoveryEntityRecord | undefined;
@@ -19,6 +21,8 @@ export interface DiscoveryModelSnapshot {
 export interface BuildDiscoveryModelSnapshotInit {
   readonly scanId: string;
   readonly sourceRoot: string;
+  readonly sourceDirs?: readonly string[];
+  readonly repositoryCommonRoot?: string;
   readonly runStartedAt: Date;
   readonly entityMaps?: ReadonlyMap<
     EntityType,
@@ -169,6 +173,8 @@ class IndexedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
   constructor(
     readonly scanId: string,
     readonly sourceRoot: string,
+    readonly sourceDirs: readonly string[],
+    readonly repositoryCommonRoot: string,
     readonly runStartedAt: Date,
     indexes: {
       readonly entitiesByType: EntitiesByType;
@@ -223,6 +229,13 @@ export function buildDiscoveryModelSnapshot(
   const indexes = buildIndexes(entityMaps);
 
   return deepFreeze(
-    new IndexedDiscoveryModelSnapshot(init.scanId, init.sourceRoot, init.runStartedAt, indexes),
+    new IndexedDiscoveryModelSnapshot(
+      init.scanId,
+      init.sourceRoot,
+      init.sourceDirs ?? [],
+      init.repositoryCommonRoot ?? "",
+      init.runStartedAt,
+      indexes,
+    ),
   );
 }

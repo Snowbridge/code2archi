@@ -26,52 +26,9 @@ export class RepositoryBuilder {
       url,
       localPath,
       name: path.basename(localPath),
-      namespace: RepositoryBuilder.computeNamespace(sourceDirs, localPath),
+      namespace: "",
       buildSystems: RepositoryBuilder.detectBuildSystems(localPath),
     });
-  }
-
-  private static computeNamespace(
-    sourceDirs: readonly string[],
-    localPath: string,
-  ): string {
-    const resolvedLocalPath = path.resolve(localPath);
-    const commonPrefix = RepositoryBuilder.findCommonPathPrefix(sourceDirs);
-    const fsRoot = path.parse(resolvedLocalPath).root;
-
-    if (!commonPrefix || commonPrefix === fsRoot) {
-      return resolvedLocalPath;
-    }
-
-    const relative = path.relative(commonPrefix, resolvedLocalPath);
-    if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
-      return resolvedLocalPath;
-    }
-
-    return `/${relative.split(path.sep).join("/")}`;
-  }
-
-  private static findCommonPathPrefix(paths: readonly string[]): string {
-    if (paths.length === 0) {
-      return "";
-    }
-
-    let prefix = path.resolve(paths[0]!);
-    for (const dir of paths.slice(1)) {
-      const resolved = path.resolve(dir);
-      while (
-        prefix !== resolved &&
-        !resolved.startsWith(prefix + path.sep) &&
-        prefix !== path.parse(prefix).root
-      ) {
-        prefix = path.dirname(prefix);
-      }
-      if (prefix === path.parse(prefix).root) {
-        return prefix;
-      }
-    }
-
-    return prefix;
   }
 
   private static detectBuildSystems(repoRoot: string): string[] {

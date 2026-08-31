@@ -5,13 +5,8 @@ import { describe, it } from "node:test";
 import { RepositoryBuilder } from "../../src/utils/repository-builder.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
-function posixNamespace(from: string, to: string): string {
-  const relative = path.relative(path.resolve(from), path.resolve(to));
-  return `/${relative.split(path.sep).join("/")}`;
-}
-
 describe("RepositoryBuilder", () => {
-  it("strips common path prefix from sourceDirs into namespace", () => {
+  it("leaves namespace empty on scan.scope", () => {
     const workspaceRoot = createTestTempDir("c2a-builder-ns-");
     const workspaceA = path.join(workspaceRoot, "a");
     const workspaceB = path.join(workspaceRoot, "b");
@@ -24,23 +19,7 @@ describe("RepositoryBuilder", () => {
       "",
     );
 
-    assert.equal(
-      repository.namespace,
-      posixNamespace(workspaceRoot, path.resolve(repo)),
-    );
-  });
-
-  it("uses full localPath as namespace when sourceDirs share only filesystem root", () => {
-    const fsRoot = path.parse(createTestTempDir("c2a-builder-ns-root-")).root;
-    const foo = path.join(fsRoot, "c2a-builder-foo", "foo");
-    const bar = path.join(fsRoot, "c2a-builder-bar", "bar");
-    const repo = path.join(foo, "repo");
-    mkdirSync(bar, { recursive: true });
-    mkdirSync(repo, { recursive: true });
-
-    const repository = RepositoryBuilder.buildFromRoot([foo, bar], repo, "");
-
-    assert.equal(repository.namespace, path.resolve(repo));
+    assert.equal(repository.namespace, "");
   });
 
   it("detects maven, gradle, and npm build systems in repository root", () => {

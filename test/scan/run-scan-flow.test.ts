@@ -12,6 +12,10 @@ import { packageVersion } from "../../src/package-version.js";
 import { runScanFlow } from "../../src/scan/run-scan-flow.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
+function createGitRepo(dir: string): void {
+  mkdirSync(path.join(dir, ".git"), { recursive: true });
+}
+
 describe("runScanFlow", () => {
   it("writes discovery-model after scan.scope", () => {
     const root = createTestTempDir("c2a-scan-flow-");
@@ -53,6 +57,50 @@ describe("runScanFlow", () => {
     }>;
     assert.equal(repositories.length, 1);
     assert.equal(repositories[0]?.name, "src");
+    assert.equal(repositories[0]?.namespace, "");
+  });
+
+  it("finalizes repository namespace from common root before scan.source", () => {
+    const root = createTestTempDir("c2a-scan-flow-ns-");
+    const sourceDir = path.join(root, "fizz");
+    const repoDir = path.join(sourceDir, "fuzz", "bar", "buzz", "flow-app");
+    const secondRepoDir = path.join(sourceDir, "other", "second-app");
+    const outputDir = path.join(root, "out");
+    mkdirSync(repoDir, { recursive: true });
+    mkdirSync(secondRepoDir, { recursive: true });
+    mkdirSync(outputDir);
+    createGitRepo(repoDir);
+    createGitRepo(secondRepoDir);
+    writeFileSync(
+      path.join(repoDir, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.flow</groupId>
+  <artifactId>flow-app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+
+    runScanFlow({
+      sourceDirs: [sourceDir],
+      outputDir,
+      force: false,
+      scanId: "test-scan-namespace",
+      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      processorFilters: {
+        with: [],
+        without: ["scan.scope.unversioned-folders"],
+        withOnly: [],
+      },
+    });
+
+    const repositories = JSON.parse(
+      readFileSync(path.join(outputDir, "repositories.json"), "utf8"),
+    ) as Array<{ name: string; namespace: string }>;
+    assert.equal(repositories.length, 2);
+    const flowApp = repositories.find((repository) => repository.name === "flow-app");
+    assert.equal(flowApp?.namespace, "fuzz/bar/buzz");
   });
 
   it("writes application modules after scan.source for maven repository", () => {

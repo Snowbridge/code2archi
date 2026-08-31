@@ -47,6 +47,9 @@ export function runScanFlow(input: RunScanFlowInput): void {
   const repositoryCount = store.getEntities("Repository").length;
   logger.info("step completed", { step: 1, count: repositoryCount });
 
+  const repositoryCommonRoot = store.finalizeRepositoryNamespaces();
+  logger.info("repository common root computed", { repositoryCommonRoot });
+
   logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_SOURCE_GROUP_ID });
   runCreateIntentProcessorGroup(SCAN_SOURCE_GROUP_ID, store.snapshot(), input.processorFilters, store);
   logger.info("step completed", { step: 2 });
