@@ -10,8 +10,9 @@ import {
 import { runGenerateProcessorGroup } from "../platform/processors/run-generate-processor-group.js";
 import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
 import { ArchiModelWriter } from "../archimate-model/archi-model-writer.js";
+import { ArchiModelDomWriter } from "../archimate-model/archi-model-dom-writer.js";
 import { DiscoveryModelReader } from "../discovery-model/discovery-model-reader.js";
-import { getLogger } from "../platform/logging/index.js";
+import { getLogger, isDebugEnabled } from "../platform/logging/index.js";
 import type { GenerateArgs } from "./validate-generate-args.js";
 
 export interface RunGenerateFlowInput extends GenerateArgs {
@@ -54,6 +55,12 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
     outputFile: input.outputFile,
     store: archiStore,
   });
+  if (isDebugEnabled()) {
+    new ArchiModelDomWriter().write({
+      outputFile: input.outputFile,
+      store: archiStore,
+    });
+  }
   logger.info("step completed", { step: 3, outputFile: input.outputFile });
 
   logger.info("flow completed", { outputFile: input.outputFile });

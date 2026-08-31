@@ -30,7 +30,7 @@ describe("ArchiProfile", () => {
   it("binds conceptType to each profile class in create-intent", () => {
     assert.deepEqual(GitRepoProfile.create().toCreateIntent(), {
       id: GitRepoProfile.create().id,
-      name: "Git repo",
+      name: "Source code repo",
       conceptType: "Artifact",
     });
     assert.deepEqual(LibraryModuleProfile.create().toCreateIntent(), {

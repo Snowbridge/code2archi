@@ -149,7 +149,7 @@ function defineAssignmentRelationshipProfile(profileName: string) {
   return NamedProfile;
 }
 
-export const GitRepoProfile = defineArtifactProfile("Git repo");
+export const GitRepoProfile = defineArtifactProfile("Source code repo");
 export const BuildScriptProfile = defineArtifactProfile("Build script");
 export const NpmModuleProfile = defineApplicationComponentProfile("NPM module");
 export const MavenModuleProfile = defineApplicationComponentProfile("Maven module");

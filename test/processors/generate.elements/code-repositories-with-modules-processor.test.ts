@@ -8,6 +8,7 @@ import { ApplicationModuleDependency } from "../../../src/discovery-model/entiti
 import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
 import { CodeRepositoriesWithModulesProcessor } from "../../../src/processors/generate.elements/code-repositories-with-modules-processor.js";
+import { withTestLogging } from "../../platform/logging/test-logging.js";
 
 function createDiscoveryStore(
   repository: Repository,
@@ -238,7 +239,7 @@ describe("CodeRepositoriesWithModulesProcessor", () => {
       archi: archiStore.snapshot(),
     });
 
-    assert.equal(output.profiles?.some((profile) => profile.name === "Git repo"), false);
+    assert.equal(output.profiles?.some((profile) => profile.name === "Source code repo"), false);
     assert.equal(output.profiles?.length, 6);
   });
 
@@ -305,5 +306,51 @@ describe("CodeRepositoriesWithModulesProcessor", () => {
           relation.profileIds?.length === 1,
       ),
     );
+  });
+
+  it("does not add c2a-debug properties at INFO log level", async () => {
+    const repository = new Repository({
+      url: "",
+      localPath: "/repo/app",
+      name: "app-repo",
+      namespace: "/app",
+      buildSystems: ["maven"],
+    });
+
+    await withTestLogging({ logLevel: "INFO", verbose: false }, () => {
+      const discovery = createDiscoveryStore(repository, []).snapshot();
+      const archi = createArchiStore().snapshot();
+      const output = new CodeRepositoriesWithModulesProcessor().process({ discovery, archi });
+      const repoArtifact = output.elements?.find((element) => element.id === repository.id);
+      assert.equal(
+        repoArtifact?.properties?.some((property) => property.key.startsWith("c2a-debug:")),
+        false,
+      );
+    });
+  });
+
+  it("adds c2a-debug Repository properties at DEBUG log level", async () => {
+    const repository = new Repository({
+      url: "https://example.com/app.git",
+      localPath: "/repo/app",
+      name: "app-repo",
+      namespace: "/app",
+      buildSystems: ["maven"],
+    });
+
+    await withTestLogging({ logLevel: "DEBUG", verbose: false }, () => {
+      const discovery = createDiscoveryStore(repository, []).snapshot();
+      const archi = createArchiStore().snapshot();
+      const output = new CodeRepositoriesWithModulesProcessor().process({ discovery, archi });
+      const repoArtifact = output.elements?.find((element) => element.id === repository.id);
+      assert.equal(
+        repoArtifact?.properties?.find((property) => property.key === "c2a-debug:Repository:name")?.value,
+        "app-repo",
+      );
+      assert.equal(
+        repoArtifact?.properties?.find((property) => property.key === "c2a-debug:Repository:url")?.value,
+        "https://example.com/app.git",
+      );
+    });
   });
 });

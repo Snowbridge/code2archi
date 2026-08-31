@@ -23,6 +23,7 @@ import {
   RealizationRelationship,
 } from "../../archimate-model/relationships/archi-relationship.js";
 import { UNKNOWN_VERSION } from "../../parsers/build-tool-versions.js";
+import { withEntityDebugProperties } from "../../generate/generate-debug.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/discovery-model-snapshot.js";
 import type { ApplicationModuleDependencyRecord } from "../../discovery-model/entities/application-module-dependency.js";
 import type { ApplicationModuleRecord, BuildSystem } from "../../discovery-model/entities/application-module.js";
@@ -52,7 +53,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     artifactId: "code-repositories-with-modules",
   };
 
-  readonly version = "0.2.0";
+  readonly version = "0.3.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
@@ -86,7 +87,11 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     const libraryModuleProfileId = LibraryModuleProfile.create().id;
     const runsOnProfileId = RunsOnProfile.create().id;
 
-    const ensureSystemSoftware = (kind: SystemSoftwareKind, version: string): string | undefined => {
+    const ensureSystemSoftware = (
+      kind: SystemSoftwareKind,
+      version: string,
+      sourceModule: ModuleRecord,
+    ): string | undefined => {
       if (version === UNKNOWN_VERSION) {
         return undefined;
       }
@@ -101,14 +106,18 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       const name = this.systemSoftwareName(kind, version);
       systemSoftwareByKey.set(key, id);
       elements.push(
-        SystemSoftware.withId(id)
-          .name(name)
-          .inFolder(technologyFolderId)
-          .property("c2a:Id", name)
-          .property("c2a:confidence", "confirmed")
-          .property("c2a:schema", packageVersion)
-          .property("c2a:generator", GENERATOR)
-          .build(),
+        withEntityDebugProperties(
+          SystemSoftware.withId(id)
+            .name(name)
+            .inFolder(technologyFolderId)
+            .property("c2a:Id", name)
+            .property("c2a:confidence", "confirmed")
+            .property("c2a:schema", packageVersion)
+            .property("c2a:generator", GENERATOR)
+            .build()
+            .toCreateIntent(),
+          [{ entityType: "ApplicationModule", record: sourceModule as unknown as DiscoveryEntityRecord }],
+        ),
       );
       return id;
     };
@@ -141,16 +150,20 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       ).length;
 
       elements.push(
-        Artifact.withId(repository.id)
-          .name(repository.name)
-          .inFolder(technologyFolderId)
-          .profiles(gitRepoProfileId)
-          .property("c2a:modulesCount", String(moduleCount))
-          .property("c2a:Id", repository.name)
-          .property("c2a:confidence", "confirmed")
-          .property("c2a:schema", packageVersion)
-          .property("c2a:generator", GENERATOR)
-          .build(),
+        withEntityDebugProperties(
+          Artifact.withId(repository.id)
+            .name(repository.name)
+            .inFolder(technologyFolderId)
+            .profiles(gitRepoProfileId)
+            .property("c2a:modulesCount", String(moduleCount))
+            .property("c2a:Id", repository.name)
+            .property("c2a:confidence", "confirmed")
+            .property("c2a:schema", packageVersion)
+            .property("c2a:generator", GENERATOR)
+            .build()
+            .toCreateIntent(),
+          [{ entityType: "Repository", record: repository as unknown as unknown as DiscoveryEntityRecord }],
+        ),
       );
     }
 
@@ -159,29 +172,37 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       if (!emittedBuildScriptIds.has(buildScriptId)) {
         emittedBuildScriptIds.add(buildScriptId);
         elements.push(
-          Artifact.withId(buildScriptId)
-            .name(module.buildScript)
-            .inFolder(technologyFolderId)
-            .profiles(buildScriptProfileId)
-            .property("c2a:Id", module.buildScript)
-            .property("c2a:confidence", "confirmed")
-            .property("c2a:schema", packageVersion)
-            .property("c2a:generator", GENERATOR)
-            .build(),
+          withEntityDebugProperties(
+            Artifact.withId(buildScriptId)
+              .name(module.buildScript)
+              .inFolder(technologyFolderId)
+              .profiles(buildScriptProfileId)
+              .property("c2a:Id", module.buildScript)
+              .property("c2a:confidence", "confirmed")
+              .property("c2a:schema", packageVersion)
+              .property("c2a:generator", GENERATOR)
+              .build()
+              .toCreateIntent(),
+            [{ entityType: "ApplicationModule", record: module as unknown as DiscoveryEntityRecord }],
+          ),
         );
       }
 
       const moduleProfileId = this.profileForBuildSystem(module.buildSystem).id;
       elements.push(
-        ApplicationComponent.withId(module.id)
-          .name(module.name)
-          .inFolder(applicationFolderId)
-          .profiles(moduleProfileId)
-          .property("c2a:Id", module.name)
-          .property("c2a:confidence", "confirmed")
-          .property("c2a:schema", packageVersion)
-          .property("c2a:generator", GENERATOR)
-          .build(),
+        withEntityDebugProperties(
+          ApplicationComponent.withId(module.id)
+            .name(module.name)
+            .inFolder(applicationFolderId)
+            .profiles(moduleProfileId)
+            .property("c2a:Id", module.name)
+            .property("c2a:confidence", "confirmed")
+            .property("c2a:schema", packageVersion)
+            .property("c2a:generator", GENERATOR)
+            .build()
+            .toCreateIntent(),
+          [{ entityType: "ApplicationModule", record: module as unknown as DiscoveryEntityRecord }],
+        ),
       );
 
       const compositionId = computeArchiId("Composition", module.repositoryId, buildScriptId);
@@ -218,6 +239,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       const buildToolSoftwareId = ensureSystemSoftware(
         module.buildSystem,
         module.buildToolVersion,
+        module,
       );
       if (buildToolSoftwareId) {
         emitAssignment(buildToolSoftwareId, buildScriptId, `${buildToolSoftwareId}:${buildScriptId}`);
@@ -237,15 +259,19 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       }
 
       elements.push(
-        ApplicationComponent.withId(module.id)
-          .name(module.name)
-          .inFolder(applicationFolderId)
-          .profiles(libraryModuleProfileId)
-          .property("c2a:Id", module.name)
-          .property("c2a:confidence", "confirmed")
-          .property("c2a:schema", packageVersion)
-          .property("c2a:generator", GENERATOR)
-          .build(),
+        withEntityDebugProperties(
+          ApplicationComponent.withId(module.id)
+            .name(module.name)
+            .inFolder(applicationFolderId)
+            .profiles(libraryModuleProfileId)
+            .property("c2a:Id", module.name)
+            .property("c2a:confidence", "confirmed")
+            .property("c2a:schema", packageVersion)
+            .property("c2a:generator", GENERATOR)
+            .build()
+            .toCreateIntent(),
+          [{ entityType: "ApplicationModule", record: module as unknown as DiscoveryEntityRecord }],
+        ),
       );
     }
 
@@ -296,7 +322,11 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
 
   private emitRuntimeAssignments(
     module: ModuleRecord,
-    ensureSystemSoftware: (kind: SystemSoftwareKind, version: string) => string | undefined,
+    ensureSystemSoftware: (
+      kind: SystemSoftwareKind,
+      version: string,
+      sourceModule: ModuleRecord,
+    ) => string | undefined,
     emitAssignment: (
       sourceId: string,
       targetId: string,
@@ -307,7 +337,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
   ): void {
     const javaIds = new Set<string>();
 
-    const javaSoftwareId = ensureSystemSoftware("java", module.javaVersion);
+    const javaSoftwareId = ensureSystemSoftware("java", module.javaVersion, module);
     if (javaSoftwareId) {
       javaIds.add(javaSoftwareId);
       emitAssignment(
@@ -322,7 +352,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       module.kotlinJvmTarget !== UNKNOWN_VERSION &&
       module.kotlinJvmTarget !== module.javaVersion
     ) {
-      const kotlinJvmSoftwareId = ensureSystemSoftware("java", module.kotlinJvmTarget);
+      const kotlinJvmSoftwareId = ensureSystemSoftware("java", module.kotlinJvmTarget, module);
       if (kotlinJvmSoftwareId && !javaIds.has(kotlinJvmSoftwareId)) {
         emitAssignment(
           kotlinJvmSoftwareId,
@@ -333,7 +363,11 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       }
     }
 
-    const kotlinCompilerSoftwareId = ensureSystemSoftware("kotlin", module.kotlinCompilerVersion);
+    const kotlinCompilerSoftwareId = ensureSystemSoftware(
+      "kotlin",
+      module.kotlinCompilerVersion,
+      module,
+    );
     if (kotlinCompilerSoftwareId) {
       emitAssignment(
         kotlinCompilerSoftwareId,
@@ -343,7 +377,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
       );
     }
 
-    const nodeSoftwareId = ensureSystemSoftware("node", module.nodeVersion);
+    const nodeSoftwareId = ensureSystemSoftware("node", module.nodeVersion, module);
     if (nodeSoftwareId) {
       emitAssignment(
         nodeSoftwareId,
@@ -460,7 +494,7 @@ export class CodeRepositoriesWithModulesProcessor extends AbstractProcessor<
     const profiles: ArchiProfile[] = [];
     const candidates: readonly { readonly name: string; readonly factory: () => ArchiProfile }[] =
       [
-        { name: "Git repo", factory: () => GitRepoProfile.create() },
+        { name: "Source code repo", factory: () => GitRepoProfile.create() },
         { name: "Build script", factory: () => BuildScriptProfile.create() },
         { name: "NPM module", factory: () => NpmModuleProfile.create() },
         { name: "Maven module", factory: () => MavenModuleProfile.create() },
