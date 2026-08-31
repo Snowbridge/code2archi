@@ -3,6 +3,7 @@ import { MavenModulesAndDependenciesProcessor } from "../../processors/scan.sour
 import { NpmModulesAndDependenciesProcessor } from "../../processors/scan.source/npm-modules-and-dependencies-processor.js";
 import { ApplicationComponentsFromModulesProcessor } from "../../processors/generate.elements.application/application-components-from-modules-processor.js";
 import { ModulesBuildSystemsAndRuntimesProcessor } from "../../processors/generate.elements.technology/modules-build-systems-and-runtimes-processor.js";
+import { NoBuildOrRuntimeToolsProcessor } from "../../processors/generate.elements.technology/no-build-or-runtime-tools-processor.js";
 import { RepositoriesProcessor } from "../../processors/generate.elements.technology/repositories-processor.js";
 import { GitReposProcessor } from "../../processors/scan.scope/git-repos-processor.js";
 import { UnversionedFoldersProcessor } from "../../processors/scan.scope/unversioned-folders-processor.js";
@@ -15,4 +16,5 @@ processorRegistry.register(new GradleModulesAndDependenciesProcessor());
 processorRegistry.register(new NpmModulesAndDependenciesProcessor());
 processorRegistry.register(new RepositoriesProcessor());
 processorRegistry.register(new ModulesBuildSystemsAndRuntimesProcessor());
+processorRegistry.register(new NoBuildOrRuntimeToolsProcessor());
 processorRegistry.register(new ApplicationComponentsFromModulesProcessor());
