@@ -42,7 +42,10 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
   }
 
   const rootProjectName = settingsFile
-    ? parseRootProjectName(readFileSync(path.join(repoRoot, settingsFile), "utf8"))
+    ? parseRootProjectName(
+        readFileSync(path.join(repoRoot, settingsFile), "utf8"),
+        path.basename(repoRoot),
+      )
     : path.basename(repoRoot);
 
   const rootIncludes = [
@@ -130,9 +133,9 @@ function findFirstExisting(
   return undefined;
 }
 
-function parseRootProjectName(content: string): string {
+function parseRootProjectName(content: string, fallbackName: string): string {
   const match = content.match(/rootProject\.name\s*=\s*['"]([^'"]+)['"]/);
-  return match?.[1] ?? "root";
+  return match?.[1] ?? fallbackName;
 }
 
 function parseIncludes(content: string): string[] {

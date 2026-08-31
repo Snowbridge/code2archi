@@ -68,4 +68,19 @@ runtime 'com.runtime:runtime-legacy:6.0.0'`,
 
     assert.deepEqual(artifactIds, ["api-lib", "impl-lib", "legacy-lib"]);
   });
+
+  it("uses repository folder name when rootProject.name is missing in settings", () => {
+    const root = createTestTempDir("c2a-gradle-folder-name-");
+    writeFileSync(path.join(root, "settings.gradle"), `include 'service-a'`);
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'com.example'
+version = '1.0.0'`,
+    );
+
+    const modules = parseGradleRepository(root);
+    const rootModule = modules.find((module) => module.repoPath === ".");
+
+    assert.equal(rootModule?.coordinates.artifactId, path.basename(root));
+  });
 });
