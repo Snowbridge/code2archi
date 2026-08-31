@@ -9,6 +9,7 @@ import {
   ensureChildFolder,
   ensureFolderPath,
   parseNamespaceSegments,
+  dedupeAndSortFolderIntents,
 } from "../../generate/archi-folder-path.js";
 import { standardGenerateElementProperties } from "../../generate/archi-element-properties.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
@@ -101,7 +102,8 @@ export class RepositoriesProcessor extends AbstractProcessor<
       elements.push(elementIntent);
     }
 
-    const uniqueFolderIntents = dedupeFolderIntents(folderIntents);
+    const existingFolderIds = new Set(input.archi.listFolders().map((folder) => folder.id));
+    const uniqueFolderIntents = dedupeAndSortFolderIntents(folderIntents, existingFolderIds);
 
     return {
       ...(uniqueFolderIntents.length > 0 ? { folders: uniqueFolderIntents } : {}),
@@ -109,14 +111,4 @@ export class RepositoriesProcessor extends AbstractProcessor<
       ...(elements.length > 0 ? { elements } : {}),
     };
   }
-}
-
-function dedupeFolderIntents(
-  folderIntents: readonly ArchiFolderCreateIntent[],
-): ArchiFolderCreateIntent[] {
-  const byId = new Map<string, ArchiFolderCreateIntent>();
-  for (const folderIntent of folderIntents) {
-    byId.set(folderIntent.id, folderIntent);
-  }
-  return [...byId.values()].sort((left, right) => left.id.localeCompare(right.id));
 }

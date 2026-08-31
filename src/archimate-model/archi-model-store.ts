@@ -23,6 +23,7 @@ import {
   ArchiRelationship,
   type ArchiRelationshipCreateIntent,
 } from "./relationships/archi-relationship.js";
+import { sortFolderIntentsParentFirst } from "../generate/archi-folder-path.js";
 
 const GENERATE_ELEMENTS_RELATION_TYPES: readonly RelationType[] = [
   "AccessRelationship",
@@ -326,8 +327,9 @@ export class ArchiModelStore {
       );
     }
 
-    if (intents.folders) {
-      for (const folderIntent of intents.folders) {
+    if (intents.folders && intents.folders.length > 0) {
+      const orderedFolders = sortFolderIntentsParentFirst(intents.folders, new Set(this.folders.keys()));
+      for (const folderIntent of orderedFolders) {
         this.addFolderIntent(builtInGroupId, folderIntent);
       }
     }
@@ -395,6 +397,10 @@ export class ArchiModelStore {
   }
 
   private addFolderIntent(builtInGroupId: BuiltInProcessorGroupId, intent: ArchiFolderCreateIntent): void {
+    if (this.folders.has(intent.id)) {
+      return;
+    }
+
     if (intent.parentFolderId) {
       this.assertFolderAllowedForGroup(builtInGroupId, intent.parentFolderId);
     } else if (!this.folders.has(intent.id)) {

@@ -82,3 +82,43 @@ export function parseNamespaceSegments(namespace: string): string[] {
 
   return namespace.split("/").filter((segment) => segment.length > 0);
 }
+
+export function sortFolderIntentsParentFirst(
+  folderIntents: readonly ArchiFolderCreateIntent[],
+  existingFolderIds: ReadonlySet<string> = new Set(),
+): ArchiFolderCreateIntent[] {
+  const pending = [...folderIntents];
+  const sorted: ArchiFolderCreateIntent[] = [];
+  const available = new Set(existingFolderIds);
+
+  while (pending.length > 0) {
+    let progressed = false;
+    for (let index = 0; index < pending.length; index++) {
+      const intent = pending[index]!;
+      const parentId = intent.parentFolderId;
+      if (parentId === undefined || available.has(parentId)) {
+        sorted.push(intent);
+        available.add(intent.id);
+        pending.splice(index, 1);
+        progressed = true;
+        break;
+      }
+    }
+    if (!progressed) {
+      throw new Error("Cannot order folder intents: missing parent folder");
+    }
+  }
+
+  return sorted;
+}
+
+export function dedupeAndSortFolderIntents(
+  folderIntents: readonly ArchiFolderCreateIntent[],
+  existingFolderIds?: ReadonlySet<string>,
+): ArchiFolderCreateIntent[] {
+  const byId = new Map<string, ArchiFolderCreateIntent>();
+  for (const folderIntent of folderIntents) {
+    byId.set(folderIntent.id, folderIntent);
+  }
+  return sortFolderIntentsParentFirst([...byId.values()], existingFolderIds);
+}

@@ -97,6 +97,30 @@ describe("ArchiModelStore", () => {
     );
   });
 
+  it("accepts folder create-intents in child-before-parent order", () => {
+    const store = new ArchiModelStore({ modelName: "Example", modelId: "model-id" });
+    const technologyFolderId = store.getPredefinedFolderId("technology");
+    const codeReposId = ArchiFolderIds.nestedId(technologyFolderId, "Code repositories");
+    const fuzzId = ArchiFolderIds.nestedId(codeReposId, "fuzz");
+    const barId = ArchiFolderIds.nestedId(fuzzId, "bar");
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements.technology", artifactId: "repositories" },
+      {
+        folders: [
+          { id: barId, name: "bar", parentFolderId: fuzzId },
+          { id: codeReposId, name: "Code repositories", parentFolderId: technologyFolderId },
+          { id: fuzzId, name: "fuzz", parentFolderId: codeReposId },
+        ],
+      },
+    );
+
+    assert.ok(store.snapshot().getFolder(codeReposId));
+    assert.ok(store.snapshot().getFolder(fuzzId));
+    assert.ok(store.snapshot().getFolder(barId));
+  });
+
   it("finds elements by concept type and name", () => {
     const store = new ArchiModelStore({
       modelName: "Example",

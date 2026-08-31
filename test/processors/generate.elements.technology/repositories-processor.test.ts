@@ -166,4 +166,48 @@ describe("RepositoriesProcessor", () => {
     assert.equal(output.profiles?.length ?? 0, 0);
     assert.equal(output.elements?.length, 1);
   });
+
+  it("adds nested folders to store when multiple repositories share namespace prefixes", () => {
+    const repositories = [
+      repositoryRecord({
+        url: "",
+        localPath: "/workspace/fizz/fuzz/bar/buzz/repo-a",
+        name: "repo-a",
+        namespace: "fuzz/bar/buzz",
+        buildSystems: [],
+      }),
+      repositoryRecord({
+        url: "",
+        localPath: "/workspace/fizz/fuzz/bar/other/repo-b",
+        name: "repo-b",
+        namespace: "fuzz/bar/other",
+        buildSystems: [],
+      }),
+      repositoryRecord({
+        url: "",
+        localPath: "/workspace/fizz/alpha/repo-c",
+        name: "repo-c",
+        namespace: "alpha",
+        buildSystems: [],
+      }),
+    ];
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new RepositoriesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot(repositories),
+      archi: store.snapshot(),
+    });
+
+    assert.ok(output.folders && output.folders.length > 1);
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements.technology", artifactId: "repositories" },
+      output,
+    );
+
+    assert.equal(store.listElements().length, 3);
+    assert.ok(store.listFolders().some((folder) => folder.name === "buzz"));
+    assert.ok(store.listFolders().some((folder) => folder.name === CODE_REPOSITORIES_FOLDER));
+  });
 });
