@@ -37,7 +37,7 @@ export class NoBuildOrRuntimeToolsProcessor extends AbstractProcessor<
 
   readonly version = "0.1.0";
 
-  readonly executionPolicy = "ALWAYS" as const;
+  readonly executionPolicy = "ON_DEMAND" as const;
 
   readonly description =
     "Marks ApplicationModules with unknown build-tool or runtime version fields via shared SystemSoftware and Assignment links.";
