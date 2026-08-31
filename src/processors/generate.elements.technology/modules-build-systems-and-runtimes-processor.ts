@@ -25,6 +25,7 @@ import {
 } from "../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
 import { decorateElementName } from "../../generate/element-name-decoration.js";
+import { moduleArtifactRepoPathValue } from "../../generate/module-artifact-repo-path.js";
 import {
   assignmentLogicalId,
   assignmentRelationshipId,
@@ -147,7 +148,15 @@ export class ModulesBuildSystemsAndRuntimesProcessor extends AbstractProcessor<
           ),
         )
         .inFolder(targetFolder.folderId)
-        .profiles(moduleProfile.id);
+        .profiles(moduleProfile.id)
+        .property(
+          "c2a:repo-path",
+          moduleArtifactRepoPathValue(
+            String(repository?.namespace ?? ""),
+            String(repository?.name ?? ""),
+            String(module.repoPath),
+          ),
+        );
 
       for (const property of standardGenerateElementProperties({
         logicalId: module.id,

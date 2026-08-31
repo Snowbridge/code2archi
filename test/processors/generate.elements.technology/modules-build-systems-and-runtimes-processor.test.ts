@@ -143,6 +143,10 @@ describe("ModulesBuildSystemsAndRuntimesProcessor", () => {
       moduleArtifacts?.[0]?.properties?.find((property) => property.key === "c2a:slot")?.value,
       "module-artifact",
     );
+    assert.equal(
+      moduleArtifacts?.[0]?.properties?.find((property) => property.key === "c2a:repo-path")?.value,
+      "/demo://child",
+    );
   });
 
   it("creates Composition from repository Artifact to module Artifact", () => {
