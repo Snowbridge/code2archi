@@ -51,7 +51,7 @@ export function runScanFlow(input: RunScanFlowInput): void {
   logger.info("repository common root computed", { repositoryCommonRoot });
 
   logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_SOURCE_GROUP_ID });
-  runCreateIntentProcessorGroup(SCAN_SOURCE_GROUP_ID, store.snapshot(), input.processorFilters, store);
+  runCreateIntentProcessorGroup(SCAN_SOURCE_GROUP_ID, input.processorFilters, store);
   logger.info("step completed", { step: 2 });
 
   logger.info("step start", { step: 3, action: "writing discovery-model", outputDir: input.outputDir });

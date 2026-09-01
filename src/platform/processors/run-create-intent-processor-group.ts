@@ -1,7 +1,6 @@
 import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
-import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
-import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
+import type { DiscoveryModelSnapshot, RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import { getLogger } from "../logging/index.js";
@@ -27,7 +26,6 @@ function countCreateIntents(output: CreateIntents): number {
 
 export function runCreateIntentProcessorGroup(
   builtInGroupId: BuiltInProcessorGroupId,
-  snapshot: DiscoveryModelSnapshot,
   filters: ProcessorFilters,
   store: RunEntityStore,
 ): void {
@@ -42,7 +40,7 @@ export function runCreateIntentProcessorGroup(
   for (const processor of processors) {
     processor.logStart();
 
-    const output = processor.process(snapshot);
+    const output = processor.process(store.snapshot());
     if (output instanceof Promise) {
       throw new Error(
         `Processor ${processor.id.groupId}/${processor.id.artifactId} returned a Promise; sync execution expected`,

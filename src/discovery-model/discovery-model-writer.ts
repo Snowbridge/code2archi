@@ -15,6 +15,9 @@ export const APPLICATION_MODULE_SCHEMA_ID =
 export const APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID =
   "https://code2archi.dev/specifications/discovery-model/schemas/ApplicationModuleDependency.schema.json";
 
+export const REST_CONTROLLER_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/RestController.schema.json";
+
 interface ManifestCollectionEntry {
   readonly path: string;
   readonly contentType: "entities" | "many-to-many";
@@ -56,7 +59,10 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
     collectionPath: "application-module-dependencies.json",
     schemaId: APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   },
-  RestController: { collectionPath: "rest-controllers.json" },
+  RestController: {
+    collectionPath: "rest-controllers.json",
+    schemaId: REST_CONTROLLER_SCHEMA_ID,
+  },
   RestClient: { collectionPath: "rest-clients.json" },
   MessageConsumer: { collectionPath: "message-consumers.json" },
   MessageProducer: { collectionPath: "message-producers.json" },

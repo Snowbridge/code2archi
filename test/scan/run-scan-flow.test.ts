@@ -176,4 +176,64 @@ describe("runScanFlow", () => {
     assert.equal(dependencies.length, 1);
     assert.equal(dependencies[0]?.artifactId, "shared");
   });
+
+  it("discovers RestController entities after maven modules are scanned in scan.source", () => {
+    const root = createTestTempDir("c2a-scan-flow-rest-");
+    const sourceDir = path.join(root, "src");
+    const javaDir = path.join(sourceDir, "src", "main", "java", "com", "flow");
+    const outputDir = path.join(root, "out");
+    mkdirSync(javaDir, { recursive: true });
+    mkdirSync(outputDir);
+    writeFileSync(
+      path.join(sourceDir, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.flow</groupId>
+  <artifactId>flow-app</artifactId>
+  <version>1.0.0</version>
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+  </properties>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "FlowController.java"),
+      `package com.flow;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class FlowController {
+    @GetMapping("/flow")
+    public String flow() { return "ok"; }
+}
+`,
+    );
+
+    runScanFlow({
+      sourceDirs: [sourceDir],
+      outputDir,
+      force: false,
+      scanId: "test-scan-rest-controllers",
+      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      processorFilters: {
+        with: ["scan.scope.unversioned-folders"],
+        without: [],
+        withOnly: [],
+      },
+    });
+
+    const controllersPath = path.join(outputDir, "rest-controllers.json");
+    assert.ok(existsSync(controllersPath));
+
+    const controllers = JSON.parse(readFileSync(controllersPath, "utf8")) as Array<{
+      name: string;
+      endpoints: string[];
+    }>;
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "FlowController");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
+  });
 });
