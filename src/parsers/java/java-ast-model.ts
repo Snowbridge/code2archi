@@ -1,3 +1,5 @@
+import type { GenericCstNode } from "./java-cst-utils.js";
+
 export interface JavaAnnotation {
   readonly name: string;
   readonly qualifiedName: string;
@@ -21,6 +23,7 @@ export interface JavaMethodDeclaration {
   readonly returnType?: JavaTypeRef;
   readonly parameters: readonly JavaParameter[];
   readonly annotations: readonly JavaAnnotation[];
+  readonly body?: GenericCstNode;
 }
 
 export interface JavaTypeDeclaration {

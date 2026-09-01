@@ -155,6 +155,7 @@ function extractMethods(source: string, normalClass: GenericCstNode | undefined)
       returnType: parseTypeRef(firstChild(methodHeader, "result")),
       parameters: extractParameters(source, methodDeclarator),
       annotations: collectModifierAnnotations(source, methodDeclaration.children?.methodModifier),
+      body: firstChild(methodDeclaration, "methodBody"),
     });
   }
 

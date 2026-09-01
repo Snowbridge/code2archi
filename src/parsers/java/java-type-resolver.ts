@@ -37,6 +37,8 @@ const FRAMEWORK_EXCLUDED_TYPES = new Set([
   "HttpEntity",
   "HttpResponse",
   "MutableHttpResponse",
+  "ServerResponse",
+  "ServerRequest",
   "Mono",
   "Flux",
   "Publisher",

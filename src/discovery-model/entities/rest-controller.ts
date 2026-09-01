@@ -4,6 +4,8 @@ import type { TcpStackType } from "../../parsers/java/rest/rest-tcp-stack-type.j
 
 export type { TcpStackType };
 
+export type ProgrammingModel = "DECLARATIVE" | "FUNCTIONAL";
+
 export interface RestControllerCreateIntent {
   readonly id: string;
   readonly applicationModuleId: string;
@@ -12,6 +14,7 @@ export interface RestControllerCreateIntent {
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
   readonly tcpStackType: TcpStackType;
+  readonly programmingModel: ProgrammingModel;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly sourceFile: string;
@@ -24,6 +27,7 @@ export interface RestControllerNaturalKeys {
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
   readonly tcpStackType: TcpStackType;
+  readonly programmingModel: ProgrammingModel;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly sourceFile: string;
@@ -38,6 +42,7 @@ export class RestController extends Entity {
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
   readonly tcpStackType: TcpStackType;
+  readonly programmingModel: ProgrammingModel;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly sourceFile: string;
@@ -53,6 +58,7 @@ export class RestController extends Entity {
     this.dtoFqcn = naturalKeys.dtoFqcn;
     this.endpoints = naturalKeys.endpoints;
     this.tcpStackType = naturalKeys.tcpStackType;
+    this.programmingModel = naturalKeys.programmingModel;
     this.implementedInterfaceFqcn = naturalKeys.implementedInterfaceFqcn;
     this.sourceFile = naturalKeys.sourceFile;
     if (naturalKeys.baseClassFqcn !== undefined) {
@@ -69,6 +75,7 @@ export class RestController extends Entity {
       dtoFqcn: this.dtoFqcn,
       endpoints: this.endpoints,
       tcpStackType: this.tcpStackType,
+      programmingModel: this.programmingModel,
       implementedInterfaceFqcn: this.implementedInterfaceFqcn,
       sourceFile: this.sourceFile,
       ...(this.baseClassFqcn !== undefined ? { baseClassFqcn: this.baseClassFqcn } : {}),

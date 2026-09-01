@@ -15,7 +15,7 @@ import {
   resolveMavenProductionJavaSourceRoot,
 } from "../../parsers/gradle-source-roots.js";
 import { parseJavaSourceFile } from "../../parsers/java/java-compilation-unit.js";
-import { extractRestControllers } from "../../parsers/java/rest/rest-controller-extractor.js";
+import { extractFunctionalRouters } from "../../parsers/java/rest/functional-router-extractor.js";
 import { toRepoRelativePath } from "../../utils/repo-relative-path.js";
 
 interface ModuleSourceContext {
@@ -30,10 +30,10 @@ interface JavaFileContext {
   readonly repository: RepositoryRecord;
 }
 
-export class AnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, ScanAppOutput> {
+export class FunctionalRouterBasedProcessor extends AbstractProcessor<ScanAppInput, ScanAppOutput> {
   readonly id: ProcessorId = {
     groupId: "scan.source.rest.controller.java",
-    artifactId: "annotation-based",
+    artifactId: "functional-router-based",
   };
 
   readonly version = "0.1.0";
@@ -41,7 +41,7 @@ export class AnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, Sc
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers Java REST controllers from annotation-based frameworks in Maven and Gradle modules.";
+    "Discovers Java REST controllers from Spring functional RouterFunction beans in Maven and Gradle modules.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const repositories = this.loadRepositories(input);
@@ -206,13 +206,13 @@ export class AnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, Sc
       return [];
     }
 
-    const parsedControllers = extractRestControllers(compilationUnit);
+    const parsedRouters = extractFunctionalRouters(compilationUnit);
     const sourceFile = toRepoRelativePath(
       fileContext.repository.localPath,
       fileContext.absolutePath,
     );
 
-    return parsedControllers.map(
+    return parsedRouters.map(
       (parsed) =>
         new RestController({
           applicationModuleId: fileContext.module.id,
@@ -221,7 +221,7 @@ export class AnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, Sc
           dtoFqcn: parsed.dtoFqcn,
           endpoints: parsed.endpoints,
           tcpStackType: parsed.tcpStackType,
-          programmingModel: "DECLARATIVE",
+          programmingModel: "FUNCTIONAL",
           implementedInterfaceFqcn: parsed.implementedInterfaceFqcn,
           sourceFile,
           ...(parsed.baseClassFqcn ? { baseClassFqcn: parsed.baseClassFqcn } : {}),

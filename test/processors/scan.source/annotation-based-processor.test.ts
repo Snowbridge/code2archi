@@ -90,6 +90,7 @@ public class EntityController {
     assert.equal(controllers[0]?.sourceFile, "src/main/java/com/example/EntityController.java");
     assert.deepEqual(controllers[0]?.endpoints, ["PUT /api/entity/:id"]);
     assert.equal(controllers[0]?.tcpStackType, "BLOCKING");
+    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
   });
 
   it("skips npm modules and modules with unknown java version", () => {

@@ -1,4 +1,5 @@
 import { AnnotationBasedProcessor } from "../../processors/scan.source/annotation-based-processor.js";
+import { FunctionalRouterBasedProcessor } from "../../processors/scan.source/functional-router-based-processor.js";
 import { GradleModulesAndDependenciesProcessor } from "../../processors/scan.source/gradle-modules-and-dependencies-processor.js";
 import { MavenModulesAndDependenciesProcessor } from "../../processors/scan.source/maven-modules-and-dependencies-processor.js";
 import { NpmModulesAndDependenciesProcessor } from "../../processors/scan.source/npm-modules-and-dependencies-processor.js";
@@ -16,6 +17,7 @@ processorRegistry.register(new MavenModulesAndDependenciesProcessor());
 processorRegistry.register(new GradleModulesAndDependenciesProcessor());
 processorRegistry.register(new NpmModulesAndDependenciesProcessor());
 processorRegistry.register(new AnnotationBasedProcessor());
+processorRegistry.register(new FunctionalRouterBasedProcessor());
 processorRegistry.register(new RepositoriesProcessor());
 processorRegistry.register(new ModulesBuildSystemsAndRuntimesProcessor());
 processorRegistry.register(new NoBuildOrRuntimeToolsProcessor());

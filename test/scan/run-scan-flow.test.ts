@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import "../../src/platform/processors/builtin-processors.js";
 import {
@@ -231,9 +232,65 @@ public class FlowController {
     const controllers = JSON.parse(readFileSync(controllersPath, "utf8")) as Array<{
       name: string;
       endpoints: string[];
+      programmingModel: string;
     }>;
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "FlowController");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
+    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+  });
+
+  it("discovers functional RouterFunction controllers in scan.source", () => {
+    const root = createTestTempDir("c2a-scan-flow-functional-");
+    const sourceDir = path.join(root, "src");
+    const javaDir = path.join(sourceDir, "src", "main", "java", "com", "example");
+    const outputDir = path.join(root, "out");
+    mkdirSync(javaDir, { recursive: true });
+    mkdirSync(outputDir);
+    writeFileSync(
+      path.join(sourceDir, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+  </properties>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "UserRouterConfig.java"),
+      readFileSync(
+        path.join(
+          path.dirname(fileURLToPath(import.meta.url)),
+          "../fixtures/java-rest-controllers/functional/user-router-config.java",
+        ),
+        "utf8",
+      ),
+    );
+
+    runScanFlow({
+      sourceDirs: [sourceDir],
+      outputDir,
+      force: false,
+      scanId: "test-scan-functional-router",
+      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      processorFilters: {
+        with: ["scan.scope.unversioned-folders"],
+        without: [],
+        withOnly: [],
+      },
+    });
+
+    const controllers = JSON.parse(
+      readFileSync(path.join(outputDir, "rest-controllers.json"), "utf8"),
+    ) as Array<{ name: string; programmingModel: string; fqcn: string }>;
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "userRoutes");
+    assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
+    assert.equal(controllers[0]?.fqcn, "com.example.UserRouterConfig#userRoutes");
   });
 });
