@@ -25,6 +25,7 @@ describe("extractRestControllers", () => {
     assert.deepEqual(controllers[0]?.endpoints, ["PUT /api/entity/:id"]);
     assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityDto"));
     assert.ok(!controllers[0]?.dtoFqcn.some((fqcn) => fqcn.includes("ResponseEntity")));
+    assert.equal(controllers[0]?.tcpStackType, "BLOCKING");
   });
 
   it("detects Spring Controller only when handler mapping exists", () => {
@@ -45,6 +46,7 @@ describe("extractRestControllers", () => {
 
     assert.equal(controllers.length, 1);
     assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityDto"));
+    assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
   });
 
   it("extracts Quarkus JAX-RS resource", () => {
@@ -52,6 +54,7 @@ describe("extractRestControllers", () => {
 
     assert.equal(controllers.length, 1);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /v1/items/:id"]);
+    assert.equal(controllers[0]?.tcpStackType, "BLOCKING");
   });
 
   it("extracts Micronaut controller", () => {

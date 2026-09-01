@@ -220,6 +220,7 @@ export class AnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, Sc
           fqcn: parsed.fqcn,
           dtoFqcn: parsed.dtoFqcn,
           endpoints: parsed.endpoints,
+          tcpStackType: parsed.tcpStackType,
           implementedInterfaceFqcn: parsed.implementedInterfaceFqcn,
           sourceFile,
           ...(parsed.baseClassFqcn ? { baseClassFqcn: parsed.baseClassFqcn } : {}),

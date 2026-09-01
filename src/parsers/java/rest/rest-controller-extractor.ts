@@ -13,12 +13,14 @@ import {
 import { jaxRsProfile } from "./profiles/jax-rs-profile.js";
 import { micronautProfile } from "./profiles/micronaut-profile.js";
 import { springMvcProfile } from "./profiles/spring-mvc-profile.js";
+import { resolveTcpStackType, type TcpStackType } from "./rest-tcp-stack-type.js";
 
 export interface ParsedRestController {
   readonly name: string;
   readonly fqcn: string;
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
+  readonly tcpStackType: TcpStackType;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly framework: string;
@@ -128,6 +130,7 @@ function extractControllerFromType(
     fqcn: type.fqcn,
     dtoFqcn: collectDtoFqcn(handlerMethods, compilationUnit.packageName, compilationUnit.imports, registry),
     endpoints: [...endpoints].sort(),
+    tcpStackType: resolveTcpStackType(handlerMethods),
     implementedInterfaceFqcn,
     framework,
     ...(baseClassFqcn ? { baseClassFqcn } : {}),

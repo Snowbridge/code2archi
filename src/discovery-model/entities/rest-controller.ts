@@ -1,5 +1,8 @@
 import type { DiscoveryEntityBase } from "./entity-base.js";
 import { Entity } from "./entity.js";
+import type { TcpStackType } from "../../parsers/java/rest/rest-tcp-stack-type.js";
+
+export type { TcpStackType };
 
 export interface RestControllerCreateIntent {
   readonly id: string;
@@ -8,6 +11,7 @@ export interface RestControllerCreateIntent {
   readonly fqcn: string;
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
+  readonly tcpStackType: TcpStackType;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly sourceFile: string;
@@ -19,6 +23,7 @@ export interface RestControllerNaturalKeys {
   readonly fqcn: string;
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
+  readonly tcpStackType: TcpStackType;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly sourceFile: string;
@@ -32,6 +37,7 @@ export class RestController extends Entity {
   readonly fqcn: string;
   readonly dtoFqcn: readonly string[];
   readonly endpoints: readonly string[];
+  readonly tcpStackType: TcpStackType;
   readonly baseClassFqcn?: string;
   readonly implementedInterfaceFqcn: readonly string[];
   readonly sourceFile: string;
@@ -46,6 +52,7 @@ export class RestController extends Entity {
     this.fqcn = naturalKeys.fqcn;
     this.dtoFqcn = naturalKeys.dtoFqcn;
     this.endpoints = naturalKeys.endpoints;
+    this.tcpStackType = naturalKeys.tcpStackType;
     this.implementedInterfaceFqcn = naturalKeys.implementedInterfaceFqcn;
     this.sourceFile = naturalKeys.sourceFile;
     if (naturalKeys.baseClassFqcn !== undefined) {
@@ -61,6 +68,7 @@ export class RestController extends Entity {
       fqcn: this.fqcn,
       dtoFqcn: this.dtoFqcn,
       endpoints: this.endpoints,
+      tcpStackType: this.tcpStackType,
       implementedInterfaceFqcn: this.implementedInterfaceFqcn,
       sourceFile: this.sourceFile,
       ...(this.baseClassFqcn !== undefined ? { baseClassFqcn: this.baseClassFqcn } : {}),
