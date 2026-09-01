@@ -1,6 +1,6 @@
 {
   "name": "code2archi",
-  "version": "3.7.1",
+  "version": "3.8.0",
   "description": "Code to Archimate Modeler CLI",
   "type": "module",
   "engines": {
@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.1",
+    "java-parser": "^3.0.1",
     "winston": "^3.19.0",
     "yargs": "^18.0.0"
   },

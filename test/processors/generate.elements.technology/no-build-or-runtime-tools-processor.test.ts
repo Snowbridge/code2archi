@@ -79,7 +79,7 @@ describe("NoBuildOrRuntimeToolsProcessor", () => {
       artifactId: "no-build-or-runtime-tools",
     });
     assert.equal(processor.version, "0.1.0");
-    assert.equal(processor.executionPolicy, "ALWAYS");
+    assert.equal(processor.executionPolicy, "ON_DEMAND");
   });
 
   it("creates unknown Maven build and Java runtime markers when module artifact exists", () => {
