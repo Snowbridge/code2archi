@@ -49,10 +49,22 @@ function parseAnnotationValue(node: SyntaxNode | undefined): string | readonly s
 
   if (node.type === "collection_literal") {
     const values: string[] = [];
-    for (const stringLiteral of findChildren(node, "string_literal")) {
-      const text = nodeText(stringLiteral);
-      if (text.length >= 2) {
-        values.push(text.slice(1, -1));
+    for (const child of nodeChildren(node)) {
+      if (child.type === "string_literal") {
+        const text = nodeText(child);
+        if (text.length >= 2) {
+          values.push(text.slice(1, -1));
+        }
+        continue;
+      }
+
+      if (child.type === "," || child.type === "[" || child.type === "]") {
+        continue;
+      }
+
+      const text = nodeText(child).trim();
+      if (text.length > 0) {
+        values.push(text);
       }
     }
     return values;
@@ -79,14 +91,20 @@ function parseValueArguments(annotationNode: SyntaxNode): Readonly<Record<string
       continue;
     }
 
-    const nameNode = childByField(argument, "name");
-    const valueNode = childByField(argument, "value") ?? nodeChildren(argument).at(-1);
+    const children = nodeChildren(argument).filter(
+      (child) => child.type !== "," && child.type !== "(" && child.type !== ")",
+    );
+    const nameNode = children.find((child) => child.type === "simple_identifier");
+    const valueNode =
+      childByField(argument, "value") ??
+      children.find((child) => child !== nameNode) ??
+      children.at(-1);
     const parsedValue = parseAnnotationValue(valueNode);
     if (parsedValue === undefined) {
       continue;
     }
 
-    const key = nameNode ? nodeText(nameNode) : "value";
+    const key = nameNode ? nodeText(nameNode) : childByField(argument, "name") ? nodeText(childByField(argument, "name")!) : "value";
     attributes[key] = parsedValue;
   }
 

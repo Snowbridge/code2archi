@@ -6,6 +6,11 @@ export const springRouterFunctionProfile = {
     "org.springframework.web.reactive.function.server.RouterFunction",
     "org.springframework.web.servlet.function.RouterFunction",
   ],
+  coRouterFunctionTypeNames: [
+    "CoRouterFunction",
+    "org.springframework.web.reactive.function.server.CoRouterFunction",
+  ],
+  kotlinRouterEntrypointNames: ["router", "coRouter"] as const,
   httpMethodNames: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] as const,
   pathPrefixMethodNames: ["nest", "path"],
   routeBuilderMethodNames: ["route", "andRoute"],

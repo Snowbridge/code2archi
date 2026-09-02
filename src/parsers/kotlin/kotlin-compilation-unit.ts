@@ -1,5 +1,12 @@
 import type { SyntaxNode } from "tree-sitter";
-import type { KotlinCompilationUnit, KotlinMethodDeclaration, KotlinParameter, KotlinTypeDeclaration } from "./kotlin-ast-model.js";
+import type {
+  KotlinCompilationUnit,
+  KotlinFunctionDeclaration,
+  KotlinMethodDeclaration,
+  KotlinParameter,
+  KotlinPropertyDeclaration,
+  KotlinTypeDeclaration,
+} from "./kotlin-ast-model.js";
 import { extractAnnotations, hasSuspendModifier } from "./kotlin-annotation-utils.js";
 import { createKotlinParser } from "./kotlin-tree-sitter.js";
 import {
@@ -12,6 +19,10 @@ import {
   nodeText,
 } from "./kotlin-tree-sitter-utils.js";
 import { parseTypeRef } from "./kotlin-type-resolver.js";
+
+export interface ParseKotlinOptions {
+  readonly fileBaseName?: string;
+}
 
 function extractPackageName(root: SyntaxNode): string | undefined {
   const packageHeader = findFirstChild(root, "package_header");
@@ -111,7 +122,30 @@ function findLeadingParameterModifiers(
   return annotations;
 }
 
-function extractMethod(functionNode: SyntaxNode): KotlinMethodDeclaration | undefined {
+function extractFunctionBody(functionNode: SyntaxNode): SyntaxNode | undefined {
+  return (
+    childByField(functionNode, "body") ??
+    findDirectChild(functionNode, "function_body") ??
+    findDirectChild(functionNode, "block")
+  );
+}
+
+function extractReceiverType(functionNode: SyntaxNode): ReturnType<typeof parseTypeRef> {
+  const receiverNode =
+    childByField(functionNode, "receiver") ??
+    findDirectChild(functionNode, "receiver_type") ??
+    findFirstChild(functionNode, "user_type");
+  if (!receiverNode || receiverNode.parent !== functionNode) {
+    const directReceiver = findDirectChild(functionNode, "receiver_type");
+    return parseTypeRef(directReceiver);
+  }
+  return parseTypeRef(receiverNode);
+}
+
+function extractMethod(
+  functionNode: SyntaxNode,
+  options: { isTopLevel: boolean; enclosingTypeFqcn?: string },
+): KotlinMethodDeclaration | undefined {
   const nameNode =
     childByField(functionNode, "name") ?? findDirectChild(functionNode, "simple_identifier");
   const name = nameNode ? nodeText(nameNode) : undefined;
@@ -130,6 +164,60 @@ function extractMethod(functionNode: SyntaxNode): KotlinMethodDeclaration | unde
     parameters: extractParameters(functionNode),
     annotations: extractAnnotations(functionNode),
     isSuspend: hasSuspendModifier(functionNode),
+    receiverType: extractReceiverType(functionNode),
+    body: extractFunctionBody(functionNode),
+    ...options,
+  };
+}
+
+function extractPropertyInitializer(propertyNode: SyntaxNode): SyntaxNode | undefined {
+  const explicit =
+    findFirstChild(propertyNode, "property_initializer") ??
+    findDirectChild(propertyNode, "initializer");
+  if (explicit) {
+    return explicit;
+  }
+
+  for (const child of nodeChildren(propertyNode)) {
+    if (child.type === "call_expression") {
+      return child;
+    }
+  }
+
+  return undefined;
+}
+
+function extractPropertyName(propertyNode: SyntaxNode): string | undefined {
+  const variableDeclaration = findDirectChild(propertyNode, "variable_declaration");
+  const target = variableDeclaration ?? propertyNode;
+  const nameNode =
+    childByField(target, "name") ??
+    findDirectChild(target, "simple_identifier") ??
+    findFirstChild(target, "simple_identifier");
+  return nameNode ? nodeText(nameNode) : undefined;
+}
+
+function extractPropertyType(propertyNode: SyntaxNode): ReturnType<typeof parseTypeRef> {
+  const variableDeclaration = findDirectChild(propertyNode, "variable_declaration");
+  const typeNode =
+    childByField(propertyNode, "type") ??
+    (variableDeclaration ? childByField(variableDeclaration, "type") : undefined) ??
+    findFirstChild(propertyNode, "user_type") ??
+    (variableDeclaration ? findFirstChild(variableDeclaration, "user_type") : undefined);
+  return parseTypeRef(typeNode);
+}
+
+function extractProperty(propertyNode: SyntaxNode): KotlinPropertyDeclaration | undefined {
+  const name = extractPropertyName(propertyNode);
+  if (!name) {
+    return undefined;
+  }
+
+  return {
+    name,
+    type: extractPropertyType(propertyNode),
+    annotations: extractAnnotations(propertyNode),
+    initializer: extractPropertyInitializer(propertyNode),
   };
 }
 
@@ -171,22 +259,38 @@ function extractSuperTypes(classNode: SyntaxNode): {
   return { superClass, interfaces };
 }
 
-function extractClassBodyMethods(classBody: SyntaxNode | undefined): KotlinMethodDeclaration[] {
+function extractClassBodyMembers(
+  classBody: SyntaxNode | undefined,
+  enclosingTypeFqcn: string,
+): {
+  methods: KotlinMethodDeclaration[];
+  properties: KotlinPropertyDeclaration[];
+} {
+  const methods: KotlinMethodDeclaration[] = [];
+  const properties: KotlinPropertyDeclaration[] = [];
+
   if (!classBody) {
-    return [];
+    return { methods, properties };
   }
 
-  const methods: KotlinMethodDeclaration[] = [];
   for (const declaration of nodeChildren(classBody)) {
     if (declaration.type === "function_declaration") {
-      const method = extractMethod(declaration);
+      const method = extractMethod(declaration, { isTopLevel: false, enclosingTypeFqcn });
       if (method) {
         methods.push(method);
+      }
+      continue;
+    }
+
+    if (declaration.type === "property_declaration") {
+      const property = extractProperty(declaration);
+      if (property) {
+        properties.push(property);
       }
     }
   }
 
-  return methods;
+  return { methods, properties };
 }
 
 function extractClassDeclaration(
@@ -200,6 +304,7 @@ function extractClassDeclaration(
     return;
   }
 
+  const fqcn = [...outerTypeStack, className].join("$");
   const nestedStart = sink.length;
   const classBody = childByField(classNode, "body") ?? findDirectChild(classNode, "class_body");
   if (classBody) {
@@ -212,54 +317,96 @@ function extractClassDeclaration(
 
   const nestedTypes = sink.splice(nestedStart);
   const { superClass, interfaces } = extractSuperTypes(classNode);
+  const { methods, properties } = extractClassBodyMembers(classBody, fqcn);
 
   sink.push({
     name: className,
-    fqcn: [...outerTypeStack, className].join("$"),
+    fqcn,
     annotations: extractAnnotations(classNode),
     superClass,
     interfaces,
-    methods: extractClassBodyMethods(classBody),
+    methods,
+    properties,
     nestedTypes,
   });
 }
 
-export function parseKotlinCompilationUnit(source: string): KotlinCompilationUnit {
+function prefixTypes(
+  packageName: string,
+  type: KotlinTypeDeclaration,
+): KotlinTypeDeclaration {
+  return {
+    ...type,
+    fqcn: `${packageName}.${type.fqcn}`,
+    nestedTypes: type.nestedTypes.map((nested) => prefixTypes(packageName, nested)),
+    methods: type.methods.map((method) => ({
+      ...method,
+      enclosingTypeFqcn: `${packageName}.${type.fqcn}`,
+    })),
+  };
+}
+
+export function parseKotlinCompilationUnit(
+  source: string,
+  options: ParseKotlinOptions = {},
+): KotlinCompilationUnit {
   const parser = createKotlinParser();
   const tree = parser.parse(source);
   const root = tree.rootNode;
 
   const packageName = extractPackageName(root);
   const imports = extractImports(root);
+  const fileBaseName = options.fileBaseName ?? "Module";
   const types: KotlinTypeDeclaration[] = [];
+  const topLevelFunctions: KotlinFunctionDeclaration[] = [];
+  const topLevelProperties: KotlinPropertyDeclaration[] = [];
 
   for (const child of nodeChildren(root)) {
     if (child.type === "class_declaration") {
       extractClassDeclaration(child, [], types);
+      continue;
+    }
+
+    if (child.type === "function_declaration") {
+      const fn = extractMethod(child, { isTopLevel: true });
+      if (fn) {
+        topLevelFunctions.push({ ...fn, isTopLevel: true });
+      }
+      continue;
+    }
+
+    if (child.type === "property_declaration") {
+      const property = extractProperty(child);
+      if (property) {
+        topLevelProperties.push(property);
+      }
     }
   }
 
   if (packageName) {
-    const prefixTypes = (type: KotlinTypeDeclaration): KotlinTypeDeclaration => ({
-      ...type,
-      fqcn: `${packageName}.${type.fqcn}`,
-      nestedTypes: type.nestedTypes.map(prefixTypes),
-    });
-
     return {
       packageName,
       imports,
-      types: types.map(prefixTypes),
+      fileBaseName,
+      types: types.map((type) => prefixTypes(packageName, type)),
+      topLevelFunctions,
+      topLevelProperties,
     };
   }
 
   return {
     packageName,
     imports,
+    fileBaseName,
     types,
+    topLevelFunctions,
+    topLevelProperties,
   };
 }
 
-export function parseKotlinSourceFile(source: string): KotlinCompilationUnit {
-  return parseKotlinCompilationUnit(source);
+export function parseKotlinSourceFile(
+  source: string,
+  options: ParseKotlinOptions = {},
+): KotlinCompilationUnit {
+  return parseKotlinCompilationUnit(source, options);
 }
