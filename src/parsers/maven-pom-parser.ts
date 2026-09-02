@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
+import { readProcessedUtf8File } from "../platform/profiling/helpers.js";
 import { XMLParser } from "fast-xml-parser";
 
 import { mergeMavenModuleVersions } from "./build-tool-versions.js";
@@ -84,7 +85,7 @@ export function parseMavenRepository(
       return;
     }
 
-    const pomContent = readFileSync(absolutePomPath, "utf8");
+    const pomContent = readProcessedUtf8File(absolutePomPath);
     const effective = buildEffectivePom(repoRoot, normalized);
     const buildVersions = mergeMavenModuleVersions(repoRoot, effective.properties, pomContent);
     const childModulePaths = effective.modules.map((moduleName) => {
@@ -177,7 +178,7 @@ function loadParentChain(repoRoot: string, pomRelativePath: string): PomDocument
       break;
     }
 
-    const parsed = parsePomFile(readFileSync(absolutePath, "utf8"));
+    const parsed = parsePomFile(readProcessedUtf8File(absolutePath));
     chain.unshift(parsed);
 
     if (!parsed.parent?.artifactId) {
@@ -353,7 +354,7 @@ function mergeBom(
     return;
   }
 
-  const bomPom = parsePomFile(readFileSync(bomPath, "utf8"));
+  const bomPom = parsePomFile(readProcessedUtf8File(bomPath));
   const bomChain = loadParentChain(repoRoot, toRepoRelativePath(repoRoot, bomPath));
   const bomProperties = { ...properties };
   for (const pom of bomChain) {

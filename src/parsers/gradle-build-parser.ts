@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
+import { readProcessedUtf8File } from "../platform/profiling/helpers.js";
 
 import { mergeGradleModuleVersions } from "./build-tool-versions.js";
 
@@ -42,7 +43,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
   }
 
   const settingsContent = settingsFile
-    ? readFileSync(path.join(repoRoot, settingsFile), "utf8")
+    ? readProcessedUtf8File(path.join(repoRoot, settingsFile))
     : undefined;
 
   const rootProjectName = settingsContent
@@ -51,7 +52,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
 
   const rootIncludes = [
     ...(settingsContent ? parseIncludes(settingsContent) : []),
-    ...(rootBuildFile ? parseIncludes(readFileSync(path.join(repoRoot, rootBuildFile), "utf8")) : []),
+    ...(rootBuildFile ? parseIncludes(readProcessedUtf8File(path.join(repoRoot, rootBuildFile))) : []),
   ];
 
   const uniqueIncludes = [...new Set(rootIncludes)];
@@ -74,7 +75,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
       return;
     }
 
-    const content = readFileSync(absoluteBuildScript, "utf8");
+    const content = readProcessedUtf8File(absoluteBuildScript);
     const coordinates = parseCoordinates(content, modulePath === "." ? rootProjectName : path.posix.basename(modulePath));
     const buildVersions = mergeGradleModuleVersions(repoRoot, content, {
       settingsContent,

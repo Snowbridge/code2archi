@@ -8,6 +8,7 @@ import {
 } from "../../scan/run-scan-flow.js";
 import { validateScanArgs } from "../../scan/validate-scan-args.js";
 import { getLogger, logError } from "../../platform/logging/index.js";
+import { finalizeProfiling } from "../../platform/profiling/index.js";
 import { packageVersion } from "../../package-version.js";
 
 export const scanCommand: CommandModule = {
@@ -34,6 +35,7 @@ export const scanCommand: CommandModule = {
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
   handler: (argv) => {
     const logger = getLogger("cli.scan");
+    const globalArgv = argv as unknown as GlobalArgv;
     try {
       const sourceDir = argv["source-dir"] as string[];
       const sourceDirs = resolveSourceDirs(sourceDir);
@@ -47,7 +49,7 @@ export const scanCommand: CommandModule = {
         outputDir: scanArgs.outputDir,
       });
       runScanFlow(
-        createRunScanFlowInput(scanArgs, argv as unknown as GlobalArgv),
+        createRunScanFlowInput(scanArgs, globalArgv),
       );
       logger.info("command completed", { outputDir: scanArgs.outputDir });
     } catch (error) {
@@ -58,6 +60,11 @@ export const scanCommand: CommandModule = {
       }
       logError(logger, error);
       throw error;
+    } finally {
+      finalizeProfiling({
+        command: "scan",
+        verbose: globalArgv.verbose,
+      });
     }
   },
 };

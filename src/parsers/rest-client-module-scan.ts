@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { recordProcessedFile } from "../platform/profiling/index.js";
 import type { ApplicationModuleRecord } from "../discovery-model/entities/application-module.js";
 import type { RepositoryRecord } from "../discovery-model/entities/repository.js";
 import { UNKNOWN_VERSION } from "./build-tool-versions.js";
@@ -105,6 +106,7 @@ export function collectSourceFiles(
       for (const absolutePath of walkSourceFiles(sourceRoot, extension)) {
         const existing = fileToContext.get(absolutePath);
         if (!existing) {
+          recordProcessedFile(absolutePath);
           fileToContext.set(absolutePath, {
             absolutePath,
             module: context.module,

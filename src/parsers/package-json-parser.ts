@@ -1,5 +1,6 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { readProcessedUtf8File } from "../platform/profiling/helpers.js";
 import { parseNpmBuildVersions } from "./build-tool-versions.js";
 import { parseNpmName } from "./npm-name.js";
 
@@ -96,7 +97,7 @@ export function parseNpmRepository(
 
 function readPackageJson(absolutePath: string): Record<string, unknown> | undefined {
   try {
-    return JSON.parse(readFileSync(absolutePath, "utf8")) as Record<string, unknown>;
+    return JSON.parse(readProcessedUtf8File(absolutePath)) as Record<string, unknown>;
   } catch {
     return undefined;
   }

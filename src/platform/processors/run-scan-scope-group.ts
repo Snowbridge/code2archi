@@ -1,5 +1,6 @@
 import { SCAN_SCOPE_GROUP_ID } from "../../cli/processor-groups.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
+import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanScopeInput, ScanScopeOutput } from "./processor.js";
@@ -21,7 +22,7 @@ export function runScanScopeGroup(
   for (const processor of processors) {
     processor.logStart();
 
-    const output = processor.process(input);
+    const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
     if (output instanceof Promise) {
       throw new Error(
         `Processor ${processor.id.groupId}/${processor.id.artifactId} returned a Promise; sync execution expected`,

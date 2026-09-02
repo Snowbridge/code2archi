@@ -1,4 +1,5 @@
 import type { ArchiProperty } from "../archimate-model/elements/archi-element.js";
+import { recordSlotGenerated } from "../platform/profiling/index.js";
 import { packageVersion } from "../package-version.js";
 
 export type GenerateConfidence = "confirmed" | "inferred" | "unknown";
@@ -31,6 +32,8 @@ export interface StandardGenerateElementPropertiesInput {
 export function standardGenerateElementProperties(
   input: StandardGenerateElementPropertiesInput,
 ): readonly ArchiProperty[] {
+  recordSlotGenerated(input.slot);
+
   return [
     { key: "c2a:Id", value: input.logicalId },
     { key: "c2a:confidence", value: input.confidence ?? "confirmed" },

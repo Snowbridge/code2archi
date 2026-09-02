@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { recordProcessedFile } from "../../platform/profiling/index.js";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
 import { RestController } from "../../discovery-model/entities/rest-controller.js";
 import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
@@ -175,6 +176,7 @@ export class AnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, Sc
         }
 
         if (entry.isFile() && entry.name.endsWith(".java")) {
+          recordProcessedFile(absolutePath);
           files.push(absolutePath);
         }
       }

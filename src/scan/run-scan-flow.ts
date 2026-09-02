@@ -12,6 +12,7 @@ import { runScanScopeGroup } from "../platform/processors/run-scan-scope-group.j
 import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../discovery-model/run-entity-store.js";
 import { getLogger } from "../platform/logging/index.js";
+import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
 import type { ScanArgs } from "./validate-scan-args.js";
 
 export interface RunScanFlowInput extends ScanArgs {
@@ -43,22 +44,31 @@ export function runScanFlow(input: RunScanFlowInput): void {
   });
 
   logger.info("step start", { step: 1, action: "repository discovery", groupId: SCAN_SCOPE_GROUP_ID });
-  runScanScopeGroup(input.sourceDirs, input.processorFilters, store);
+  measureFlowStep("1", () => {
+    runScanScopeGroup(input.sourceDirs, input.processorFilters, store);
+  });
   const repositoryCount = store.getEntities("Repository").length;
   logger.info("step completed", { step: 1, count: repositoryCount });
 
-  const repositoryCommonRoot = store.finalizeRepositoryNamespaces();
-  logger.info("repository common root computed", { repositoryCommonRoot });
+  logger.info("step start", { step: "1b", action: "repository common root" });
+  measureFlowStep("1b", () => {
+    const repositoryCommonRoot = store.finalizeRepositoryNamespaces();
+    logger.info("repository common root computed", { repositoryCommonRoot });
+  });
 
   logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_SOURCE_GROUP_ID });
-  runCreateIntentProcessorGroup(SCAN_SOURCE_GROUP_ID, input.processorFilters, store);
+  measureFlowStep("2", () => {
+    runCreateIntentProcessorGroup(SCAN_SOURCE_GROUP_ID, input.processorFilters, store);
+  });
   logger.info("step completed", { step: 2 });
 
   logger.info("step start", { step: 3, action: "writing discovery-model", outputDir: input.outputDir });
-  new DiscoveryModelWriter().write({
-    outputDir: input.outputDir,
-    store,
-    scannedAt: new Date(),
+  measureFlowStep("3", () => {
+    new DiscoveryModelWriter().write({
+      outputDir: input.outputDir,
+      store,
+      scannedAt: new Date(),
+    });
   });
   logger.info("step completed", { step: 3, outputDir: input.outputDir });
 

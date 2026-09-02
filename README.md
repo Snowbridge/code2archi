@@ -98,7 +98,7 @@ Open `landscape.archimate` in Archi: **File → Open Model**.
 | ------ | ----------- |
 | `-L, --log-level` | `INFO` (default) or `DEBUG` |
 | `-V, --verbose` | Mirror TSV log to stderr |
-| `--profile` | Write JSON timing report to cwd |
+| `--profile` | Write JSON metrics report to `$TMP` |
 | `--threads` / `--sync` | Parallel or single-threaded processor execution |
 | `--with` / `--without` / `--with-only` | Filter built-in processors by coordinate |
 

@@ -51,7 +51,7 @@ export const globalOptions: Record<string, Options> = {
   profile: {
     type: "boolean",
     default: false,
-    describe: "Profiling: JSON report in cwd",
+    describe: "Profiling: JSON metrics report in $TMP",
   },
   threads: {
     type: "number",

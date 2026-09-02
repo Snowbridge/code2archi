@@ -7,6 +7,7 @@ import {
 import { validateGenerateArgs } from "../../generate/validate-generate-args.js";
 import type { GlobalArgv } from "../processor-groups.js";
 import { getLogger, logError } from "../../platform/logging/index.js";
+import { finalizeProfiling } from "../../platform/profiling/index.js";
 import { packageVersion } from "../../package-version.js";
 
 export const generateCommand: CommandModule = {
@@ -36,6 +37,7 @@ export const generateCommand: CommandModule = {
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
   handler: (argv) => {
     const logger = getLogger("cli.generate");
+    const globalArgv = argv as unknown as GlobalArgv;
     try {
       const generateArgs = validateGenerateArgs({
         outputFile: argv["output-file"] as string,
@@ -48,7 +50,7 @@ export const generateCommand: CommandModule = {
         discoveryModelDir: generateArgs.discoveryModelDir,
       });
       runGenerateFlow(
-        createRunGenerateFlowInput(generateArgs, argv as unknown as GlobalArgv),
+        createRunGenerateFlowInput(generateArgs, globalArgv),
       );
       logger.info("command completed", { outputFile: generateArgs.outputFile });
     } catch (error) {
@@ -59,6 +61,11 @@ export const generateCommand: CommandModule = {
       }
       logError(logger, error);
       throw error;
+    } finally {
+      finalizeProfiling({
+        command: "generate",
+        verbose: globalArgv.verbose,
+      });
     }
   },
 };

@@ -2,6 +2,7 @@ import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelStore } from "../../archimate-model/archi-model-store.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
+import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { GenerateProcessorInput, GenerateOptions } from "./processor.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
@@ -39,7 +40,7 @@ export function runGenerateProcessorGroup(
       archi: archiStore.snapshot(),
       options,
     };
-    const output = processor.process(input);
+    const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
     if (output instanceof Promise) {
       throw new Error(
         `Processor ${processor.id.groupId}/${processor.id.artifactId} returned a Promise; sync execution expected`,

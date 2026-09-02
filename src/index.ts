@@ -10,6 +10,7 @@ import { ExitCode } from "./cli/exit-codes.js";
 import { globalOptions } from "./cli/global-options.js";
 import { validateGlobalArgv } from "./cli/validate-global-argv.js";
 import { initLogging } from "./platform/logging/index.js";
+import { initProfiling } from "./platform/profiling/index.js";
 import type { GlobalArgv } from "./cli/processor-groups.js";
 import { packageVersion } from "./package-version.js";
 
@@ -35,6 +36,7 @@ yargs(hideBin(process.argv))
       logLevel: globalArgv.logLevel,
       verbose: globalArgv.verbose,
     });
+    initProfiling({ enabled: globalArgv.profile });
   })
   .command(scanCommand)
   .command(generateCommand)

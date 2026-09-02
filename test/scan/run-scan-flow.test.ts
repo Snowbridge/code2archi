@@ -11,6 +11,8 @@ import {
 } from "../../src/discovery-model/discovery-model-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { runScanFlow } from "../../src/scan/run-scan-flow.js";
+import { finalizeProfiling, initProfiling } from "../../src/platform/profiling/index.js";
+import { resetProfilingState } from "../../src/platform/profiling/profiling-state.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
 function createGitRepo(dir: string): void {
@@ -351,5 +353,41 @@ class FlowController {
     assert.equal(controllers[0]?.name, "userRoutes");
     assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
     assert.equal(controllers[0]?.fqcn, "com.example.UserRouterConfig#userRoutes");
+  });
+
+  it("records profiling metrics when profiling is enabled", () => {
+    const root = createTestTempDir("c2a-scan-flow-profile-");
+    const sourceDir = path.join(root, "src");
+    const outputDir = path.join(root, "out");
+    mkdirSync(sourceDir);
+    mkdirSync(outputDir);
+
+    initProfiling({ enabled: true });
+    try {
+      runScanFlow({
+        sourceDirs: [sourceDir],
+        outputDir,
+        force: false,
+        scanId: "test-scan-profile",
+        runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+        processorFilters: {
+          with: ["scan.scope.unversioned-folders"],
+          without: [],
+          withOnly: [],
+        },
+      });
+
+      const reportPath = finalizeProfiling({ command: "scan", verbose: false });
+      assert.ok(reportPath);
+      assert.ok(existsSync(reportPath!));
+
+      const report = JSON.parse(readFileSync(reportPath!, "utf8")) as {
+        metrics: Record<string, number>;
+      };
+      assert.ok(typeof report.metrics["run.duration.total"] === "number");
+      assert.ok(typeof report.metrics['run.step.duration{step="1"}'] === "number");
+    } finally {
+      resetProfilingState();
+    }
   });
 });
