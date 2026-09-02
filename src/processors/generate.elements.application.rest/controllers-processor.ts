@@ -30,17 +30,17 @@ import {
   type ProcessorId,
 } from "../../platform/processors/processor.js";
 
-const GENERATOR_COORDINATE = "generate.elements.application:rest-controllers";
+const GENERATOR_COORDINATE = "generate.elements.application.rest:controllers";
 
 const REQUIRED_PROFILES: readonly ArchiProfile[] = [RestControllerProfile.create()];
 
-export class RestControllersProcessor extends AbstractProcessor<
+export class ControllersProcessor extends AbstractProcessor<
   GenerateProcessorInput,
   ArchiCreateIntents
 > {
   readonly id: ProcessorId = {
-    groupId: "generate.elements.application",
-    artifactId: "rest-controllers",
+    groupId: "generate.elements.application.rest",
+    artifactId: "controllers",
   };
 
   readonly version = "0.1.0";

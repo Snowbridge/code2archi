@@ -1,23 +1,24 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { ArchiModelStore } from "../../../src/archimate-model/archi-model-store.js";
-import { ApplicationComponent, ApplicationService } from "../../../src/archimate-model/elements/archi-element.js";
-import { MavenModuleProfile, RestControllerProfile } from "../../../src/archimate-model/profiles/profile.js";
+import { ApplicationService } from "../../../src/archimate-model/elements/archi-element.js";
+import { ApiContractProfile, RestControllerProfile } from "../../../src/archimate-model/profiles/profile.js";
 import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
 import { ApplicationModule } from "../../../src/discovery-model/entities/application-module.js";
 import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { RestController } from "../../../src/discovery-model/entities/rest-controller.js";
-import { applicationComponentIdForModule } from "../../../src/generate/application-module-components.js";
 import {
-  restControllerRealizationRelationshipId,
-  restControllerServiceLogicalId,
-} from "../../../src/generate/rest-controller-services.js";
-import { initLogging } from "../../../src/platform/logging/index.js";
-import { RestControllersProcessor } from "../../../src/processors/generate.elements.application/rest-controllers-processor.js";
-import { createTestTempDir } from "../../test-temp-dir.js";
+  declaredContractAssignmentId,
+  declaredRestContractId,
+  declaredRestContractLogicalId,
+} from "../../../src/generate/declared-rest-contracts.js";
+import { DeclaredApiContractsProcessor } from "../../../src/processors/generate.elements.application.rest/declared-api-contracts-processor.js";
 import {
   defaultGenerateProcessorOptions,
+  undecoratedGenerateProcessorOptions,
 } from "../../generate/generate-processor-test-options.js";
+
+const API_FQCN = "com.example.api.LotsCrudApi";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -54,21 +55,23 @@ function discoverySnapshot(
   });
 }
 
-function seedAppModuleComponent(store: ArchiModelStore, module: ReturnType<typeof moduleRecord>): string {
+function seedRestController(
+  store: ArchiModelStore,
+  controller: ReturnType<typeof restControllerRecord>,
+): void {
   const applicationFolderId = store.getPredefinedFolderId("application");
-  const componentId = applicationComponentIdForModule(module.id);
-  const profile = MavenModuleProfile.create();
+  const profile = RestControllerProfile.create();
   if (store.snapshot().findProfile(profile.name, profile.conceptType) === undefined) {
     store.registerProfile(profile);
   }
-  if (store.snapshot().getElement(componentId) === undefined) {
+  if (store.snapshot().getElement(controller.id) === undefined) {
     store.addCreateIntents(
       "generate.elements",
-      { groupId: "generate.elements.application", artifactId: "application-components-from-modules" },
+      { groupId: "generate.elements.application.rest", artifactId: "controllers" },
       {
         elements: [
-          ApplicationComponent.withId(componentId)
-            .name(String(module.name))
+          ApplicationService.withId(controller.id)
+            .name(String(controller.name))
             .inFolder(applicationFolderId)
             .profiles(profile.id)
             .build(),
@@ -76,22 +79,21 @@ function seedAppModuleComponent(store: ArchiModelStore, module: ReturnType<typeo
       },
     );
   }
-  return componentId;
 }
 
-describe("RestControllersProcessor", () => {
-  it("exposes generate.elements.application coordinates", () => {
-    const processor = new RestControllersProcessor();
+describe("DeclaredApiContractsProcessor", () => {
+  it("exposes generate.elements.application.rest coordinates", () => {
+    const processor = new DeclaredApiContractsProcessor();
 
     assert.deepEqual(processor.id, {
-      groupId: "generate.elements.application",
-      artifactId: "rest-controllers",
+      groupId: "generate.elements.application.rest",
+      artifactId: "declared-api-contracts",
     });
     assert.equal(processor.version, "0.1.0");
     assert.equal(processor.executionPolicy, "ALWAYS");
   });
 
-  it("creates ApplicationService and Realization for declarative and functional controllers", () => {
+  it("creates ApplicationInterface and Assignment for implemented interface", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -110,84 +112,117 @@ describe("RestControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const declarativeController = restControllerRecord({
+    const controller = restControllerRecord({
       applicationModuleId: module.id,
-      name: "LimitController",
-      fqcn: "com.example.LimitController",
+      name: "LotsCrudController",
+      fqcn: "com.example.LotsCrudController",
       dtoFqcn: [],
-      endpoints: ["GET /limits"],
+      endpoints: ["GET /lots"],
       tcpStackType: "BLOCKING",
       programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
-      sourceFile: "src/main/java/com/example/LimitController.java",
-    });
-    const functionalController = restControllerRecord({
-      applicationModuleId: module.id,
-      name: "routes",
-      fqcn: "com.example.RouterConfig#routes",
-      dtoFqcn: [],
-      endpoints: ["GET /api"],
-      tcpStackType: "NON_BLOCKING",
-      programmingModel: "FUNCTIONAL",
-      implementedInterfaceFqcn: [],
-      sourceFile: "src/main/java/com/example/RouterConfig.java",
+      implementedInterfaceFqcn: [API_FQCN],
+      sourceFile: "src/main/java/com/example/LotsCrudController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
-    const appComponentId = seedAppModuleComponent(store, module);
+    seedRestController(store, controller);
 
-    const processor = new RestControllersProcessor();
+    const processor = new DeclaredApiContractsProcessor();
     const output = processor.process({
-      discovery: discoverySnapshot(
-        [repository],
-        [module],
-        [declarativeController, functionalController],
-      ),
+      discovery: discoverySnapshot([repository], [module], [controller]),
       archi: store.snapshot(),
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(output.elements?.length, 2);
-    assert.equal(output.relations?.length, 2);
-
-    const declarativeService = output.elements?.find(
-      (element) => element.id === declarativeController.id,
-    );
-    assert.equal(declarativeService?.conceptType, "ApplicationService");
-    assert.equal(declarativeService?.name, "LimitController");
-    assert.deepEqual(declarativeService?.profileIds, [RestControllerProfile.create().id]);
+    const contractId = declaredRestContractId(API_FQCN);
+    const contract = output.elements?.find((element) => element.id === contractId);
+    assert.equal(contract?.conceptType, "ApplicationInterface");
+    assert.equal(contract?.name, "LotsCrudApi API Contract");
+    assert.deepEqual(contract?.profileIds, [ApiContractProfile.create().id]);
     assert.equal(
-      declarativeService?.properties?.find((property) => property.key === "c2a:slot")?.value,
-      "rest-controller",
+      contract?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "declared-rest-contract",
     );
     assert.equal(
-      declarativeService?.properties?.find((property) => property.key === "c2a:confidence")?.value,
+      contract?.properties?.find((property) => property.key === "c2a:confidence")?.value,
       "confirmed",
     );
     assert.equal(
-      declarativeService?.properties?.find((property) => property.key === "c2a:generator")?.value,
-      "generate.elements.application:rest-controllers",
+      contract?.properties?.find((property) => property.key === "c2a:generator")?.value,
+      "generate.elements.application.rest:declared-api-contracts",
     );
     assert.equal(
-      declarativeService?.properties?.find((property) => property.key === "c2a:Id")?.value,
-      restControllerServiceLogicalId(declarativeController.id),
+      contract?.properties?.find((property) => property.key === "c2a:Id")?.value,
+      declaredRestContractLogicalId(API_FQCN),
     );
 
-    const realization = output.relations?.find(
-      (relation) => relation.targetId === declarativeController.id,
-    );
-    assert.equal(realization?.relationType, "RealizationRelationship");
-    assert.equal(realization?.sourceId, appComponentId);
+    const assignment = output.relations?.[0];
+    assert.equal(assignment?.relationType, "AssignmentRelationship");
+    assert.equal(assignment?.sourceId, contractId);
+    assert.equal(assignment?.targetId, controller.id);
+    assert.equal(assignment?.id, declaredContractAssignmentId(contractId, controller.id));
     assert.equal(
-      realization?.id,
-      restControllerRealizationRelationshipId(appComponentId, declarativeController.id),
-    );
-    assert.equal(
-      realization?.properties?.find((property) => property.key === "c2a:slot")?.value,
-      "app-module-realizes-rest-controller",
+      assignment?.properties?.find((property) => property.key === "c2a:slot")?.value,
+      "declared-contract-assigned-to-rest-controller",
     );
   });
 
-  it("skips controller and Realization when app-module-component is missing", () => {
+  it("deduplicates interface and creates two assignments for shared FQCN", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const controllerA = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "LotsCrudController",
+      fqcn: "com.example.LotsCrudController",
+      dtoFqcn: [],
+      endpoints: ["GET /lots"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [API_FQCN],
+      sourceFile: "src/main/java/com/example/LotsCrudController.java",
+    });
+    const controllerB = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "LotsCrudControllerV2",
+      fqcn: "com.example.LotsCrudControllerV2",
+      dtoFqcn: [],
+      endpoints: ["GET /lots/v2"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [API_FQCN],
+      sourceFile: "src/main/java/com/example/LotsCrudControllerV2.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestController(store, controllerA);
+    seedRestController(store, controllerB);
+
+    const processor = new DeclaredApiContractsProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [controllerA, controllerB]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.length, 1);
+    assert.equal(output.relations?.length, 2);
+  });
+
+  it("skips when implementedInterfaceFqcn is empty", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -218,8 +253,9 @@ describe("RestControllersProcessor", () => {
       sourceFile: "src/main/java/com/example/LimitController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestController(store, controller);
 
-    const processor = new RestControllersProcessor();
+    const processor = new DeclaredApiContractsProcessor();
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module], [controller]),
       archi: store.snapshot(),
@@ -230,7 +266,7 @@ describe("RestControllersProcessor", () => {
     assert.equal(output.relations?.length ?? 0, 0);
   });
 
-  it("skips element creation when controller already exists in archi snapshot", () => {
+  it("skips when rest-controller is missing from archi snapshot", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -251,35 +287,18 @@ describe("RestControllersProcessor", () => {
     });
     const controller = restControllerRecord({
       applicationModuleId: module.id,
-      name: "LimitController",
-      fqcn: "com.example.LimitController",
+      name: "LotsCrudController",
+      fqcn: "com.example.LotsCrudController",
       dtoFqcn: [],
-      endpoints: ["GET /limits"],
+      endpoints: ["GET /lots"],
       tcpStackType: "BLOCKING",
       programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
-      sourceFile: "src/main/java/com/example/LimitController.java",
+      implementedInterfaceFqcn: [API_FQCN],
+      sourceFile: "src/main/java/com/example/LotsCrudController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
-    const appComponentId = seedAppModuleComponent(store, module);
-    const applicationFolderId = store.getPredefinedFolderId("application");
-    const profile = RestControllerProfile.create();
-    store.registerProfile(profile);
-    store.addCreateIntents(
-      "generate.elements",
-      { groupId: "generate.elements.application", artifactId: "rest-controllers" },
-      {
-        elements: [
-          ApplicationService.withId(controller.id)
-            .name("existing")
-            .inFolder(applicationFolderId)
-            .profiles(profile.id)
-            .build(),
-        ],
-      },
-    );
 
-    const processor = new RestControllersProcessor();
+    const processor = new DeclaredApiContractsProcessor();
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module], [controller]),
       archi: store.snapshot(),
@@ -287,18 +306,10 @@ describe("RestControllersProcessor", () => {
     });
 
     assert.equal(output.elements?.length ?? 0, 0);
-    assert.equal(output.relations?.length, 1);
-    assert.equal(output.relations?.[0]?.sourceId, appComponentId);
-    assert.equal(output.relations?.[0]?.targetId, controller.id);
+    assert.equal(output.relations?.length ?? 0, 0);
   });
 
-  it("emits c2a-debug properties for RestController when DEBUG", () => {
-    initLogging({
-      logLevel: "DEBUG",
-      verbose: false,
-      logDirectory: createTestTempDir("c2a-rest-controllers-debug-"),
-    });
-
+  it("leaves names undecorated when decorate is false", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -319,33 +330,25 @@ describe("RestControllersProcessor", () => {
     });
     const controller = restControllerRecord({
       applicationModuleId: module.id,
-      name: "LimitController",
-      fqcn: "com.example.LimitController",
+      name: "LotsCrudController",
+      fqcn: "com.example.LotsCrudController",
       dtoFqcn: [],
-      endpoints: ["GET /limits"],
+      endpoints: ["GET /lots"],
       tcpStackType: "BLOCKING",
       programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
-      sourceFile: "src/main/java/com/example/LimitController.java",
+      implementedInterfaceFqcn: [API_FQCN],
+      sourceFile: "src/main/java/com/example/LotsCrudController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
-    seedAppModuleComponent(store, module);
+    seedRestController(store, controller);
 
-    const processor = new RestControllersProcessor();
+    const processor = new DeclaredApiContractsProcessor();
     const output = processor.process({
       discovery: discoverySnapshot([repository], [module], [controller]),
       archi: store.snapshot(),
-      options: defaultGenerateProcessorOptions,
+      options: undecoratedGenerateProcessorOptions,
     });
 
-    const properties = output.elements?.[0]?.properties ?? [];
-    assert.equal(
-      properties.find((property) => property.key === "c2a-debug:RestController:name")?.value,
-      "LimitController",
-    );
-    assert.equal(
-      properties.find((property) => property.key === "c2a-debug:RestController:fqcn")?.value,
-      "com.example.LimitController",
-    );
+    assert.equal(output.elements?.[0]?.name, "LotsCrudApi");
   });
 });

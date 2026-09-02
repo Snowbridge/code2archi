@@ -129,4 +129,30 @@ describe("decorateElementName", () => {
       );
     });
   });
+
+  describe("declared-rest-contract", () => {
+    it("appends API Contract suffix", () => {
+      assert.equal(
+        decorateElementName(
+          "declared-rest-contract",
+          "LotsCrudApi",
+          {},
+          defaultGenerateProcessorOptions,
+        ),
+        "LotsCrudApi API Contract",
+      );
+    });
+
+    it("is idempotent for API Contract suffix", () => {
+      assert.equal(
+        decorateElementName(
+          "declared-rest-contract",
+          "LotsCrudApi API Contract",
+          {},
+          defaultGenerateProcessorOptions,
+        ),
+        "LotsCrudApi API Contract",
+      );
+    });
+  });
 });

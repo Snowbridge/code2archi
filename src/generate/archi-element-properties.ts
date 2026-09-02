@@ -15,7 +15,9 @@ export type ElementSlotId =
   | "module-artifact-realizes"
   | "module-lib-aggregation"
   | "rest-controller"
-  | "app-module-realizes-rest-controller";
+  | "app-module-realizes-rest-controller"
+  | "declared-rest-contract"
+  | "declared-contract-assigned-to-rest-controller";
 
 export interface StandardGenerateElementPropertiesInput {
   readonly logicalId: string;
