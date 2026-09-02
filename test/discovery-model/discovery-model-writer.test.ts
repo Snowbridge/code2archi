@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
-import { REPOSITORY_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
+import { REPOSITORY_SCHEMA_ID, REST_CLIENT_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -166,5 +166,58 @@ describe("DiscoveryModelWriter", () => {
     });
 
     assert.ok(!existsSync(path.join(outputDir, "build-scripts.json")));
+  });
+
+  it("writes rest-clients.json when RestClient entities are present", () => {
+    const root = createTestTempDir("c2a-dm-rest-client-");
+    const outputDir = path.join(root, "out");
+    mkdirSync(outputDir);
+
+    const store = new RunEntityStore({
+      sourceDirs: [path.join(root, "src")],
+      scanId: "scan-rest-client",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+    store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
+      entities: {
+        RestClient: [
+          {
+            id: "client-1",
+            applicationModuleId: "module-1",
+            name: "OrderFeignClient",
+            fqcn: "com.example.OrderFeignClient",
+            dtoFqcn: [],
+            endpoints: ["GET /api/orders/:id"],
+            tcpStackType: "BLOCKING",
+            discoveryStyle: "DECLARATIVE",
+            clientFramework: "feign",
+            extendedInterfaceFqcn: [],
+            sourceFile: "src/main/java/com/example/OrderFeignClient.java",
+          },
+        ],
+      },
+    });
+
+    new DiscoveryModelWriter().write({
+      outputDir,
+      store,
+      scannedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    const clientsPath = path.join(outputDir, "rest-clients.json");
+    assert.ok(existsSync(clientsPath));
+
+    const manifest = JSON.parse(
+      readFileSync(path.join(outputDir, "manifest.json"), "utf8"),
+    ) as { collections: Array<{ path: string; entityType: string; schema: string }> };
+    const restClientCollection = manifest.collections.find(
+      (entry) => entry.entityType === "RestClient",
+    );
+    assert.equal(restClientCollection?.path, "rest-clients.json");
+    assert.equal(restClientCollection?.schema, REST_CLIENT_SCHEMA_ID);
+
+    const clients = JSON.parse(readFileSync(clientsPath, "utf8")) as Array<{ name: string }>;
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "OrderFeignClient");
   });
 });
