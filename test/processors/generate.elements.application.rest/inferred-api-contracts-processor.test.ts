@@ -446,6 +446,90 @@ describe("InferredApiContractsProcessor", () => {
     assert.equal(output.elements?.[0]?.name, "LotsCrudController");
   });
 
+  it("deduplicates interface and creates two assignments for shared fqcn across modules", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const moduleA = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc-a",
+      version: "1",
+      name: "svc-a",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const moduleB = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc-b",
+      version: "1",
+      name: "svc-b",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const sharedFqcn = "com.example.FormController";
+    const controllerA = restControllerRecord({
+      applicationModuleId: moduleA.id,
+      name: "FormController",
+      fqcn: sharedFqcn,
+      dtoFqcn: [],
+      endpoints: ["GET /form/task/:taskId"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/FormController.java",
+    });
+    const controllerB = restControllerRecord({
+      applicationModuleId: moduleB.id,
+      name: "FormController",
+      fqcn: sharedFqcn,
+      dtoFqcn: [],
+      endpoints: ["GET /form/task/:taskId"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/FormController.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestController(store, controllerA);
+    seedRestController(store, controllerB);
+
+    const processor = new InferredApiContractsProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot(
+        [repository],
+        [moduleA, moduleB],
+        [controllerA, controllerB],
+      ),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    const contractId = inferredRestContractId(sharedFqcn);
+    assert.equal(output.elements?.length, 1);
+    assert.equal(output.elements?.[0]?.id, contractId);
+    assert.equal(output.relations?.length, 2);
+    const relationIds = new Set(output.relations?.map((relation) => relation.id));
+    assert.ok(relationIds.has(inferredContractAssignmentId(contractId, controllerA.id)));
+    assert.ok(relationIds.has(inferredContractAssignmentId(contractId, controllerB.id)));
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements.application.rest", artifactId: "inferred-api-contracts" },
+      output,
+    );
+    assert.equal(store.snapshot().getElement(contractId)?.conceptType, "ApplicationInterface");
+  });
+
   it("coexists with declared-api-contracts for the same controller", () => {
     const repository = repositoryRecord({
       url: "",

@@ -80,6 +80,7 @@ export class InferredApiContractsProcessor extends AbstractProcessor<
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
     const inferredApiContractProfile = InferredApiContractProfile.create();
+    const createdContractIds = new Set<string>();
 
     for (const controller of controllers) {
       if (!isEligibleForInferredRestContract(controller.endpoints, controller.dtoFqcn)) {
@@ -107,7 +108,10 @@ export class InferredApiContractsProcessor extends AbstractProcessor<
 
       const contractId = inferredRestContractId(controller.fqcn);
 
-      if (input.archi.getElement(contractId) === undefined) {
+      if (
+        input.archi.getElement(contractId) === undefined &&
+        !createdContractIds.has(contractId)
+      ) {
         let elementBuilder = ApplicationInterface.withId(contractId)
           .name(
             decorateElementName("inferred-rest-contract", controller.name, {}, input.options),
@@ -134,6 +138,7 @@ export class InferredApiContractsProcessor extends AbstractProcessor<
           },
         ]);
         elements.push(elementIntent);
+        createdContractIds.add(contractId);
       }
 
       const relationId = inferredContractAssignmentId(contractId, controller.id);
