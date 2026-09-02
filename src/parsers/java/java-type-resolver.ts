@@ -71,9 +71,15 @@ export function parseTypeRef(node: GenericCstNode | undefined): JavaTypeRef | un
     return undefined;
   }
 
+  if (node.name === "referenceType") {
+    const classOrInterfaceType = firstChild(node, "classOrInterfaceType");
+    if (classOrInterfaceType) {
+      return parseClassOrInterfaceType(classOrInterfaceType);
+    }
+  }
+
   if (
     node.name === "unannReferenceType" ||
-    node.name === "referenceType" ||
     node.name === "classOrInterfaceType" ||
     node.name === "unannClassOrInterfaceType" ||
     node.name === "unannClassType" ||
