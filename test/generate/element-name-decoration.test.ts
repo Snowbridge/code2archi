@@ -155,4 +155,30 @@ describe("decorateElementName", () => {
       );
     });
   });
+
+  describe("inferred-rest-contract", () => {
+    it("appends Inferred REST-controller suffix", () => {
+      assert.equal(
+        decorateElementName(
+          "inferred-rest-contract",
+          "LotsCrudController",
+          {},
+          defaultGenerateProcessorOptions,
+        ),
+        "LotsCrudController Inferred REST-controller",
+      );
+    });
+
+    it("is idempotent for Inferred REST-controller suffix", () => {
+      assert.equal(
+        decorateElementName(
+          "inferred-rest-contract",
+          "LotsCrudController Inferred REST-controller",
+          {},
+          defaultGenerateProcessorOptions,
+        ),
+        "LotsCrudController Inferred REST-controller",
+      );
+    });
+  });
 });
