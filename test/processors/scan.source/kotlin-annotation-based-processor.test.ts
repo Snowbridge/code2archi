@@ -184,7 +184,104 @@ describe("KotlinAnnotationBasedProcessor", () => {
 
     assert.equal(output.entities?.RestController?.length ?? 0, 0);
   });
+
+  it("marks suspend handlers as NON_BLOCKING", () => {
+    const root = createTestTempDir("c2a-kotlin-suspend-");
+    const kotlinDir = path.join(root, "src", "main", "kotlin", "com", "example");
+    mkdirSync(kotlinDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(kotlinDir, "FluxController.kt"),
+      readFixture("spring-webflux-suspend-controller.kt"),
+    );
+
+    const { store } = createKotlinMavenStore(root, "scan-kotlin-suspend");
+    const output = new KotlinAnnotationBasedProcessor().process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /entities"]);
+  });
+
+  it("creates RestController from Quarkus JAX-RS @Path", () => {
+    const root = createTestTempDir("c2a-kotlin-quarkus-jaxrs-");
+    const kotlinDir = path.join(root, "src", "main", "kotlin", "com", "example");
+    mkdirSync(kotlinDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(path.join(kotlinDir, "ItemResource.kt"), readFixture("quarkus-jaxrs-resource.kt"));
+
+    const { store } = createKotlinMavenStore(root, "scan-kotlin-quarkus-jaxrs");
+    const output = new KotlinAnnotationBasedProcessor().process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "ItemResource");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /v1/items/:id"]);
+    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+  });
 });
+
+function createKotlinMavenStore(
+  root: string,
+  scanId: string,
+): { module: ApplicationModule; store: RunEntityStore } {
+  const repository = new Repository({
+    url: "",
+    localPath: root,
+    name: "app",
+    namespace: "",
+    buildSystems: ["maven"],
+  });
+  const module = new ApplicationModule({
+    repositoryId: repository.id,
+    buildSystem: "maven",
+    groupId: "com.example",
+    artifactId: "app",
+    version: "1.0.0",
+    name: "app",
+    repoPath: ".",
+    buildScript: "pom.xml",
+    isMultimodule: false,
+    javaVersion: "17",
+  });
+
+  const store = new RunEntityStore({
+    sourceDirs: [root],
+    scanId,
+    runStartedAt: new Date("2026-09-01T12:00:00.000Z"),
+  });
+  store.addCreateIntents(
+    "scan.scope",
+    { groupId: "scan.scope", artifactId: "test" },
+    { entities: { Repository: [repository] } },
+  );
+  store.addCreateIntents(
+    "scan.source",
+    { groupId: "scan.source.assembly.maven", artifactId: "test" },
+    { entities: { ApplicationModule: [module] } },
+  );
+
+  return { module, store };
+}
 
 function readFixture(name: string): string {
   return readFileSync(path.join(fixturesDir, name), "utf8");

@@ -1,4 +1,4 @@
-import type { JavaAnnotation, JavaMethodDeclaration, JavaTypeRef } from "../java-ast-model.js";
+import type { JavaMethodDeclaration, JavaTypeRef } from "../java-ast-model.js";
 import {
   collectCollectionElementTypes,
   flattenTypeRefs,
@@ -32,16 +32,6 @@ function collectTypesFromRef(
     }
   }
 }
-
-function parameterIsRequestBody(
-  annotations: readonly JavaAnnotation[],
-  registry: RestAnnotationRegistry,
-): boolean {
-  return annotations.some(
-    (annotation) => registry.lookupRulesByRole(annotation, "request-body").length > 0,
-  );
-}
-
 export function collectDtoFqcn(
   handlerMethods: readonly JavaMethodDeclaration[],
   packageName: string | undefined,
@@ -61,15 +51,13 @@ export function collectDtoFqcn(
   );
 
   for (const parameter of method.parameters) {
-    if (parameterIsRequestBody(parameter.annotations, registry)) {
-      collectTypesFromRef(
-        parameter.type,
-        packageName,
-        imports,
-        wrapperSimpleNames,
-        dtoFqcn,
-      );
-    }
+    collectTypesFromRef(
+      parameter.type,
+      packageName,
+      imports,
+      wrapperSimpleNames,
+      dtoFqcn,
+    );
   }
   }
 

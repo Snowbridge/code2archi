@@ -11,6 +11,7 @@ import {
   extractStringLiteral,
   getInvocationArgumentExpressions,
   getSuffixName,
+  getTrailingPrimaryPrefixName,
 } from "./functional-cst-utils.js";
 import { formatEndpoint, joinPaths } from "./rest-path-normalizer.js";
 import {
@@ -25,6 +26,74 @@ export interface FunctionalRouteExtraction {
 
 const HTTP_METHOD_SET = new Set<string>(springRouterFunctionProfile.httpMethodNames);
 const PATH_PREFIX_METHODS = new Set<string>(springRouterFunctionProfile.pathPrefixMethodNames);
+const ROUTE_COMBINE_METHODS = new Set<string>(springRouterFunctionProfile.routeBuilderMethodNames);
+
+function extractStaticHttpRoute(
+  argument: GenericCstNode | undefined,
+): { readonly httpMethod: string; readonly path: string } | undefined {
+  if (!argument) {
+    return undefined;
+  }
+
+  for (const primary of walkDescendants(argument, "primary")) {
+    const trailingName = getTrailingPrimaryPrefixName(primary);
+    const suffixes = childNodes(primary, "primarySuffix");
+
+    if (trailingName && HTTP_METHOD_SET.has(trailingName) && suffixes.length > 0) {
+      const args = getInvocationArgumentExpressions(
+        firstChild(suffixes[0], "methodInvocationSuffix"),
+      );
+      const pathSegment = extractStringLiteral(args[0]);
+      if (pathSegment !== undefined) {
+        return { httpMethod: trailingName, path: pathSegment };
+      }
+    }
+
+    for (const primarySuffix of suffixes) {
+      const suffixName = getSuffixName(primarySuffix);
+      if (!suffixName || !HTTP_METHOD_SET.has(suffixName)) {
+        continue;
+      }
+
+      const invocationSuffix = firstChild(primarySuffix, "methodInvocationSuffix");
+      const args = getInvocationArgumentExpressions(invocationSuffix);
+      if (args.length === 0) {
+        continue;
+      }
+
+      const pathSegment = extractStringLiteral(args[0]);
+      if (pathSegment !== undefined) {
+        return { httpMethod: suffixName, path: pathSegment };
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function processRouteCombineArgs(
+  args: readonly GenericCstNode[],
+  pathPrefix: string,
+  endpoints: Set<string>,
+  handlerMethodNames: Set<string>,
+): void {
+  if (args.length < 2) {
+    return;
+  }
+
+  const route = extractStaticHttpRoute(args[0]);
+  if (!route) {
+    return;
+  }
+
+  endpoints.add(
+    formatEndpoint(route.httpMethod as SpringRouterHttpMethod, joinPaths(pathPrefix, route.path)),
+  );
+  const handlerName = extractMethodReferenceName(args[1]);
+  if (handlerName) {
+    handlerMethodNames.add(handlerName);
+  }
+}
 
 function processPrimary(
   primary: GenericCstNode,
@@ -32,13 +101,48 @@ function processPrimary(
   endpoints: Set<string>,
   handlerMethodNames: Set<string>,
 ): void {
+  const trailingName = getTrailingPrimaryPrefixName(primary);
   const suffixes = childNodes(primary, "primarySuffix");
   let pendingHttpMethod: string | undefined;
+  let pendingRouteCombine: string | undefined;
+  let handledRoutePrefix = false;
 
-  for (const primarySuffix of suffixes) {
+  if (trailingName && ROUTE_COMBINE_METHODS.has(trailingName) && suffixes.length > 0) {
+    const firstArgs = getInvocationArgumentExpressions(
+      firstChild(suffixes[0], "methodInvocationSuffix"),
+    );
+    if (firstArgs.length >= 2) {
+      processRouteCombineArgs(firstArgs, pathPrefix, endpoints, handlerMethodNames);
+      handledRoutePrefix = true;
+    }
+  }
+
+  for (let index = 0; index < suffixes.length; index++) {
+    const primarySuffix = suffixes[index]!;
+    if (handledRoutePrefix && index === 0) {
+      continue;
+    }
+
     const suffixName = getSuffixName(primarySuffix);
     const invocationSuffix = firstChild(primarySuffix, "methodInvocationSuffix");
     const args = getInvocationArgumentExpressions(invocationSuffix);
+
+    if (suffixName && ROUTE_COMBINE_METHODS.has(suffixName) && args.length >= 2) {
+      processRouteCombineArgs(args, pathPrefix, endpoints, handlerMethodNames);
+      pendingRouteCombine = undefined;
+      continue;
+    }
+
+    if (suffixName && ROUTE_COMBINE_METHODS.has(suffixName) && args.length === 0 && !invocationSuffix) {
+      pendingRouteCombine = suffixName;
+      continue;
+    }
+
+    if (!suffixName && args.length >= 2 && pendingRouteCombine) {
+      processRouteCombineArgs(args, pathPrefix, endpoints, handlerMethodNames);
+      pendingRouteCombine = undefined;
+      continue;
+    }
 
     if (suffixName && PATH_PREFIX_METHODS.has(suffixName)) {
       pendingHttpMethod = undefined;

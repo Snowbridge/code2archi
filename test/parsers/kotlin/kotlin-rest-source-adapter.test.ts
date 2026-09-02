@@ -67,4 +67,14 @@ describe("extractKotlinRestControllers", () => {
     assert.equal(controllers.length, 1);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /api/users/:id"]);
   });
+
+  it("collects DTO types from @PathVariable parameters", () => {
+    const controllers = extractKotlinRestControllers(
+      parseKotlinSourceFile(readFixture("spring-path-param-dto.kt")),
+    );
+
+    assert.equal(controllers.length, 1);
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityDto"));
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityId"));
+  });
 });

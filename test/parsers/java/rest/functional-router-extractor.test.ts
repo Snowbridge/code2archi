@@ -70,4 +70,14 @@ describe("extractFunctionalRouters", () => {
     assert.equal(routers[0]?.fqcn, "com.example.ReactiveRoutes");
     assert.deepEqual(routers[0]?.endpoints, ["GET /hello", "GET /world"]);
   });
+
+  it("extracts Spring RouterFunctions.route and andRoute", () => {
+    const routers = extractFunctionalRouters(
+      parseJavaSourceFile(readFixture("router-functions-and-route.java")),
+    );
+
+    assert.equal(routers.length, 1);
+    assert.equal(routers[0]?.name, "combinedRoutes");
+    assert.deepEqual(routers[0]?.endpoints, ["GET /users", "POST /users"]);
+  });
 });

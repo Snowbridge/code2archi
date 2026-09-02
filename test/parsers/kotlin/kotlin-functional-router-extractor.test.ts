@@ -31,6 +31,15 @@ describe("extractKotlinFunctionalRouters", () => {
     assert.equal(routers[0]?.tcpStackType, "NON_BLOCKING");
   });
 
+  it("extracts Spring Kotlin route().GET().build() chained builder", () => {
+    const routers = extractKotlinFunctionalRouters(parseFixture("spring-router-chained-builder.kt"));
+
+    assert.equal(routers.length, 1);
+    assert.equal(routers[0]?.name, "userRoutes");
+    assert.deepEqual(routers[0]?.endpoints, ["GET /users", "GET /users/:id"]);
+    assert.equal(routers[0]?.tcpStackType, "NON_BLOCKING");
+  });
+
   it("extracts Spring Kotlin CoRouterFunction @Bean", () => {
     const routers = extractKotlinFunctionalRouters(parseFixture("spring-co-router-bean.kt"));
 

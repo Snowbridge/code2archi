@@ -9,23 +9,19 @@ import { FunctionalRouterBasedProcessor } from "../../../src/processors/scan.sou
 import { Repository } from "../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
-const fixturePath = path.join(
+const functionalFixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../fixtures/java-rest-controllers/functional/user-router-config.java",
-);
-const springFieldFixturePath = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../fixtures/java-rest-controllers/functional/spring-router-field.java",
+  "../../fixtures/java-rest-controllers/functional",
 );
 
-describe("FunctionalRouterBasedProcessor", () => {
-  it("creates RestController entities from RouterFunction bean methods", () => {
-    const root = createTestTempDir("c2a-functional-router-");
-    const javaDir = path.join(root, "src", "main", "java", "com", "example");
-    mkdirSync(javaDir, { recursive: true });
-    writeFileSync(
-      path.join(root, "pom.xml"),
-      `<?xml version="1.0" encoding="UTF-8"?>
+function readFunctionalFixture(name: string): string {
+  return readFileSync(path.join(functionalFixturesDir, name), "utf8");
+}
+
+function writeMavenPom(root: string): void {
+  writeFileSync(
+    path.join(root, "pom.xml"),
+    `<?xml version="1.0" encoding="UTF-8"?>
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.example</groupId>
@@ -35,47 +31,62 @@ describe("FunctionalRouterBasedProcessor", () => {
     <maven.compiler.source>17</maven.compiler.source>
   </properties>
 </project>`,
-    );
-    writeFileSync(path.join(javaDir, "UserRouterConfig.java"), readFileSync(fixturePath, "utf8"));
+  );
+}
 
-    const repository = new Repository({
-      url: "",
-      localPath: root,
-      name: "app",
-      namespace: "",
-      buildSystems: ["maven"],
-    });
-    const module = new ApplicationModule({
-      repositoryId: repository.id,
-      buildSystem: "maven",
-      groupId: "com.example",
-      artifactId: "app",
-      version: "1.0.0",
-      name: "app",
-      repoPath: ".",
-      buildScript: "pom.xml",
-      isMultimodule: false,
-      javaVersion: "17",
-    });
+function createMavenStore(root: string, scanId: string): RunEntityStore {
+  const repository = new Repository({
+    url: "",
+    localPath: root,
+    name: "app",
+    namespace: "",
+    buildSystems: ["maven"],
+  });
+  const module = new ApplicationModule({
+    repositoryId: repository.id,
+    buildSystem: "maven",
+    groupId: "com.example",
+    artifactId: "app",
+    version: "1.0.0",
+    name: "app",
+    repoPath: ".",
+    buildScript: "pom.xml",
+    isMultimodule: false,
+    javaVersion: "17",
+  });
 
-    const store = new RunEntityStore({
-      sourceDirs: [root],
-      scanId: "scan-functional-router",
-      runStartedAt: new Date("2026-09-01T12:00:00.000Z"),
-    });
-    store.addCreateIntents(
-      "scan.scope",
-      { groupId: "scan.scope", artifactId: "test" },
-      { entities: { Repository: [repository] } },
-    );
-    store.addCreateIntents(
-      "scan.source",
-      { groupId: "scan.source.assembly.maven", artifactId: "test" },
-      { entities: { ApplicationModule: [module] } },
+  const store = new RunEntityStore({
+    sourceDirs: [root],
+    scanId,
+    runStartedAt: new Date("2026-09-01T12:00:00.000Z"),
+  });
+  store.addCreateIntents(
+    "scan.scope",
+    { groupId: "scan.scope", artifactId: "test" },
+    { entities: { Repository: [repository] } },
+  );
+  store.addCreateIntents(
+    "scan.source",
+    { groupId: "scan.source.assembly.maven", artifactId: "test" },
+    { entities: { ApplicationModule: [module] } },
+  );
+
+  return store;
+}
+
+describe("FunctionalRouterBasedProcessor", () => {
+  it("creates RestController entities from RouterFunction bean methods", () => {
+    const root = createTestTempDir("c2a-functional-router-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeMavenPom(root);
+    writeFileSync(
+      path.join(javaDir, "UserRouterConfig.java"),
+      readFunctionalFixture("user-router-config.java"),
     );
 
-    const processor = new FunctionalRouterBasedProcessor();
-    const output = processor.process(store.snapshot());
+    const store = createMavenStore(root, "scan-functional-router");
+    const output = new FunctionalRouterBasedProcessor().process(store.snapshot());
     const controllers = output.entities?.RestController ?? [];
 
     assert.equal(controllers.length, 1);
@@ -94,64 +105,92 @@ describe("FunctionalRouterBasedProcessor", () => {
     const root = createTestTempDir("c2a-functional-router-field-");
     const javaDir = path.join(root, "src", "main", "java", "com", "example");
     mkdirSync(javaDir, { recursive: true });
+    writeMavenPom(root);
     writeFileSync(
-      path.join(root, "pom.xml"),
-      `<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example</groupId>
-  <artifactId>app</artifactId>
-  <version>1.0.0</version>
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-  </properties>
-</project>`,
-    );
-    writeFileSync(path.join(javaDir, "FieldRouterConfig.java"), readFileSync(springFieldFixturePath, "utf8"));
-
-    const repository = new Repository({
-      url: "",
-      localPath: root,
-      name: "app",
-      namespace: "",
-      buildSystems: ["maven"],
-    });
-    const module = new ApplicationModule({
-      repositoryId: repository.id,
-      buildSystem: "maven",
-      groupId: "com.example",
-      artifactId: "app",
-      version: "1.0.0",
-      name: "app",
-      repoPath: ".",
-      buildScript: "pom.xml",
-      isMultimodule: false,
-      javaVersion: "17",
-    });
-
-    const store = new RunEntityStore({
-      sourceDirs: [root],
-      scanId: "scan-functional-router-field",
-      runStartedAt: new Date("2026-09-01T12:00:00.000Z"),
-    });
-    store.addCreateIntents(
-      "scan.scope",
-      { groupId: "scan.scope", artifactId: "test" },
-      { entities: { Repository: [repository] } },
-    );
-    store.addCreateIntents(
-      "scan.source",
-      { groupId: "scan.source.assembly.maven", artifactId: "test" },
-      { entities: { ApplicationModule: [module] } },
+      path.join(javaDir, "FieldRouterConfig.java"),
+      readFunctionalFixture("spring-router-field.java"),
     );
 
-    const processor = new FunctionalRouterBasedProcessor();
-    const output = processor.process(store.snapshot());
+    const store = createMavenStore(root, "scan-functional-router-field");
+    const output = new FunctionalRouterBasedProcessor().process(store.snapshot());
     const controllers = output.entities?.RestController ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "userRoutes");
     assert.equal(controllers[0]?.fqcn, "com.example.FieldRouterConfig#userRoutes");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "GET /users/:id"]);
+  });
+
+  it("creates RestController from RouterFunctions.route and andRoute", () => {
+    const root = createTestTempDir("c2a-functional-and-route-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeMavenPom(root);
+    writeFileSync(
+      path.join(javaDir, "CombinedRouterConfig.java"),
+      readFunctionalFixture("router-functions-and-route.java"),
+    );
+
+    const store = createMavenStore(root, "scan-functional-and-route");
+    const output = new FunctionalRouterBasedProcessor().process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "combinedRoutes");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "POST /users"]);
+  });
+
+  it("creates RestController from Micronaut RouteBuilder", () => {
+    const root = createTestTempDir("c2a-functional-micronaut-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeMavenPom(root);
+    writeFileSync(
+      path.join(javaDir, "MyRoutes.java"),
+      readFunctionalFixture("micronaut-default-route-builder.java"),
+    );
+
+    const store = createMavenStore(root, "scan-functional-micronaut");
+    const output = new FunctionalRouterBasedProcessor().process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "issuesRoutes");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /issues/show/:number"]);
+  });
+
+  it("creates RestController from Quarkus Vert.x Router", () => {
+    const root = createTestTempDir("c2a-functional-quarkus-vertx-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeMavenPom(root);
+    writeFileSync(path.join(javaDir, "MyRoutes.java"), readFunctionalFixture("quarkus-vertx-router.java"));
+
+    const store = createMavenStore(root, "scan-functional-quarkus-vertx");
+    const output = new FunctionalRouterBasedProcessor().process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "init");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /hello", "POST /items"]);
+  });
+
+  it("creates RestController from Quarkus @Route class", () => {
+    const root = createTestTempDir("c2a-functional-quarkus-route-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeMavenPom(root);
+    writeFileSync(
+      path.join(javaDir, "ReactiveRoutes.java"),
+      readFunctionalFixture("quarkus-reactive-routes.java"),
+    );
+
+    const store = createMavenStore(root, "scan-functional-quarkus-route");
+    const output = new FunctionalRouterBasedProcessor().process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "ReactiveRoutes");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /hello", "GET /world"]);
   });
 });

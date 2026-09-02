@@ -70,4 +70,12 @@ describe("extractRestControllers", () => {
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.fqcn, "com.example.Outer$InnerController");
   });
+
+  it("collects DTO types from @PathVariable parameters", () => {
+    const controllers = extractRestControllers(parseJavaSourceFile(readFixture("spring-path-param-dto.java")));
+
+    assert.equal(controllers.length, 1);
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityDto"));
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityId"));
+  });
 });

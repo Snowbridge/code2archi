@@ -120,7 +120,6 @@ function walkSpringKotlinNodes(
     handleSpringKotlinCall(node, pathPrefix, endpoints, handlerMethodNames, (child, prefix) => {
       walkSpringKotlinNodes(child, prefix, endpoints, handlerMethodNames);
     });
-    return;
   }
 
   for (const child of nodeChildren(node)) {
