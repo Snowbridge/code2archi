@@ -78,4 +78,17 @@ describe("extractRestControllers", () => {
     assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityDto"));
     assert.ok(controllers[0]?.dtoFqcn.includes("com.example.dto.EntityId"));
   });
+
+  it("extracts implemented interface FQCN from implements clause", () => {
+    const compilationUnit = parseJavaSourceFile(
+      readFixture("spring-rest-controller-implements-api.java"),
+    );
+
+    assert.equal(compilationUnit.types[0]?.interfaces.length, 1);
+
+    const controllers = extractRestControllers(compilationUnit);
+
+    assert.equal(controllers.length, 1);
+    assert.deepEqual(controllers[0]?.implementedInterfaceFqcn, ["com.example.api.ProcurementApi"]);
+  });
 });

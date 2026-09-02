@@ -238,20 +238,10 @@ function extractTypeRefsFromInterfaceTypeList(
 ): JavaTypeRef[] {
   const interfaces: JavaTypeRef[] = [];
 
-  if (!interfaceList?.children) {
-    return interfaces;
-  }
-
-  for (const childList of Object.values(interfaceList.children)) {
-    for (const child of childList) {
-      const genericChild = asGenericCstNode(child);
-      if (!genericChild) {
-        continue;
-      }
-      const parsed = parseTypeRef(genericChild);
-      if (parsed) {
-        interfaces.push(parsed);
-      }
+  for (const interfaceType of childNodes(interfaceList, "interfaceType")) {
+    const parsed = parseTypeRef(interfaceType);
+    if (parsed) {
+      interfaces.push(parsed);
     }
   }
 
@@ -259,7 +249,8 @@ function extractTypeRefsFromInterfaceTypeList(
 }
 
 function extractInterfaces(normalClass: GenericCstNode | undefined): JavaTypeRef[] {
-  return extractTypeRefsFromInterfaceTypeList(firstChild(normalClass, "interfaceTypeList"));
+  const classImplements = firstChild(normalClass, "classImplements");
+  return extractTypeRefsFromInterfaceTypeList(firstChild(classImplements, "interfaceTypeList"));
 }
 
 function extractInterfaceSuperInterfaces(
