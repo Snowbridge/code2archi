@@ -15,7 +15,6 @@ import {
   ensureFolderPath,
   parseNamespaceSegments,
 } from "../../generate/archi-folder-path.js";
-import { decorateElementName } from "../../generate/element-name-decoration.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
 import {
   restControllerRealizationLogicalId,
@@ -102,9 +101,7 @@ export class RestControllersProcessor extends AbstractProcessor<
 
       if (input.archi.getElement(controller.id) === undefined) {
         let elementBuilder = ApplicationService.withId(controller.id)
-          .name(
-            decorateElementName("rest-controller", String(controller.name), {}, input.options),
-          )
+          .name(String(controller.name))
           .inFolder(targetFolder.folderId)
           .profiles(restControllerProfile.id);
 

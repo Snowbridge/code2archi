@@ -17,7 +17,6 @@ import { RestControllersProcessor } from "../../../src/processors/generate.eleme
 import { createTestTempDir } from "../../test-temp-dir.js";
 import {
   defaultGenerateProcessorOptions,
-  undecoratedGenerateProcessorOptions,
 } from "../../generate/generate-processor-test-options.js";
 
 function repositoryRecord(
@@ -154,7 +153,7 @@ describe("RestControllersProcessor", () => {
       (element) => element.id === declarativeController.id,
     );
     assert.equal(declarativeService?.conceptType, "ApplicationService");
-    assert.equal(declarativeService?.name, "LimitController REST Controller");
+    assert.equal(declarativeService?.name, "LimitController");
     assert.deepEqual(declarativeService?.profileIds, [RestControllerProfile.create().id]);
     assert.equal(
       declarativeService?.properties?.find((property) => property.key === "c2a:slot")?.value,
@@ -186,49 +185,6 @@ describe("RestControllersProcessor", () => {
       realization?.properties?.find((property) => property.key === "c2a:slot")?.value,
       "app-module-realizes-rest-controller",
     );
-  });
-
-  it("leaves names undecorated when decorate is false", () => {
-    const repository = repositoryRecord({
-      url: "",
-      localPath: "/workspace/demo",
-      name: "demo",
-      namespace: "",
-      buildSystems: ["maven"],
-    });
-    const module = moduleRecord({
-      repositoryId: repository.id,
-      buildSystem: "maven",
-      groupId: "com.example",
-      artifactId: "svc",
-      version: "1",
-      name: "svc",
-      repoPath: ".",
-      buildScript: "pom.xml",
-      isMultimodule: false,
-    });
-    const controller = restControllerRecord({
-      applicationModuleId: module.id,
-      name: "LimitController",
-      fqcn: "com.example.LimitController",
-      dtoFqcn: [],
-      endpoints: ["GET /limits"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
-      sourceFile: "src/main/java/com/example/LimitController.java",
-    });
-    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
-    seedAppModuleComponent(store, module);
-
-    const processor = new RestControllersProcessor();
-    const output = processor.process({
-      discovery: discoverySnapshot([repository], [module], [controller]),
-      archi: store.snapshot(),
-      options: undecoratedGenerateProcessorOptions,
-    });
-
-    assert.equal(output.elements?.[0]?.name, "LimitController");
   });
 
   it("skips controller and Realization when app-module-component is missing", () => {
