@@ -1,6 +1,22 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
 
 const INFERRED_REST_CONTRACT_ID_PREFIX = "inferredapicontract:";
+const ROOT_HEALTH_ENDPOINT = "GET /";
+
+export function isEligibleForInferredRestContract(
+  endpoints: readonly string[],
+  dtoFqcn: readonly string[],
+): boolean {
+  if (endpoints.length === 0 && dtoFqcn.length === 0) {
+    return false;
+  }
+
+  return !(
+    dtoFqcn.length === 0 &&
+    endpoints.length === 1 &&
+    endpoints[0] === ROOT_HEALTH_ENDPOINT
+  );
+}
 
 export function inferredRestContractId(fqcn: string): string {
   return computeArchiId("ApplicationInterface", `${INFERRED_REST_CONTRACT_ID_PREFIX}${fqcn}`);

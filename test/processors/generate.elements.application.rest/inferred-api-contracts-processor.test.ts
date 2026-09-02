@@ -20,6 +20,7 @@ import {
   inferredContractAssignmentId,
   inferredRestContractId,
   inferredRestContractLogicalId,
+  isEligibleForInferredRestContract,
 } from "../../../src/generate/inferred-rest-contracts.js";
 import { DeclaredApiContractsProcessor } from "../../../src/processors/generate.elements.application.rest/declared-api-contracts-processor.js";
 import { InferredApiContractsProcessor } from "../../../src/processors/generate.elements.application.rest/inferred-api-contracts-processor.js";
@@ -113,6 +114,25 @@ describe("buildInferredContractDocumentation", () => {
       buildInferredContractDocumentation([], ["com.example.FooDto"]),
       "DTOs:\n- com.example.FooDto",
     );
+  });
+});
+
+describe("isEligibleForInferredRestContract", () => {
+  it("rejects empty endpoints and dtoFqcn", () => {
+    assert.equal(isEligibleForInferredRestContract([], []), false);
+  });
+
+  it("rejects root health endpoint without DTOs", () => {
+    assert.equal(isEligibleForInferredRestContract(["GET /"], []), false);
+  });
+
+  it("accepts meaningful endpoints without DTOs", () => {
+    assert.equal(isEligibleForInferredRestContract(["GET /lots"], []), true);
+    assert.equal(isEligibleForInferredRestContract(["GET /", "GET /lots"], []), true);
+  });
+
+  it("accepts DTOs even with only GET / endpoint", () => {
+    assert.equal(isEligibleForInferredRestContract(["GET /"], ["com.example.FooDto"]), true);
   });
 });
 
@@ -281,6 +301,50 @@ describe("InferredApiContractsProcessor", () => {
       programmingModel: "DECLARATIVE",
       implementedInterfaceFqcn: [API_FQCN],
       sourceFile: "src/main/java/com/example/LimitController.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestController(store, controller);
+
+    const processor = new InferredApiContractsProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [controller]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.length ?? 0, 0);
+    assert.equal(output.relations?.length ?? 0, 0);
+  });
+
+  it("skips when dtoFqcn is empty and endpoints is only GET /", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const controller = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "HealthController",
+      fqcn: "com.example.HealthController",
+      dtoFqcn: [],
+      endpoints: ["GET /"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/HealthController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
     seedRestController(store, controller);

@@ -22,6 +22,7 @@ import {
   inferredContractAssignmentLogicalId,
   inferredRestContractId,
   inferredRestContractLogicalId,
+  isEligibleForInferredRestContract,
 } from "../../generate/inferred-rest-contracts.js";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
 import type { DiscoveryEntityRecord } from "../../discovery-model/entities/entity-types.js";
@@ -81,7 +82,7 @@ export class InferredApiContractsProcessor extends AbstractProcessor<
     const inferredApiContractProfile = InferredApiContractProfile.create();
 
     for (const controller of controllers) {
-      if (controller.endpoints.length === 0 && controller.dtoFqcn.length === 0) {
+      if (!isEligibleForInferredRestContract(controller.endpoints, controller.dtoFqcn)) {
         continue;
       }
 
