@@ -1,6 +1,6 @@
 {
   "name": "code2archi",
-  "version": "3.15.0",
+  "version": "3.16.0",
   "description": "Code to Archimate Modeler CLI",
   "type": "module",
   "engines": {
@@ -14,7 +14,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "test": "node --import tsx --test test/**/*.test.ts"
+    "test": "npm run readme:check && node --import tsx --test test/**/*.test.ts",
+    "readme:sync": "tsx scripts/sync-readme-status.ts",
+    "readme:check": "tsx scripts/sync-readme-status.ts --check"
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.1",
