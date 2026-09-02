@@ -121,8 +121,8 @@ export class ProcessorRegistry {
         continue;
       }
 
-      const artifactId = processor.id.artifactId;
-      if (seen.has(artifactId)) {
+      const coordinateKey = processorKey(processor.id);
+      if (seen.has(coordinateKey)) {
         continue;
       }
 
@@ -131,7 +131,7 @@ export class ProcessorRegistry {
       }
 
       selected.push(processor as AbstractProcessor<TInput, TOutput>);
-      seen.add(artifactId);
+      seen.add(coordinateKey);
     }
 
     return selected;

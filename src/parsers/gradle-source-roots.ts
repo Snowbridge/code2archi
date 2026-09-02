@@ -26,7 +26,7 @@ function normalizeSourceDir(moduleRoot: string, sourceDir: string): string | und
   return existsSync(absolute) ? absolute : undefined;
 }
 
-function extractQuotedPaths(content: string): string[] {
+function extractQuotedPaths(content: string, includeKotlin: boolean): string[] {
   const paths: string[] = [];
   const patterns = [
     /srcDirs\s*\(\s*([^)]+)\)/g,
@@ -35,6 +35,13 @@ function extractQuotedPaths(content: string): string[] {
     /java\.srcDirs\s*\(\s*([^)]+)\)/g,
     /java\.srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
   ];
+
+  if (includeKotlin) {
+    patterns.push(
+      /kotlin\.srcDirs\s*\(\s*([^)]+)\)/g,
+      /kotlin\.srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
+    );
+  }
 
   for (const pattern of patterns) {
     let match: RegExpExecArray | null = pattern.exec(content);
@@ -67,7 +74,7 @@ export function parseGradleProductionJavaSourceRoots(
   }
 
   const content = readFileSync(buildFilePath, "utf8");
-  const extracted = extractQuotedPaths(content)
+  const extracted = extractQuotedPaths(content, false)
     .map((sourceDir) => normalizeSourceDir(moduleRoot, sourceDir))
     .filter((sourceDir): sourceDir is string => sourceDir !== undefined);
 
@@ -89,6 +96,46 @@ export function resolveMavenProductionJavaSourceRoot(
     "src",
     "main",
     "java",
+  );
+  return existsSync(sourceRoot) ? path.resolve(sourceRoot) : undefined;
+}
+
+export function parseGradleProductionKotlinSourceRoots(
+  repoRoot: string,
+  moduleRepoPath: string,
+  buildScript: string,
+): string[] {
+  const moduleRoot = path.resolve(repoRoot, moduleRepoPath === "." ? "" : moduleRepoPath);
+  const buildFilePath = path.resolve(repoRoot, buildScript);
+  const fallback = path.join(moduleRoot, "src", "main", "kotlin");
+
+  if (!existsSync(buildFilePath)) {
+    return existsSync(fallback) ? [fallback] : [];
+  }
+
+  const content = readFileSync(buildFilePath, "utf8");
+  const extracted = extractQuotedPaths(content, true)
+    .map((sourceDir) => normalizeSourceDir(moduleRoot, sourceDir))
+    .filter((sourceDir): sourceDir is string => sourceDir !== undefined);
+
+  const unique = [...new Set(extracted)];
+  if (unique.length > 0) {
+    return unique;
+  }
+
+  return existsSync(fallback) ? [fallback] : [];
+}
+
+export function resolveMavenProductionKotlinSourceRoot(
+  repoRoot: string,
+  moduleRepoPath: string,
+): string | undefined {
+  const sourceRoot = path.join(
+    repoRoot,
+    moduleRepoPath === "." ? "" : moduleRepoPath,
+    "src",
+    "main",
+    "kotlin",
   );
   return existsSync(sourceRoot) ? path.resolve(sourceRoot) : undefined;
 }

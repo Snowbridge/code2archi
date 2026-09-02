@@ -1,6 +1,6 @@
 {
   "name": "code2archi",
-  "version": "3.9.0",
+  "version": "3.10.0",
   "description": "Code to Archimate Modeler CLI",
   "type": "module",
   "engines": {
@@ -19,6 +19,8 @@
   "dependencies": {
     "fast-xml-parser": "^5.11.1",
     "java-parser": "^3.0.1",
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-kotlin": "^0.3.8",
     "winston": "^3.19.0",
     "yargs": "^18.0.0"
   },
@@ -27,5 +29,9 @@
     "@types/yargs": "^17.0.33",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
+  },
+  "allowScripts": {
+    "tree-sitter@0.21.1": true,
+    "tree-sitter-kotlin@0.3.8": true
   }
 }

@@ -20,6 +20,12 @@ export function resolveTcpStackType(
   handlerMethods: readonly JavaMethodDeclaration[],
 ): TcpStackType {
   for (const method of handlerMethods) {
+    if (method.isSuspend) {
+      return "NON_BLOCKING";
+    }
+  }
+
+  for (const method of handlerMethods) {
     if (returnTypeContainsNonBlockingWrapper(method.returnType)) {
       return "NON_BLOCKING";
     }

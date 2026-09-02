@@ -240,6 +240,65 @@ public class FlowController {
     assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
   });
 
+  it("discovers Kotlin RestController entities from maven kotlin sources in scan.source", () => {
+    const root = createTestTempDir("c2a-scan-flow-kotlin-");
+    const sourceDir = path.join(root, "src");
+    const kotlinDir = path.join(sourceDir, "src", "main", "kotlin", "com", "flow");
+    const outputDir = path.join(root, "out");
+    mkdirSync(kotlinDir, { recursive: true });
+    mkdirSync(outputDir);
+    writeFileSync(
+      path.join(sourceDir, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.flow</groupId>
+  <artifactId>flow-app</artifactId>
+  <version>1.0.0</version>
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+  </properties>
+</project>`,
+    );
+    writeFileSync(
+      path.join(kotlinDir, "FlowController.kt"),
+      `package com.flow
+
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+class FlowController {
+    @GetMapping("/flow")
+    fun flow(): String = "ok"
+}
+`,
+    );
+
+    runScanFlow({
+      sourceDirs: [sourceDir],
+      outputDir,
+      force: false,
+      scanId: "test-scan-kotlin-rest-controllers",
+      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      processorFilters: {
+        with: ["scan.scope.unversioned-folders"],
+        without: [],
+        withOnly: [],
+      },
+    });
+
+    const controllers = JSON.parse(
+      readFileSync(path.join(outputDir, "rest-controllers.json"), "utf8"),
+    ) as Array<{ name: string; endpoints: string[]; programmingModel: string; sourceFile: string }>;
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "FlowController");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
+    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.sourceFile, "src/main/kotlin/com/flow/FlowController.kt");
+  });
+
   it("discovers functional RouterFunction controllers in scan.source", () => {
     const root = createTestTempDir("c2a-scan-flow-functional-");
     const sourceDir = path.join(root, "src");

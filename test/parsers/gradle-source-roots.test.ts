@@ -4,7 +4,9 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import {
   parseGradleProductionJavaSourceRoots,
+  parseGradleProductionKotlinSourceRoots,
   resolveMavenProductionJavaSourceRoot,
+  resolveMavenProductionKotlinSourceRoot,
 } from "../../src/parsers/gradle-source-roots.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -48,5 +50,24 @@ describe("gradle-source-roots", () => {
     mkdirSync(sourceRoot, { recursive: true });
 
     assert.equal(resolveMavenProductionJavaSourceRoot(root, "."), sourceRoot);
+  });
+
+  it("falls back to src/main/kotlin for gradle modules", () => {
+    const root = createTestTempDir("c2a-gradle-kotlin-roots-");
+    const sourceRoot = path.join(root, "src", "main", "kotlin");
+    mkdirSync(sourceRoot, { recursive: true });
+    writeFileSync(path.join(root, "build.gradle"), "plugins { id 'org.jetbrains.kotlin.jvm' }");
+
+    const roots = parseGradleProductionKotlinSourceRoots(root, ".", "build.gradle");
+
+    assert.deepEqual(roots, [sourceRoot]);
+  });
+
+  it("resolves maven production kotlin source root", () => {
+    const root = createTestTempDir("c2a-maven-kotlin-roots-");
+    const sourceRoot = path.join(root, "src", "main", "kotlin");
+    mkdirSync(sourceRoot, { recursive: true });
+
+    assert.equal(resolveMavenProductionKotlinSourceRoot(root, "."), sourceRoot);
   });
 });

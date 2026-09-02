@@ -148,6 +148,24 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
     assert.deepEqual(result, [always, onDemand]);
   });
 
+  it("includes processors that share artifactId under different subgroup groupIds", () => {
+    const registry = new ProcessorRegistry();
+    const java = new StubProcessor({
+      groupId: "scan.source.rest.controller.java",
+      artifactId: "annotation-based",
+    });
+    const kotlin = new StubProcessor({
+      groupId: "scan.source.rest.controller.kotlin",
+      artifactId: "annotation-based",
+    });
+    registry.register(java);
+    registry.register(kotlin);
+
+    const result = registry.listForBuiltInStep("scan.source", emptyFilters());
+
+    assert.deepEqual(result, [java, kotlin]);
+  });
+
   it("rejects invalid groupId on register", () => {
     const registry = new ProcessorRegistry();
   const invalid = new StubProcessor({ groupId: "invalid.group", artifactId: "alpha" });

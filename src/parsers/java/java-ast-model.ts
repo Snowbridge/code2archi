@@ -24,6 +24,7 @@ export interface JavaMethodDeclaration {
   readonly parameters: readonly JavaParameter[];
   readonly annotations: readonly JavaAnnotation[];
   readonly body?: GenericCstNode;
+  readonly isSuspend?: boolean;
 }
 
 export interface JavaTypeDeclaration {
