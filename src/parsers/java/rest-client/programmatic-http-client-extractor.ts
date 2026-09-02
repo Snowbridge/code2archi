@@ -5,6 +5,11 @@ import type {
 } from "../java-ast-model.js";
 import type { GenericCstNode } from "../java-cst-utils.js";
 import {
+  APACHE_HTTP_CLIENT_FRAMEWORK,
+  detectApacheClientFramework,
+  extractApacheHttpEndpoints,
+} from "./apache-http-client-extractor.js";
+import {
   collectPrimaryInvocations,
   extractStringLiteral,
 } from "../rest/functional-cst-utils.js";
@@ -38,8 +43,6 @@ const REST_TEMPLATE_CALLS = new Set([
   "exchange",
   "patchForObject",
 ]);
-const HTTP_COMPONENT_CALLS = new Set(["HttpGet", "HttpPost", "HttpPut", "HttpDelete", "HttpPatch"]);
-
 
 function typeSimpleName(typeRef: JavaMethodDeclaration["returnType"]): string | undefined {
   return typeRef?.simpleName;
@@ -54,7 +57,10 @@ function flattenTypes(types: readonly JavaTypeDeclaration[]): JavaTypeDeclaratio
   return flattened;
 }
 
-function detectClientFramework(type: JavaTypeDeclaration): string | undefined {
+function detectClientFramework(
+  type: JavaTypeDeclaration,
+  imports: ReadonlyMap<string, string>,
+): string | undefined {
   const typeNames = new Set<string>();
 
   for (const field of type.fields) {
@@ -83,6 +89,12 @@ function detectClientFramework(type: JavaTypeDeclaration): string | undefined {
   if ([...typeNames].some((name) => OKHTTP_TYPE_NAMES.has(name))) {
     return "okhttp";
   }
+
+  const apacheFramework = detectApacheClientFramework(type, imports);
+  if (apacheFramework) {
+    return apacheFramework;
+  }
+
   if ([...typeNames].some((name) => JDK_HTTP_TYPE_NAMES.has(name))) {
     return "java-net-http";
   }
@@ -127,6 +139,10 @@ function extractEndpointsFromBody(
 ): string[] {
   if (!body) {
     return [];
+  }
+
+  if (clientFramework === APACHE_HTTP_CLIENT_FRAMEWORK) {
+    return extractApacheHttpEndpoints(body);
   }
 
   const endpoints = new Set<string>();
@@ -181,13 +197,6 @@ function extractEndpointsFromBody(
       }
     }
 
-    if (HTTP_COMPONENT_CALLS.has(methodName) && args.length > 0) {
-      const urlLiteral = extractStringLiteral(args[0]);
-      if (urlLiteral) {
-        endpoints.add(formatEndpoint("POST", urlLiteral));
-      }
-    }
-
     if (methodName === "post" || methodName === "get" || methodName === "put" || methodName === "delete") {
       pendingHttpMethod = methodName.toUpperCase();
     }
@@ -234,14 +243,14 @@ function extractBeanClient(
 }
 
 function extractClassClient(
-  _compilationUnit: JavaCompilationUnit,
+  compilationUnit: JavaCompilationUnit,
   type: JavaTypeDeclaration,
 ): ParsedProgrammaticRestClient | undefined {
   if (type.name.startsWith("Abstract")) {
     return undefined;
   }
 
-  const clientFramework = detectClientFramework(type);
+  const clientFramework = detectClientFramework(type, compilationUnit.imports);
   if (!clientFramework) {
     return undefined;
   }
