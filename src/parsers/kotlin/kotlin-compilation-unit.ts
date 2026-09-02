@@ -6,6 +6,7 @@ import {
   childByField,
   findChildren,
   findDirectChild,
+  findDirectChildren,
   findFirstChild,
   nodeChildren,
   nodeText,
@@ -136,35 +137,35 @@ function extractSuperTypes(classNode: SyntaxNode): {
   superClass?: ReturnType<typeof parseTypeRef>;
   interfaces: NonNullable<ReturnType<typeof parseTypeRef>>[];
 } {
-  const delegationSpecifiers = findDirectChild(classNode, "delegation_specifiers");
   const interfaces: NonNullable<ReturnType<typeof parseTypeRef>>[] = [];
   let superClass: ReturnType<typeof parseTypeRef>;
 
-  if (!delegationSpecifiers) {
-    return { interfaces };
-  }
+  const delegationContainer = findDirectChild(classNode, "delegation_specifiers");
+  const specifiers = delegationContainer
+    ? nodeChildren(delegationContainer).filter((node) => node.type === "delegation_specifier")
+    : findDirectChildren(classNode, "delegation_specifier");
 
-  let first = true;
-  for (const specifier of nodeChildren(delegationSpecifiers)) {
-    if (specifier.type !== "delegation_specifier") {
+  for (const specifier of specifiers) {
+    if (findFirstChild(specifier, "constructor_invocation")) {
+      const userType =
+        findFirstChild(specifier, "user_type") ?? findFirstChild(specifier, "type_reference");
+      const parsed = parseTypeRef(userType);
+      if (parsed) {
+        superClass = parsed;
+      }
       continue;
     }
 
-    const userType = findFirstChild(specifier, "user_type") ?? findFirstChild(specifier, "type_reference");
+    if (findFirstChild(specifier, "explicit_delegation")) {
+      continue;
+    }
+
+    const userType =
+      findFirstChild(specifier, "user_type") ?? findFirstChild(specifier, "type_reference");
     const parsed = parseTypeRef(userType);
-    if (!parsed) {
-      continue;
+    if (parsed) {
+      interfaces.push(parsed);
     }
-
-    const constructorInvocation = findFirstChild(specifier, "constructor_invocation");
-    if (first && !constructorInvocation) {
-      superClass = parsed;
-      first = false;
-      continue;
-    }
-
-    interfaces.push(parsed);
-    first = false;
   }
 
   return { superClass, interfaces };

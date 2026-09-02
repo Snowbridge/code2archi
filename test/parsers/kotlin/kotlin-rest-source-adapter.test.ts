@@ -50,6 +50,15 @@ describe("extractKotlinRestControllers", () => {
     assert.equal(controllers[0]?.tcpStackType, "BLOCKING");
   });
 
+  it("extracts implemented interface FQCN from class delegation specifiers", () => {
+    const controllers = extractKotlinRestControllers(
+      parseKotlinSourceFile(readFixture("spring-interface-controller.kt")),
+    );
+
+    assert.equal(controllers.length, 1);
+    assert.deepEqual(controllers[0]?.implementedInterfaceFqcn, ["com.example.api.LotsCrudApi"]);
+  });
+
   it("extracts Micronaut controller", () => {
     const controllers = extractKotlinRestControllers(
       parseKotlinSourceFile(readFixture("micronaut-user-controller.kt")),
