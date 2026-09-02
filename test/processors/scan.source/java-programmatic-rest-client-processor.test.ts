@@ -248,6 +248,220 @@ public class MetricsClient {
     assert.equal(clients[0]?.clientFramework, "apache-http");
     assert.deepEqual(clients[0]?.endpoints, ["GET /actuator/metrics"]);
   });
+
+  it("creates RestClient from java.net.http.HttpClient", () => {
+    const root = createTestTempDir("c2a-java-jdk-http-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "JdkOrderClient.java"),
+      `package com.example;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+
+public class JdkOrderClient {
+    private final HttpClient client = HttpClient.newHttpClient();
+
+    public void fetch() throws Exception {
+        client.send(
+            HttpRequest.newBuilder().uri(URI.create("/api/orders")).build(),
+            null
+        );
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-jdk-http");
+    const processor = new JavaProgrammaticRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "JdkOrderClient");
+    assert.equal(clients[0]?.clientFramework, "java-http");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
+  });
+
+  it("creates RestClient from RestTemplate with UriComponentsBuilder", () => {
+    const root = createTestTempDir("c2a-java-uri-components-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "OrderClient.java"),
+      `package com.example;
+
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+public class OrderClient {
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    public String fetch() {
+        return restTemplate.getForObject(
+            UriComponentsBuilder.fromHttpUrl("http://host").path("/api/orders").toUriString(),
+            String.class
+        );
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-uri-components");
+    const processor = new JavaProgrammaticRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.clientFramework, "rest-template");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
+  });
+
+  it("creates RestClient from OkHttpClient", () => {
+    const root = createTestTempDir("c2a-java-okhttp-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "OkOrderClient.java"),
+      `package com.example;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+
+public class OkOrderClient {
+    private final OkHttpClient client = new OkHttpClient();
+
+    public void fetch() throws Exception {
+        client.newCall(new Request.Builder().url("/api/orders").build()).execute();
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-java-okhttp");
+    const processor = new JavaProgrammaticRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "OkOrderClient");
+    assert.equal(clients[0]?.clientFramework, "okhttp");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
+  });
+
+  it("creates RestClient from Spring WebClient", () => {
+    const root = createTestTempDir("c2a-java-webclient-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "ApiWebclient.java"),
+      `package com.example;
+
+import org.springframework.web.reactive.function.client.WebClient;
+
+public class ApiWebclient {
+    private final WebClient webClient = WebClient.create();
+
+    public void fetch() {
+        webClient.get().uri("/api/items").retrieve();
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-java-webclient");
+    const processor = new JavaProgrammaticRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "ApiWebclient");
+    assert.equal(clients[0]?.clientFramework, "webclient");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/items"]);
+  });
+
+  it("creates RestClient from Spring RestClient", () => {
+    const root = createTestTempDir("c2a-java-spring-rest-client-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "OrderClient.java"),
+      `package com.example;
+
+import org.springframework.web.client.RestClient;
+
+public class OrderClient {
+    private final RestClient restClient = RestClient.create();
+
+    public void fetch() {
+        restClient.get().uri("/api/orders").retrieve();
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-spring-rest-client");
+    const processor = new JavaProgrammaticRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "OrderClient");
+    assert.equal(clients[0]?.clientFramework, "spring-rest-client");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
+  });
 });
 
 function createMavenStore(root: string, scanId: string): { store: RunEntityStore } {

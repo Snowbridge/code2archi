@@ -2,12 +2,14 @@ import type { SyntaxNode } from "tree-sitter";
 import type {
   KotlinCompilationUnit,
   KotlinMethodDeclaration,
+  KotlinPropertyDeclaration,
   KotlinTypeDeclaration,
 } from "./kotlin-ast-model.js";
 import {
   collectCallExpressions,
   extractStringLiteral,
 } from "./kotlin-functional-cst-utils.js";
+import { findDirectChild, nodeText } from "./kotlin-tree-sitter-utils.js";
 import type { JavaMethodDeclaration } from "../java/java-ast-model.js";
 import { formatEndpoint } from "../java/rest/rest-path-normalizer.js";
 import { resolveTcpStackType } from "../java/rest/rest-tcp-stack-type.js";
@@ -31,17 +33,112 @@ function typeSimpleName(typeRef?: { readonly simpleName: string }): string | und
   return typeRef?.simpleName;
 }
 
+function inferTypeNameFromInitializer(initializer: SyntaxNode | undefined): string | undefined {
+  if (!initializer) {
+    return undefined;
+  }
+
+  const callExpression =
+    initializer.type === "call_expression" ? initializer : findDirectChild(initializer, "call_expression");
+  if (!callExpression) {
+    return undefined;
+  }
+
+  const callee = callExpression.childForFieldName("function");
+  if (!callee) {
+    return undefined;
+  }
+
+  if (callee.type === "simple_identifier" || callee.type === "type_identifier") {
+    return nodeText(callee);
+  }
+
+  const navigation = findDirectChild(callee, "navigation_expression");
+  if (navigation) {
+    const identifier = findDirectChild(navigation, "simple_identifier");
+    if (identifier) {
+      return nodeText(identifier);
+    }
+  }
+
+  return undefined;
+}
+
+function inferFrameworkFromProperty(property: KotlinPropertyDeclaration): string | undefined {
+  const simple = typeSimpleName(property.type) ?? inferTypeNameFromInitializer(property.initializer);
+  if (!simple) {
+    return undefined;
+  }
+
+  if (WEB_CLIENT_TYPE_NAMES.has(simple)) {
+    return "webclient";
+  }
+  if (KTRO_CLIENT_TYPE_NAMES.has(simple)) {
+    return "ktor-client";
+  }
+  if (OKHTTP_TYPE_NAMES.has(simple)) {
+    return "okhttp";
+  }
+
+  return undefined;
+}
+
+function inferFrameworkFromMethodBody(method: KotlinMethodDeclaration): string | undefined {
+  if (!method.body) {
+    return undefined;
+  }
+
+  let hasNewCall = false;
+  let hasUrl = false;
+  let hasGet = false;
+  let hasUri = false;
+
+  collectCallExpressions(method.body, (methodName, args) => {
+    if (methodName === "newCall") {
+      hasNewCall = true;
+    }
+    if (methodName === "url" && extractStringLiteral(args[0])) {
+      hasUrl = true;
+    }
+    if (methodName === "get") {
+      hasGet = true;
+    }
+    if (methodName === "uri" && extractStringLiteral(args[0])) {
+      hasUri = true;
+    }
+  });
+
+  if (hasNewCall && hasUrl) {
+    return "okhttp";
+  }
+  if (hasGet && hasUri) {
+    return "webclient";
+  }
+
+  return undefined;
+}
+
 function detectClientFramework(type: KotlinTypeDeclaration): string | undefined {
   const typeNames = new Set<string>();
 
   for (const property of type.properties) {
-    const simple = typeSimpleName(property.type);
+    const inferred = inferFrameworkFromProperty(property);
+    if (inferred) {
+      return inferred;
+    }
+
+    const simple = typeSimpleName(property.type) ?? inferTypeNameFromInitializer(property.initializer);
     if (simple) {
       typeNames.add(simple);
     }
   }
 
   for (const method of type.methods) {
+    const inferred = inferFrameworkFromMethodBody(method);
+    if (inferred) {
+      return inferred;
+    }
+
     for (const parameter of method.parameters) {
       const simple = typeSimpleName(parameter.type);
       if (simple) {

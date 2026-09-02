@@ -78,9 +78,16 @@ export function buildEndpointsForMethod(
   }
 
   if (httpVerbs.length > 0) {
-    const methodPaths = mappingAnnotations.flatMap((annotation) =>
-      collectMethodPathSegments(annotation),
-    );
+    const verbPaths = annotations.flatMap((annotation) => {
+      if (registry.lookupRulesByRole(annotation, "http-verb").length === 0) {
+        return [];
+      }
+      return collectMethodPathSegments(annotation).filter((pathValue) => pathValue.length > 0);
+    });
+    const mappingPaths = mappingAnnotations
+      .filter((annotation) => registry.lookupRulesByRole(annotation, "http-verb").length === 0)
+      .flatMap((annotation) => collectMethodPathSegments(annotation));
+    const methodPaths = [...verbPaths, ...mappingPaths];
     const normalizedMethodPaths = methodPaths.length > 0 ? methodPaths : [""];
 
     for (const classPath of classPaths) {

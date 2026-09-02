@@ -10,6 +10,10 @@ import {
   extractApacheHttpEndpoints,
 } from "./apache-http-client-extractor.js";
 import {
+  detectJdkHttpClientFramework,
+} from "./jdk-http-client-extractor.js";
+import { extractRestTemplatePathLiteral } from "./uri-components-builder-extractor.js";
+import {
   collectPrimaryInvocations,
   extractStringLiteral,
 } from "../rest/functional-cst-utils.js";
@@ -29,9 +33,7 @@ const WEB_CLIENT_TYPE_NAMES = new Set(["WebClient", "WebClient.Builder"]);
 const REST_TEMPLATE_TYPE_NAMES = new Set(["RestTemplate"]);
 const SPRING_REST_CLIENT_TYPE_NAMES = new Set(["RestClient", "RestClient.Builder"]);
 const OKHTTP_TYPE_NAMES = new Set(["OkHttpClient", "Request", "Request.Builder"]);
-const JDK_HTTP_TYPE_NAMES = new Set(["HttpClient", "HttpRequest", "HttpRequest.Builder"]);
-
-const URI_METHOD_NAMES = new Set(["uri", "fromHttpUrl", "fromUriString"]);
+const URI_METHOD_NAMES = new Set(["uri", "fromUriString"]);
 const URL_METHOD_NAMES = new Set(["url"]);
 const REST_TEMPLATE_CALLS = new Set([
   "getForEntity",
@@ -95,8 +97,9 @@ function detectClientFramework(
     return apacheFramework;
   }
 
-  if ([...typeNames].some((name) => JDK_HTTP_TYPE_NAMES.has(name))) {
-    return "java-net-http";
+  const jdkFramework = detectJdkHttpClientFramework(type, imports);
+  if (jdkFramework) {
+    return jdkFramework;
   }
 
   const fqcnLower = type.fqcn.toLowerCase();
@@ -182,7 +185,10 @@ function extractEndpointsFromBody(
     }
 
     if (REST_TEMPLATE_CALLS.has(methodName) && args.length > 0) {
-      const pathLiteral = extractStringLiteral(args[0]);
+      const pathLiteral =
+        clientFramework === "rest-template"
+          ? extractRestTemplatePathLiteral(args[0])
+          : extractStringLiteral(args[0]);
       const httpMethod = parseHttpMethodFromName(methodName);
       if (pathLiteral && httpMethod) {
         endpoints.add(formatEndpoint(httpMethod as "GET", pathLiteral));

@@ -157,6 +157,125 @@ public interface MetricsClient {
     assert.equal(clients[0]?.clientFramework, "http-exchange");
     assert.deepEqual(clients[0]?.endpoints, ["GET /actuator/metrics"]);
   });
+
+  it("creates RestClient from @RegisterRestClient MP REST interface", () => {
+    const root = createTestTempDir("c2a-java-mp-rest-client-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "OrderClient.java"),
+      `package com.example;
+
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+
+@RegisterRestClient(configKey = "orders")
+@Path("/api/orders")
+public interface OrderClient {
+    @GET
+    @Path("/{id}")
+    String get(String id);
+}
+`,
+    );
+
+    const { store } = createStore(root);
+    const processor = new JavaDeclarativeRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.clientFramework, "mp-rest-client");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders/:id"]);
+  });
+
+  it("creates RestClient from Micronaut @Client interface", () => {
+    const root = createTestTempDir("c2a-java-micronaut-client-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "OrderClient.java"),
+      `package com.example;
+
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.client.annotation.Client;
+
+@Client("/api/orders")
+public interface OrderClient {
+    @Get("/{id}")
+    String get(String id);
+}
+`,
+    );
+
+    const { store } = createStore(root);
+    const processor = new JavaDeclarativeRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.clientFramework, "micronaut-client");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders/:id"]);
+  });
+
+  it("creates RestClient from Retrofit interface", () => {
+    const root = createTestTempDir("c2a-java-retrofit-client-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "OrderApi.java"),
+      `package com.example;
+
+import retrofit2.http.GET;
+import retrofit2.http.Path;
+
+public interface OrderApi {
+    @GET("/api/orders/{id}")
+    String get(@Path("id") String id);
+}
+`,
+    );
+
+    const { store } = createStore(root);
+    const processor = new JavaDeclarativeRestClientProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.clientFramework, "retrofit");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders/:id"]);
+  });
 });
 
 function createStore(root: string): { module: ApplicationModule; store: RunEntityStore } {
