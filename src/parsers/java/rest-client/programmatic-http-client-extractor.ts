@@ -23,8 +23,11 @@ export interface ParsedProgrammaticRestClient {
 const WEB_CLIENT_TYPE_NAMES = new Set(["WebClient", "WebClient.Builder"]);
 const REST_TEMPLATE_TYPE_NAMES = new Set(["RestTemplate"]);
 const SPRING_REST_CLIENT_TYPE_NAMES = new Set(["RestClient", "RestClient.Builder"]);
+const OKHTTP_TYPE_NAMES = new Set(["OkHttpClient", "Request", "Request.Builder"]);
+const JDK_HTTP_TYPE_NAMES = new Set(["HttpClient", "HttpRequest", "HttpRequest.Builder"]);
 
 const URI_METHOD_NAMES = new Set(["uri", "fromHttpUrl", "fromUriString"]);
+const URL_METHOD_NAMES = new Set(["url"]);
 const REST_TEMPLATE_CALLS = new Set([
   "getForEntity",
   "getForObject",
@@ -77,10 +80,19 @@ function detectClientFramework(type: JavaTypeDeclaration): string | undefined {
   if ([...typeNames].some((name) => REST_TEMPLATE_TYPE_NAMES.has(name))) {
     return "rest-template";
   }
+  if ([...typeNames].some((name) => OKHTTP_TYPE_NAMES.has(name))) {
+    return "okhttp";
+  }
+  if ([...typeNames].some((name) => JDK_HTTP_TYPE_NAMES.has(name))) {
+    return "java-net-http";
+  }
 
   const fqcnLower = type.fqcn.toLowerCase();
-  if (fqcnLower.includes("restclient") || type.name.endsWith("RestClient")) {
-    return "rest-template";
+  if (fqcnLower.includes("webclient") || type.name.toLowerCase().includes("webclient")) {
+    return "webclient";
+  }
+  if (fqcnLower.includes("okhttp") || type.name.toLowerCase().includes("okhttp")) {
+    return "okhttp";
   }
 
   return undefined;
@@ -136,7 +148,17 @@ function extractEndpointsFromBody(
     if (URI_METHOD_NAMES.has(methodName) && args.length > 0) {
       const pathLiteral = extractStringLiteral(args[0]);
       if (pathLiteral) {
-        const httpMethod = pendingHttpMethod ?? (clientFramework === "webclient" ? "GET" : "GET");
+        const httpMethod = pendingHttpMethod ?? "GET";
+        endpoints.add(formatEndpoint(httpMethod as "GET", pathLiteral));
+      }
+      pendingHttpMethod = undefined;
+      return;
+    }
+
+    if (URL_METHOD_NAMES.has(methodName) && args.length > 0) {
+      const pathLiteral = extractStringLiteral(args[0]);
+      if (pathLiteral) {
+        const httpMethod = pendingHttpMethod ?? "GET";
         endpoints.add(formatEndpoint(httpMethod as "GET", pathLiteral));
       }
       pendingHttpMethod = undefined;

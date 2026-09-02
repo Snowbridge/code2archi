@@ -1,12 +1,11 @@
 import type { KotlinCompilationUnit } from "./kotlin-ast-model.js";
-import { adaptKotlinCompilationUnitToJava } from "./kotlin-rest-source-adapter.js";
-import {
-  extractProgrammaticRestClients,
-  type ParsedProgrammaticRestClient,
-} from "../java/rest-client/programmatic-http-client-extractor.js";
+import { extractKotlinProgrammaticRestClients } from "./kotlin-programmatic-rest-client-extractor.js";
 
-export function extractKotlinProgrammaticRestClients(
+export { extractKotlinProgrammaticRestClients };
+export type { ParsedProgrammaticRestClient } from "../java/rest-client/programmatic-http-client-extractor.js";
+
+export function extractKotlinProgrammaticRestClientsFromUnit(
   compilationUnit: KotlinCompilationUnit,
-): ParsedProgrammaticRestClient[] {
-  return extractProgrammaticRestClients(adaptKotlinCompilationUnitToJava(compilationUnit));
+): ReturnType<typeof extractKotlinProgrammaticRestClients> {
+  return extractKotlinProgrammaticRestClients(compilationUnit);
 }

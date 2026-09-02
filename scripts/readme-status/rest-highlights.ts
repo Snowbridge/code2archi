@@ -20,4 +20,30 @@ export const REST_PROCESSOR_HIGHLIGHTS: Readonly<Record<string, readonly string[
     "Micronaut `RouteBuilder`",
     "Quarkus Vert.x / reactive routes",
   ],
+  "scan.source.rest.client.java/declarative": [
+    "Spring OpenFeign",
+    "Spring HTTP Interface (`@HttpExchange`)",
+    "MicroProfile REST Client",
+    "Micronaut `@Client`",
+    "Retrofit",
+  ],
+  "scan.source.rest.client.java/programmatic": [
+    "Spring WebClient",
+    "Spring RestTemplate / RestClient",
+    "Apache HttpClient",
+    "OkHttp",
+    "`java.net.http.HttpClient`",
+  ],
+  "scan.source.rest.client.kotlin/declarative": [
+    "Spring OpenFeign",
+    "Spring HTTP Interface (`@HttpExchange`)",
+    "MicroProfile REST Client",
+    "Micronaut `@Client`",
+    "Retrofit",
+  ],
+  "scan.source.rest.client.kotlin/programmatic": [
+    "Spring WebClient wrappers",
+    "Ktor `HttpClient`",
+    "OkHttp",
+  ],
 };

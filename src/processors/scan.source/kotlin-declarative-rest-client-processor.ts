@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
 import { RestClient } from "../../discovery-model/entities/rest-client.js";
 import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
@@ -89,7 +90,8 @@ export class KotlinDeclarativeRestClientProcessor extends AbstractProcessor<Scan
 
       for (const [absolutePath, source] of sources.entries()) {
         try {
-          const kotlinUnit = parseKotlinSourceFile(source);
+          const fileBaseName = path.basename(absolutePath, ".kt");
+          const kotlinUnit = parseKotlinSourceFile(source, { fileBaseName });
           const unit = adaptKotlinCompilationUnitToJava(kotlinUnit);
           index.addCompilationUnit(unit);
           units.push({ absolutePath, unit });

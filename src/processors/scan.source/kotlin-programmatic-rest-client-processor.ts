@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
 import { RestClient } from "../../discovery-model/entities/rest-client.js";
 import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
@@ -83,7 +84,8 @@ export class KotlinProgrammaticRestClientProcessor extends AbstractProcessor<Sca
     for (const { context, sources } of byModule.values()) {
       for (const [absolutePath, source] of sources.entries()) {
         try {
-          const unit = parseKotlinSourceFile(source);
+          const fileBaseName = path.basename(absolutePath, ".kt");
+          const unit = parseKotlinSourceFile(source, { fileBaseName });
           for (const parsed of extractKotlinProgrammaticRestClients(unit)) {
             clients.push(
               toProgrammaticRestClientEntity(

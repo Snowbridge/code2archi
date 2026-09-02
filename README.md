@@ -139,8 +139,21 @@ Built-in processors discover:
   - Micronaut `RouteBuilder`
   - Quarkus Vert.x / reactive routes
   - Ktor routing
+- **REST clients (Java/Kotlin)** — declarative and programmatic HTTP clients:
+  - Spring OpenFeign
+  - Spring HTTP Interface (`@HttpExchange`)
+  - MicroProfile REST Client
+  - Micronaut `@Client`
+  - Retrofit
+  - Spring WebClient
+  - Spring RestTemplate / RestClient
+  - Apache HttpClient
+  - OkHttp
+  - `java.net.http.HttpClient`
+  - Spring WebClient wrappers
+  - Ktor `HttpClient`
 
-Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, rest-controllers.json, …) validated against JSON Schema in the specifications repo.
+Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, rest-controllers.json, rest-clients.json, …) validated against JSON Schema in the specifications repo.
 
 ### `generate` — ArchiMate model
 
@@ -185,7 +198,7 @@ The README above describes the **current slice** of the vision. The table below 
 | **Modelling pipeline** | `scan → match → generate → reconcile` as a complete workflow | `scan` and `generate` work; `reconcile` command missing |
 | **Reconciliation** | Compare code, ArchiMate model, and declared contracts (OpenAPI, schemas); surface gaps explicitly | Not implemented (capability: [reconciliation](../documentation/product-intent/capability/reconciliation.md)) |
 | **Business layer** | Camunda / BPMN process inventory and links | Not implemented (capability: [business-process-inventory](../documentation/product-intent/capability/business-process-inventory.md)) |
-| **Inter-service links** | HTTP clients, message producers/consumers, cross-service dependencies in the model | Entity types (RestClient, MessageConsumer, MessageProducer) reserved; no scan/generate processors yet |
+| **Inter-service links** | HTTP clients, message producers/consumers, cross-service dependencies in the model | Entity types (MessageConsumer, MessageProducer) reserved; no scan/generate processors yet |
 | **JavaScript / TypeScript** | Source-level discovery alongside JVM languages | npm **module assembly** only; no JS/TS REST or application parsing |
 | **Technology inventory** | Broad runtime, framework, and infra-pattern coverage (databases, messaging, deployment) | Limited to repo/module structure, versions from build files, runtime catalog |
 | **Diagrams** | `generate.views` — layout diagrams in Archi | Processor group exists; **no view processors** registered |

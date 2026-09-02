@@ -20,4 +20,8 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
   "scan.source.rest.controller.java/functional-router-based": ["RestController"],
   "scan.source.rest.controller.kotlin/annotation-based": ["RestController"],
   "scan.source.rest.controller.kotlin/ktor-and-router-based": ["RestController"],
+  "scan.source.rest.client.java/declarative": ["RestClient"],
+  "scan.source.rest.client.java/programmatic": ["RestClient"],
+  "scan.source.rest.client.kotlin/declarative": ["RestClient"],
+  "scan.source.rest.client.kotlin/programmatic": ["RestClient"],
 };

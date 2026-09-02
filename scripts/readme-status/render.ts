@@ -27,6 +27,10 @@ function listRestProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo
   return processors.filter((processor) => processor.groupId.startsWith("scan.source.rest.controller"));
 }
 
+function listRestClientProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
+  return processors.filter((processor) => processor.groupId.startsWith("scan.source.rest.client"));
+}
+
 function slotLayer(kind: string): "technology" | "application" | "other" {
   const normalized = kind.toLowerCase();
   if (normalized.startsWith("technology/")) {
@@ -76,6 +80,25 @@ function renderRestSection(processors: readonly ProcessorInfo[]): string[] {
   return [...new Set(lines)];
 }
 
+function renderRestClientSection(processors: readonly ProcessorInfo[]): string[] {
+  const lines = [
+    "- **REST clients (Java/Kotlin)** — declarative and programmatic HTTP clients:",
+  ];
+
+  for (const processor of processors) {
+    const highlights = REST_PROCESSOR_HIGHLIGHTS[processor.coordinate];
+    if (highlights) {
+      for (const highlight of highlights) {
+        lines.push(`  - ${highlight}`);
+      }
+      continue;
+    }
+    lines.push(`  - ${processor.description}`);
+  }
+
+  return [...new Set(lines)];
+}
+
 function renderDiscoveryOutputFiles(status: ImplementationStatus): string {
   const files = ["manifest.json", "repositories.json"];
   if (status.scanEntityTypes.has("ApplicationModule")) {
@@ -86,6 +109,9 @@ function renderDiscoveryOutputFiles(status: ImplementationStatus): string {
   }
   if (status.scanEntityTypes.has("RestController")) {
     files.push("rest-controllers.json");
+  }
+  if (status.scanEntityTypes.has("RestClient")) {
+    files.push("rest-clients.json");
   }
   return files.join(", ");
 }
@@ -98,6 +124,7 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
   const scopeProcessors = listScopeProcessors(status.processors);
   const assemblyProcessors = listAssemblyProcessors(status.processors);
   const restProcessors = listRestProcessors(status.processors);
+  const restClientProcessors = listRestClientProcessors(status.processors);
   const technologySlots = uniqueSlotLabels(status, "technology");
   const applicationSlots = uniqueSlotLabels(status, "application");
 
@@ -147,6 +174,10 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
 
   if (restProcessors.length > 0) {
     lines.push(...renderRestSection(restProcessors));
+  }
+
+  if (restClientProcessors.length > 0) {
+    lines.push(...renderRestClientSection(restClientProcessors));
   }
 
   lines.push(
