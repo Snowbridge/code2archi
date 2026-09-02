@@ -90,5 +90,12 @@ describe("extractRestControllers", () => {
 
     assert.equal(controllers.length, 1);
     assert.deepEqual(controllers[0]?.implementedInterfaceFqcn, ["com.example.api.ProcurementApi"]);
+    assert.deepEqual(controllers[0]?.endpoints, []);
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.model.Procurement"));
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.model.ProcurementCreate"));
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.model.ProcurementUpdate"));
+    assert.ok(!controllers[0]?.dtoFqcn.some((fqcn) => fqcn.includes("ResponseEntity")));
+    assert.ok(!controllers[0]?.dtoFqcn.some((fqcn) => fqcn.includes("UUID")));
+    assert.ok(!controllers[0]?.dtoFqcn.some((fqcn) => fqcn.endsWith(".String")));
   });
 });

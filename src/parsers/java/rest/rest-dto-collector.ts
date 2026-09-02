@@ -1,4 +1,4 @@
-import type { JavaMethodDeclaration, JavaTypeRef } from "../java-ast-model.js";
+import type { JavaMethodDeclaration, JavaTypeDeclaration, JavaTypeRef } from "../java-ast-model.js";
 import {
   collectCollectionElementTypes,
   flattenTypeRefs,
@@ -6,8 +6,37 @@ import {
   resolveTypeFqcn,
   unwrapTypeArguments,
 } from "../java-type-resolver.js";
+import { springMvcProfile } from "./profiles/spring-mvc-profile.js";
 import type { RestAnnotationRegistry } from "./rest-annotation-registry.js";
 import { methodHasMapping } from "./rest-endpoint-builder.js";
+
+const OVERRIDE_ANNOTATION_NAMES = ["Override", "java.lang.Override"] as const;
+
+function hasAnnotationName(
+  annotations: readonly { readonly name: string; readonly qualifiedName: string }[],
+  names: readonly string[],
+): boolean {
+  const nameSet = new Set(names);
+  return annotations.some(
+    (annotation) =>
+      nameSet.has(annotation.name) || nameSet.has(annotation.qualifiedName),
+  );
+}
+
+function isSpringRestController(type: JavaTypeDeclaration): boolean {
+  return hasAnnotationName(type.annotations, [
+    "RestController",
+    "org.springframework.web.bind.annotation.RestController",
+  ]);
+}
+
+function filterOverrideMethods(
+  methods: readonly JavaMethodDeclaration[],
+): JavaMethodDeclaration[] {
+  return methods.filter((method) =>
+    hasAnnotationName(method.annotations, OVERRIDE_ANNOTATION_NAMES),
+  );
+}
 
 function collectTypesFromRef(
   typeRef: JavaTypeRef | undefined,
@@ -69,4 +98,25 @@ export function filterHandlerMethods(
   registry: RestAnnotationRegistry,
 ): JavaMethodDeclaration[] {
   return methods.filter((method) => methodHasMapping(method.annotations, registry));
+}
+
+export function resolveDtoSourceMethods(
+  type: JavaTypeDeclaration,
+  mappingHandlerMethods: readonly JavaMethodDeclaration[],
+  framework: string,
+): JavaMethodDeclaration[] {
+  if (mappingHandlerMethods.length > 0) {
+    return [...mappingHandlerMethods];
+  }
+
+  if (framework !== springMvcProfile.id || !isSpringRestController(type) || type.interfaces.length === 0) {
+    return [];
+  }
+
+  const overrideMethods = filterOverrideMethods(type.methods);
+  if (overrideMethods.length > 0) {
+    return overrideMethods;
+  }
+
+  return [...type.methods];
 }

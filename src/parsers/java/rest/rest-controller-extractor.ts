@@ -4,7 +4,7 @@ import {
   createDefaultRestAnnotationRegistry,
   type RestAnnotationRegistry,
 } from "./rest-annotation-registry.js";
-import { collectDtoFqcn, filterHandlerMethods } from "./rest-dto-collector.js";
+import { collectDtoFqcn, filterHandlerMethods, resolveDtoSourceMethods } from "./rest-dto-collector.js";
 import {
   buildClassBasePaths,
   buildEndpointsForMethod,
@@ -128,7 +128,12 @@ function extractControllerFromType(
   return {
     name: type.name,
     fqcn: type.fqcn,
-    dtoFqcn: collectDtoFqcn(handlerMethods, compilationUnit.packageName, compilationUnit.imports, registry),
+    dtoFqcn: collectDtoFqcn(
+      resolveDtoSourceMethods(type, handlerMethods, framework),
+      compilationUnit.packageName,
+      compilationUnit.imports,
+      registry,
+    ),
     endpoints: [...endpoints].sort(),
     tcpStackType: resolveTcpStackType(handlerMethods),
     implementedInterfaceFqcn,

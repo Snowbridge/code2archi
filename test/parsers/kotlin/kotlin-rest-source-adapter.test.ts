@@ -57,6 +57,7 @@ describe("extractKotlinRestControllers", () => {
 
     assert.equal(controllers.length, 1);
     assert.deepEqual(controllers[0]?.implementedInterfaceFqcn, ["com.example.api.LotsCrudApi"]);
+    assert.ok(controllers[0]?.dtoFqcn.includes("com.example.LotRequest"));
   });
 
   it("extracts Micronaut controller", () => {
