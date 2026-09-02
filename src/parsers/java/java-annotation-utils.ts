@@ -84,6 +84,10 @@ function parseAnnotationAttributes(body: string): Record<string, string | string
     return parseNamedAttributes(trimmed.slice(1, -1));
   }
 
+  if (findTopLevelEquals(trimmed) >= 0) {
+    return parseNamedAttributes(trimmed);
+  }
+
   return { value: parseAttributeValue(trimmed) };
 }
 

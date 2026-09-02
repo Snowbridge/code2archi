@@ -24,6 +24,7 @@ function adaptType(type: KotlinTypeDeclaration): JavaTypeDeclaration {
     superClass: type.superClass,
     interfaces: type.interfaces,
     methods: type.methods.map(adaptMethod),
+    fields: [],
     nestedTypes: type.nestedTypes.map(adaptType),
   };
 }

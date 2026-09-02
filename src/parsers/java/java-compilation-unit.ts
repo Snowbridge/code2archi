@@ -2,6 +2,7 @@ import { parse } from "java-parser";
 import { collectModifierAnnotations } from "./java-annotation-utils.js";
 import type {
   JavaCompilationUnit,
+  JavaFieldDeclaration,
   JavaMethodDeclaration,
   JavaParameter,
   JavaTypeDeclaration,
@@ -130,6 +131,43 @@ function extractParameters(source: string, methodDeclarator: GenericCstNode | un
   return parameters;
 }
 
+function extractFields(source: string, normalClass: GenericCstNode | undefined): JavaFieldDeclaration[] {
+  const fields: JavaFieldDeclaration[] = [];
+  const classBody = firstChild(normalClass, "classBody");
+
+  for (const bodyDeclaration of childNodes(classBody, "classBodyDeclaration")) {
+    const memberDeclaration = firstChild(bodyDeclaration, "classMemberDeclaration");
+    const fieldDeclaration =
+      firstChild(bodyDeclaration, "fieldDeclaration") ??
+      firstChild(memberDeclaration, "fieldDeclaration");
+    if (!fieldDeclaration) {
+      continue;
+    }
+
+    const unannType = firstChild(fieldDeclaration, "unannType");
+    const fieldType = parseTypeRef(unannType);
+    const fieldAnnotations = collectModifierAnnotations(source, fieldDeclaration.children?.fieldModifier);
+    const variableDeclaratorList = firstChild(fieldDeclaration, "variableDeclaratorList");
+
+    for (const variableDeclarator of childNodes(variableDeclaratorList, "variableDeclarator")) {
+      const variableDeclaratorId = firstChild(variableDeclarator, "variableDeclaratorId");
+      const fieldName = getTokenImage(variableDeclaratorId?.children?.Identifier?.[0]);
+      if (!fieldName) {
+        continue;
+      }
+
+      fields.push({
+        name: fieldName,
+        type: fieldType,
+        annotations: fieldAnnotations,
+        initializer: firstChild(variableDeclarator, "variableInitializer"),
+      });
+    }
+  }
+
+  return fields;
+}
+
 function extractMethods(source: string, normalClass: GenericCstNode | undefined): JavaMethodDeclaration[] {
   const methods: JavaMethodDeclaration[] = [];
   const classBody = firstChild(normalClass, "classBody");
@@ -226,6 +264,7 @@ function extractClassDeclaration(
     superClass: extractSuperClass(normalClass),
     interfaces: extractInterfaces(normalClass),
     methods: extractMethods(source, normalClass),
+    fields: extractFields(source, normalClass),
     nestedTypes,
   });
 }

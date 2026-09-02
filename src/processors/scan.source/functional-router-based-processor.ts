@@ -36,12 +36,12 @@ export class FunctionalRouterBasedProcessor extends AbstractProcessor<ScanAppInp
     artifactId: "functional-router-based",
   };
 
-  readonly version = "0.1.0";
+  readonly version = "0.2.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers Java REST controllers from Spring functional RouterFunction beans in Maven and Gradle modules.";
+    "Discovers Java REST controllers from functional routing: Spring RouterFunction, Micronaut RouteBuilder, Quarkus Vert.x Router and @Route.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const repositories = this.loadRepositories(input);

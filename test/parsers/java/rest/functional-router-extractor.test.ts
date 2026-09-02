@@ -30,4 +30,44 @@ describe("extractFunctionalRouters", () => {
     assert.deepEqual(routers[0]?.dtoFqcn, []);
     assert.equal(routers[0]?.tcpStackType, "NON_BLOCKING");
   });
+
+  it("extracts Spring RouterFunction from field initializer", () => {
+    const routers = extractFunctionalRouters(parseJavaSourceFile(readFixture("spring-router-field.java")));
+
+    assert.equal(routers.length, 1);
+    assert.equal(routers[0]?.name, "userRoutes");
+    assert.equal(routers[0]?.fqcn, "com.example.FieldRouterConfig#userRoutes");
+    assert.deepEqual(routers[0]?.endpoints, ["GET /users", "GET /users/:id"]);
+    assert.equal(routers[0]?.tcpStackType, "NON_BLOCKING");
+  });
+
+  it("extracts Micronaut DefaultRouteBuilder routes", () => {
+    const routers = extractFunctionalRouters(
+      parseJavaSourceFile(readFixture("micronaut-default-route-builder.java")),
+    );
+
+    assert.equal(routers.length, 1);
+    assert.equal(routers[0]?.name, "issuesRoutes");
+    assert.deepEqual(routers[0]?.endpoints, ["GET /issues/show/:number"]);
+  });
+
+  it("extracts Quarkus Vert.x Router observe method routes", () => {
+    const routers = extractFunctionalRouters(parseJavaSourceFile(readFixture("quarkus-vertx-router.java")));
+
+    assert.equal(routers.length, 1);
+    assert.equal(routers[0]?.name, "init");
+    assert.deepEqual(routers[0]?.endpoints, ["GET /hello", "POST /items"]);
+    assert.equal(routers[0]?.tcpStackType, "BLOCKING");
+  });
+
+  it("extracts Quarkus @Route reactive routes per class", () => {
+    const routers = extractFunctionalRouters(
+      parseJavaSourceFile(readFixture("quarkus-reactive-routes.java")),
+    );
+
+    assert.equal(routers.length, 1);
+    assert.equal(routers[0]?.name, "ReactiveRoutes");
+    assert.equal(routers[0]?.fqcn, "com.example.ReactiveRoutes");
+    assert.deepEqual(routers[0]?.endpoints, ["GET /hello", "GET /world"]);
+  });
 });

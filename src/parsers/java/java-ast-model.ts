@@ -18,6 +18,13 @@ export interface JavaParameter {
   readonly annotations: readonly JavaAnnotation[];
 }
 
+export interface JavaFieldDeclaration {
+  readonly name: string;
+  readonly type?: JavaTypeRef;
+  readonly annotations: readonly JavaAnnotation[];
+  readonly initializer?: GenericCstNode;
+}
+
 export interface JavaMethodDeclaration {
   readonly name: string;
   readonly returnType?: JavaTypeRef;
@@ -34,6 +41,7 @@ export interface JavaTypeDeclaration {
   readonly superClass?: JavaTypeRef;
   readonly interfaces: readonly JavaTypeRef[];
   readonly methods: readonly JavaMethodDeclaration[];
+  readonly fields: readonly JavaFieldDeclaration[];
   readonly nestedTypes: readonly JavaTypeDeclaration[];
 }
 

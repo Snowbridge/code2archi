@@ -13,6 +13,10 @@ const fixturePath = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../fixtures/java-rest-controllers/functional/user-router-config.java",
 );
+const springFieldFixturePath = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../fixtures/java-rest-controllers/functional/spring-router-field.java",
+);
 
 describe("FunctionalRouterBasedProcessor", () => {
   it("creates RestController entities from RouterFunction bean methods", () => {
@@ -84,5 +88,70 @@ describe("FunctionalRouterBasedProcessor", () => {
       "PUT /users/:id",
     ]);
     assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
+  });
+
+  it("creates RestController entities from RouterFunction field initializers", () => {
+    const root = createTestTempDir("c2a-functional-router-field-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+  </properties>
+</project>`,
+    );
+    writeFileSync(path.join(javaDir, "FieldRouterConfig.java"), readFileSync(springFieldFixturePath, "utf8"));
+
+    const repository = new Repository({
+      url: "",
+      localPath: root,
+      name: "app",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = new ApplicationModule({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "app",
+      version: "1.0.0",
+      name: "app",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+
+    const store = new RunEntityStore({
+      sourceDirs: [root],
+      scanId: "scan-functional-router-field",
+      runStartedAt: new Date("2026-09-01T12:00:00.000Z"),
+    });
+    store.addCreateIntents(
+      "scan.scope",
+      { groupId: "scan.scope", artifactId: "test" },
+      { entities: { Repository: [repository] } },
+    );
+    store.addCreateIntents(
+      "scan.source",
+      { groupId: "scan.source.assembly.maven", artifactId: "test" },
+      { entities: { ApplicationModule: [module] } },
+    );
+
+    const processor = new FunctionalRouterBasedProcessor();
+    const output = processor.process(store.snapshot());
+    const controllers = output.entities?.RestController ?? [];
+
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.name, "userRoutes");
+    assert.equal(controllers[0]?.fqcn, "com.example.FieldRouterConfig#userRoutes");
+    assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "GET /users/:id"]);
   });
 });
