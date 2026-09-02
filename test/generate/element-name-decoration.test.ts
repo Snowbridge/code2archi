@@ -30,6 +30,10 @@ describe("decorateElementName", () => {
       ),
       "lib",
     );
+    assert.equal(
+      decorateElementName("rest-controller", "LimitController", {}, undecoratedGenerateProcessorOptions),
+      "LimitController",
+    );
   });
 
   describe("repo-artifact", () => {
@@ -126,6 +130,27 @@ describe("decorateElementName", () => {
           defaultGenerateProcessorOptions,
         ),
         "shared-lib (lib)",
+      );
+    });
+  });
+
+  describe("rest-controller", () => {
+    it("appends REST Controller suffix", () => {
+      assert.equal(
+        decorateElementName("rest-controller", "LimitController", {}, defaultGenerateProcessorOptions),
+        "LimitController REST Controller",
+      );
+    });
+
+    it("is idempotent for REST Controller suffix", () => {
+      assert.equal(
+        decorateElementName(
+          "rest-controller",
+          "LimitController REST Controller",
+          {},
+          defaultGenerateProcessorOptions,
+        ),
+        "LimitController REST Controller",
       );
     });
   });
