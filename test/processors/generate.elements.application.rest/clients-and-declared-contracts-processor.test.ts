@@ -184,26 +184,20 @@ describe("ClientsAndDeclaredContractsProcessor", () => {
 
     const contractElements =
       output.elements?.filter((element) => element.conceptType === "ApplicationInterface") ?? [];
-    assert.equal(contractElements.length, 2);
-    assert.ok(contractElements.some((element) => element.id === declaredRestContractId(API_FQCN)));
-    assert.ok(contractElements.some((element) => element.id === declaredRestContractId(STUB_FQCN)));
+    assert.equal(contractElements.length, 1);
+    assert.equal(contractElements[0]?.id, declaredRestContractId(API_FQCN));
 
     const assignments =
       output.relations?.filter((relation) => relation.relationType === "AssignmentRelationship") ??
       [];
-    assert.equal(assignments.length, 2);
-    assert.ok(
-      assignments.some(
-        (relation) =>
-          relation.id === declaredContractAssignmentToClientId(
-            declaredRestContractId(API_FQCN),
-            client.id,
-          ),
-      ),
+    assert.equal(assignments.length, 1);
+    assert.equal(
+      assignments[0]?.id,
+      declaredContractAssignmentToClientId(declaredRestContractId(API_FQCN), client.id),
     );
   });
 
-  it("creates one declared contract for programmatic client with fqcn only", () => {
+  it("skips declared contracts for programmatic client with empty extendedInterfaceFqcn", () => {
     const { repository, module } = baseRepositoryAndModule();
     const client = restClientRecord({
       applicationModuleId: module.id,
@@ -229,9 +223,12 @@ describe("ClientsAndDeclaredContractsProcessor", () => {
 
     const contractElements =
       output.elements?.filter((element) => element.conceptType === "ApplicationInterface") ?? [];
-    assert.equal(contractElements.length, 1);
-    assert.equal(contractElements[0]?.id, declaredRestContractId("com.example.ScoringServiceRestClient"));
-    assert.equal(output.relations?.filter((relation) => relation.relationType === "AssignmentRelationship").length, 1);
+    assert.equal(contractElements.length, 0);
+    assert.equal(
+      output.relations?.filter((relation) => relation.relationType === "AssignmentRelationship").length,
+      0,
+    );
+    assert.ok((output.elements ?? []).some((element) => element.id === client.id));
   });
 
   it("omits documentation when endpoints are empty", () => {
@@ -381,9 +378,15 @@ describe("ClientsAndDeclaredContractsProcessor", () => {
         ?.value,
       declaredRestContractLogicalId(API_FQCN),
     );
-    assert.ok(
-      (clientsOutput.elements ?? []).some((element) => element.id === declaredRestContractId(STUB_FQCN)),
+    assert.equal(
+      (clientsOutput.elements ?? []).filter((element) => element.conceptType === "ApplicationInterface").length,
+      0,
     );
     assert.ok((clientsOutput.elements ?? []).some((element) => element.id === client.id));
+    assert.equal(
+      (clientsOutput.relations ?? []).filter((relation) => relation.relationType === "AssignmentRelationship")
+        .length,
+      1,
+    );
   });
 });

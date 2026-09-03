@@ -19,9 +19,10 @@ export function restClientRealizationRelationshipId(
   return computeArchiId("RealizationRelationship", appComponentId, restClientId);
 }
 
-export function declaredContractFqcnList(client: RestClientRecord): readonly string[] {
-  const merged = new Set<string>([client.fqcn, ...client.extendedInterfaceFqcn]);
-  return [...merged].sort((left, right) => left.localeCompare(right));
+export function extendedInterfaceFqcnList(client: RestClientRecord): readonly string[] {
+  return [...new Set(client.extendedInterfaceFqcn)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 }
 
 export function buildRestClientEndpointsDocumentation(endpoints: readonly string[]): string | undefined {

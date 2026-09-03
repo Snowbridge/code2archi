@@ -28,7 +28,7 @@ import { decorateElementName } from "../../generate/element-name-decoration.js";
 import { withEntityDebugProperties } from "../../generate/generate-debug.js";
 import {
   buildRestClientEndpointsDocumentation,
-  declaredContractFqcnList,
+  extendedInterfaceFqcnList,
   restClientRealizationLogicalId,
   restClientRealizationRelationshipId,
   restClientServiceLogicalId,
@@ -167,7 +167,11 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
         relations.push(realizationBuilder.build().toCreateIntent());
       }
 
-      for (const interfaceFqcn of declaredContractFqcnList(client)) {
+      if (client.extendedInterfaceFqcn.length === 0) {
+        continue;
+      }
+
+      for (const interfaceFqcn of extendedInterfaceFqcnList(client)) {
         const contractId = declaredRestContractId(interfaceFqcn);
 
         if (
