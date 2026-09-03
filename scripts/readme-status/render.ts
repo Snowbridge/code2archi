@@ -24,11 +24,21 @@ function listAssemblyProcessors(processors: readonly ProcessorInfo[]): Processor
 }
 
 function listRestProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
-  return processors.filter((processor) => processor.groupId.startsWith("scan.source.rest.controller"));
+  return processors.filter(
+    (processor) =>
+      (processor.groupId === "scan.source.java.rest" ||
+        processor.groupId === "scan.source.kotlin.rest") &&
+      processor.artifactId.startsWith("controller-"),
+  );
 }
 
 function listRestClientProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
-  return processors.filter((processor) => processor.groupId.startsWith("scan.source.rest.client"));
+  return processors.filter(
+    (processor) =>
+      (processor.groupId === "scan.source.java.rest" ||
+        processor.groupId === "scan.source.kotlin.rest") &&
+      processor.artifactId.startsWith("client-"),
+  );
 }
 
 function slotLayer(kind: string): "technology" | "application" | "other" {

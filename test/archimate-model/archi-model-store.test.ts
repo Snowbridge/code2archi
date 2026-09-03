@@ -106,7 +106,7 @@ describe("ArchiModelStore", () => {
 
     store.addCreateIntents(
       "generate.elements",
-      { groupId: "generate.elements.technology", artifactId: "repositories" },
+      { groupId: "generate.elements.technology", artifactId: "code-repositories" },
       {
         folders: [
           { id: barId, name: "bar", parentFolderId: fuzzId },

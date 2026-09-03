@@ -9,7 +9,7 @@ import {
   parseNamespaceSegments,
   sortFolderIntentsParentFirst,
 } from "../../src/generate/archi-folder-path.js";
-import { CODE_REPOSITORIES_FOLDER } from "../../src/processors/generate.elements.technology/repositories-processor.js";
+import { CODE_REPOSITORIES_FOLDER } from "../../src/processors/generate/elements/technology/code-repositories-processor.js";
 
 describe("archi-folder-path", () => {
   it("returns parent folder id for empty namespace segments", () => {

@@ -10,7 +10,7 @@ import { createTestTempDir } from "../test-temp-dir.js";
 
 const GIT_REPOS_PROCESSOR = {
   groupId: "scan.scope",
-  artifactId: "git-repos",
+  artifactId: "git-repositories",
 };
 
 const SCAN_SOURCE_PROCESSOR = {
@@ -109,7 +109,7 @@ describe("DiscoveryModelWriter", () => {
       extractedAt: string;
     }>;
     assert.equal(writtenRepositories.length, 1);
-    assert.equal(writtenRepositories[0]?.scannerExtractor, "scan.scope:git-repos");
+    assert.equal(writtenRepositories[0]?.scannerExtractor, "scan.scope:git-repositories");
     assert.equal(writtenRepositories[0]?.scannerSchema, packageVersion);
     assert.equal(writtenRepositories[0]?.extractedAt, "2026-08-27T15:00:00.000+03:00");
   });

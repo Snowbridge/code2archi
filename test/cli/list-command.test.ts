@@ -38,15 +38,15 @@ describe("list CLI command", () => {
   it("prints processor table by default", () => {
     const result = runCli(["list"], applicationRoot);
     assert.equal(result.status, 0);
-    assert.match(result.stdout, /groupId\s+artifactId\s+version\s+executionPolicy\s+description/);
-    assert.match(result.stdout, /scan\.scope\s+git-repos/);
+    assert.match(result.stdout, /artifactId\s+version\s+executionPolicy\s+description/);
+    assert.match(result.stdout, /scan\.scope[\s\S]*git-repositories/);
   });
 
   it("filters processors by wildcard pattern", () => {
     const result = runCli(["list", "generate.elements.*"], applicationRoot);
     assert.equal(result.status, 0);
     assert.match(result.stdout, /generate\.elements/);
-    assert.doesNotMatch(result.stdout, /scan\.scope\s+git-repos/);
+    assert.doesNotMatch(result.stdout, /scan\.scope[\s\S]*git-repositories/);
   });
 
   it("prints only group ids with --only-groups", () => {

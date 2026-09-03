@@ -43,7 +43,7 @@ describe("RunEntityStore", () => {
     const extractedAt = new Date("2026-08-28T09:49:00.123Z");
     store.addCreateIntents(
       "scan.scope",
-      { groupId: "scan.scope", artifactId: "git-repos" },
+      { groupId: "scan.scope", artifactId: "git-repositories" },
       {
         entities: {
           Repository: [{ id: "repo-1", name: "a" }],
@@ -55,7 +55,7 @@ describe("RunEntityStore", () => {
     const repository = store.getEntities("Repository")[0];
     assert.equal(store.getEntities("Repository").length, 1);
     assert.equal(repository?.name, "a");
-    assert.equal(repository?.scannerExtractor, "scan.scope:git-repos");
+    assert.equal(repository?.scannerExtractor, "scan.scope:git-repositories");
     assert.equal(repository?.scannerSchema, packageVersion);
     assert.equal(repository?.extractedAt, "2026-08-28T12:49:00.123+03:00");
   });

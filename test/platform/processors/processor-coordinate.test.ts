@@ -35,8 +35,8 @@ describe("matchesGroupPattern", () => {
   });
 
   it("does not treat coordinate-like pattern as processor coordinate", () => {
-    assert.equal(matchesGroupPattern("scan.scope", "scan.scope.git-repos"), false);
-    assert.equal(matchesGroupPattern("scan.scope.git-repos", "scan.scope.git-repos"), true);
+    assert.equal(matchesGroupPattern("scan.scope", "scan.scope.git-repositories"), false);
+    assert.equal(matchesGroupPattern("scan.scope.git-repositories", "scan.scope.git-repositories"), true);
   });
 
   it("matches wildcard prefix and subgroups", () => {

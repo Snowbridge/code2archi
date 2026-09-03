@@ -60,15 +60,15 @@ describe("resolveProcessorFilters", () => {
   it("maps global argv to processor filters", () => {
     const filters = resolveProcessorFilters(
       emptyGlobalArgv({
-        without: ["scan.scope.git-repos"],
+        without: ["scan.scope.git-repositories"],
         with: ["scan.scope.unversioned-folders"],
-        withOnly: ["scan.source.assembly.maven-modules-and-dependencies"],
+        withOnly: ["scan.source.assembly.maven.modules-and-dependencies"],
       }),
     );
 
-    assert.deepEqual(filters.without, ["scan.scope.git-repos"]);
+    assert.deepEqual(filters.without, ["scan.scope.git-repositories"]);
     assert.deepEqual(filters.with, ["scan.scope.unversioned-folders"]);
-    assert.deepEqual(filters.withOnly, ["scan.source.assembly.maven-modules-and-dependencies"]);
+    assert.deepEqual(filters.withOnly, ["scan.source.assembly.maven.modules-and-dependencies"]);
   });
 });
 
@@ -151,12 +151,12 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
   it("includes processors that share artifactId under different subgroup groupIds", () => {
     const registry = new ProcessorRegistry();
     const java = new StubProcessor({
-      groupId: "scan.source.rest.controller.java",
-      artifactId: "annotation-based",
+      groupId: "scan.source.java.rest",
+      artifactId: "controller-annotation-based",
     });
     const kotlin = new StubProcessor({
-      groupId: "scan.source.rest.controller.kotlin",
-      artifactId: "annotation-based",
+      groupId: "scan.source.kotlin.rest",
+      artifactId: "controller-annotation-based",
     });
     registry.register(java);
     registry.register(kotlin);

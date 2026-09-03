@@ -159,7 +159,7 @@ describe("runGenerateFlow", () => {
         namespace: "",
         buildSystems: ["maven"],
       }).toCreateIntent(),
-      scannerExtractor: "scan.scope:git-repos",
+      scannerExtractor: "scan.scope:git-repositories",
       scannerSchema: "0.2.6",
       extractedAt: "2026-08-30T12:15:24.335+03:00",
     };
@@ -206,7 +206,7 @@ describe("runGenerateFlow", () => {
         namespace: "",
         buildSystems: ["maven"],
       }).toCreateIntent(),
-      scannerExtractor: "scan.scope:git-repos",
+      scannerExtractor: "scan.scope:git-repositories",
       scannerSchema: "0.2.6",
       extractedAt: "2026-08-30T12:15:24.335+03:00",
     };

@@ -1,47 +1,47 @@
 /** Optional README bullets for REST scan processors (frameworks / styles). */
 export const REST_PROCESSOR_HIGHLIGHTS: Readonly<Record<string, readonly string[]>> = {
-  "scan.source.rest.controller.java/annotation-based": [
+  "scan.source.java.rest/controller-annotation-based": [
     "Spring Web / WebFlux (MVC annotations)",
     "JAX-RS (Quarkus)",
     "Micronaut (`@Controller`)",
   ],
-  "scan.source.rest.controller.java/functional-router-based": [
+  "scan.source.java.rest/controller-functional-router-based": [
     "Spring `RouterFunction` / `CoRouterFunction`",
     "Micronaut `RouteBuilder`",
     "Quarkus Vert.x / reactive routes",
   ],
-  "scan.source.rest.controller.kotlin/annotation-based": [
+  "scan.source.kotlin.rest/controller-annotation-based": [
     "Spring Web / WebFlux (MVC annotations)",
     "Micronaut (`@Controller`)",
   ],
-  "scan.source.rest.controller.kotlin/ktor-and-router-based": [
+  "scan.source.kotlin.rest/controller-ktor-and-router-based": [
     "Ktor routing",
     "Spring `RouterFunction` / `CoRouterFunction`",
     "Micronaut `RouteBuilder`",
     "Quarkus Vert.x / reactive routes",
   ],
-  "scan.source.rest.client.java/declarative": [
+  "scan.source.java.rest/client-declarative": [
     "Spring OpenFeign",
     "Spring HTTP Interface (`@HttpExchange`)",
     "MicroProfile REST Client",
     "Micronaut `@Client`",
     "Retrofit",
   ],
-  "scan.source.rest.client.java/programmatic": [
+  "scan.source.java.rest/client-programmatic": [
     "Spring WebClient",
     "Spring RestTemplate / RestClient",
     "Apache HttpClient",
     "OkHttp",
     "`java.net.http.HttpClient`",
   ],
-  "scan.source.rest.client.kotlin/declarative": [
+  "scan.source.kotlin.rest/client-declarative": [
     "Spring OpenFeign",
     "Spring HTTP Interface (`@HttpExchange`)",
     "MicroProfile REST Client",
     "Micronaut `@Client`",
     "Retrofit",
   ],
-  "scan.source.rest.client.kotlin/programmatic": [
+  "scan.source.kotlin.rest/client-programmatic": [
     "Spring WebClient wrappers",
     "Ktor `HttpClient`",
     "OkHttp",

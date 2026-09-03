@@ -2,26 +2,26 @@ import type { EntityType } from "../../src/discovery-model/entities/entity-types
 
 /** Scan processors and discovery entity types they create (for gap detection). */
 export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly EntityType[]>> = {
-  "scan.scope/git-repos": ["Repository"],
+  "scan.scope/git-repositories": ["Repository"],
   "scan.scope/unversioned-folders": ["Repository"],
-  "scan.source.assembly.maven/maven-modules-and-dependencies": [
+  "scan.source.assembly.maven/modules-and-dependencies": [
     "ApplicationModule",
     "ApplicationModuleDependency",
   ],
-  "scan.source.assembly.gradle/gradle-modules-and-dependencies": [
+  "scan.source.assembly.gradle/modules-and-dependencies": [
     "ApplicationModule",
     "ApplicationModuleDependency",
   ],
-  "scan.source.assembly.npm/npm-modules-and-dependencies": [
+  "scan.source.assembly.npm/modules-and-dependencies": [
     "ApplicationModule",
     "ApplicationModuleDependency",
   ],
-  "scan.source.rest.controller.java/annotation-based": ["RestController"],
-  "scan.source.rest.controller.java/functional-router-based": ["RestController"],
-  "scan.source.rest.controller.kotlin/annotation-based": ["RestController"],
-  "scan.source.rest.controller.kotlin/ktor-and-router-based": ["RestController"],
-  "scan.source.rest.client.java/declarative": ["RestClient"],
-  "scan.source.rest.client.java/programmatic": ["RestClient"],
-  "scan.source.rest.client.kotlin/declarative": ["RestClient"],
-  "scan.source.rest.client.kotlin/programmatic": ["RestClient"],
+  "scan.source.java.rest/controller-annotation-based": ["RestController"],
+  "scan.source.java.rest/controller-functional-router-based": ["RestController"],
+  "scan.source.kotlin.rest/controller-annotation-based": ["RestController"],
+  "scan.source.kotlin.rest/controller-ktor-and-router-based": ["RestController"],
+  "scan.source.java.rest/client-declarative": ["RestClient"],
+  "scan.source.java.rest/client-programmatic": ["RestClient"],
+  "scan.source.kotlin.rest/client-declarative": ["RestClient"],
+  "scan.source.kotlin.rest/client-programmatic": ["RestClient"],
 };

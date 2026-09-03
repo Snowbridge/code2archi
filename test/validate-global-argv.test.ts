@@ -35,7 +35,7 @@ describe("validateGlobalArgv", () => {
       validateGlobalArgv({
         ...baseArgv(),
         without: ["scan.source.*"],
-        withOnly: ["scan.scope.git-repos"],
+        withOnly: ["scan.scope.git-repositories"],
       }),
     );
   });
@@ -56,7 +56,7 @@ describe("validateGlobalArgv", () => {
       () =>
         validateGlobalArgv({
           ...baseArgv(),
-          withOnly: ["scan.scope.git-repos"],
+          withOnly: ["scan.scope.git-repositories"],
           with: ["scan.scope.unversioned-folders"],
         }),
       "--with-only and --with cannot be used together",

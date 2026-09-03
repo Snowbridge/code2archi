@@ -6,11 +6,11 @@ import {
 } from "../../src/list/format-processors-table.js";
 
 describe("formatProcessorsTable", () => {
-  it("aligns columns and includes header", () => {
+  it("groups processors by groupId with shared column header", () => {
     const table = formatProcessorsTable([
       {
         groupId: "scan.scope",
-        artifactId: "git-repos",
+        artifactId: "git-repositories",
         version: "0.2.0",
         executionPolicy: "ALWAYS",
         description: "Discovers Git repository roots.",
@@ -25,11 +25,12 @@ describe("formatProcessorsTable", () => {
     ]);
 
     const lines = table.split("\n");
-    assert.equal(lines.length, 3);
-    assert.ok(lines[0]!.startsWith("groupId"));
-    assert.ok(lines[0]!.includes("artifactId"));
-    assert.ok(lines[1]!.includes("git-repos"));
-    assert.ok(lines[2]!.includes("unversioned-folders"));
+    assert.ok(lines[0]!.startsWith("artifactId"));
+    assert.ok(lines[0]!.includes("executionPolicy"));
+    assert.equal(lines[1], "");
+    assert.equal(lines[2], "scan.scope");
+    assert.ok(lines[3]!.includes("git-repositories"));
+    assert.ok(lines[4]!.includes("unversioned-folders"));
   });
 
   it("returns empty string for no rows", () => {

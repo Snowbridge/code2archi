@@ -7,7 +7,7 @@ describe("standardGenerateElementProperties", () => {
   it("includes c2a:slot with bare slot id", () => {
     const properties = standardGenerateElementProperties({
       logicalId: "demo-id",
-      generatorCoordinate: "generate.elements.technology:repositories",
+      generatorCoordinate: "generate.elements.technology:code-repositories",
       slot: "repo-artifact",
     });
 
@@ -15,7 +15,7 @@ describe("standardGenerateElementProperties", () => {
       { key: "c2a:Id", value: "demo-id" },
       { key: "c2a:confidence", value: "confirmed" },
       { key: "c2a:schema", value: packageVersion },
-      { key: "c2a:generator", value: "generate.elements.technology:repositories" },
+      { key: "c2a:generator", value: "generate.elements.technology:code-repositories" },
       { key: "c2a:slot", value: "repo-artifact" },
     ]);
   });
@@ -23,7 +23,7 @@ describe("standardGenerateElementProperties", () => {
   it("honors optional confidence", () => {
     const properties = standardGenerateElementProperties({
       logicalId: "demo-id",
-      generatorCoordinate: "generate.elements.technology:repositories",
+      generatorCoordinate: "generate.elements.technology:code-repositories",
       slot: "repo-artifact",
       confidence: "inferred",
     });
