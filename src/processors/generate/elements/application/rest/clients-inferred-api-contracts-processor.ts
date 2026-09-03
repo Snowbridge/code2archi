@@ -18,15 +18,15 @@ import { decorateElementName } from "../../../../../generate/element-name-decora
 import { withEntityDebugProperties } from "../../../../../generate/generate-debug.js";
 import {
   buildInferredContractDocumentation,
-  inferredContractAssignmentId,
-  inferredContractAssignmentLogicalId,
+  inferredContractAssignmentToClientId,
+  inferredContractAssignmentToClientLogicalId,
   inferredRestContractId,
   inferredRestContractLogicalId,
   isEligibleForInferredRestContract,
 } from "../../../../../generate/inferred-rest-contracts.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { RestControllerRecord } from "../../../../../discovery-model/entities/rest-controller.js";
+import type { RestClientRecord } from "../../../../../discovery-model/entities/rest-client.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,
@@ -34,17 +34,17 @@ import {
 } from "../../../../../platform/processors/processor.js";
 
 const GENERATOR_COORDINATE =
-  "generate.elements.application.rest:controllers-inferred-api-contracts";
+  "generate.elements.application.rest:clients-inferred-api-contracts";
 
 const REQUIRED_PROFILES: readonly ArchiProfile[] = [InferredApiContractProfile.create()];
 
-export class ControllersInferredApiContractsProcessor extends AbstractProcessor<
+export class ClientsInferredApiContractsProcessor extends AbstractProcessor<
   GenerateProcessorInput,
   ArchiCreateIntents
 > {
   readonly id: ProcessorId = {
     groupId: "generate.elements.application.rest",
-    artifactId: "controllers-inferred-api-contracts",
+    artifactId: "clients-inferred-api-contracts",
   };
 
   readonly version = "0.1.0";
@@ -52,7 +52,7 @@ export class ControllersInferredApiContractsProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps RestController endpoints and dtoFqcn to inferred ApplicationInterfaces with Assignment to REST controllers.";
+    "Maps RestClient endpoints and dtoFqcn to inferred ApplicationInterfaces with Assignment to REST clients when extendedInterfaceFqcn is empty.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -75,20 +75,24 @@ export class ControllersInferredApiContractsProcessor extends AbstractProcessor<
         .map((record) => [record.id, record as unknown as ApplicationModuleRecord]),
     );
 
-    const controllers = [...input.discovery.listEntities("RestController")]
-      .map((record) => record as unknown as RestControllerRecord)
+    const clients = [...input.discovery.listEntities("RestClient")]
+      .map((record) => record as unknown as RestClientRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
     const inferredApiContractProfile = InferredApiContractProfile.create();
     const createdContractIds = new Set<string>();
 
-    for (const controller of controllers) {
-      if (!isEligibleForInferredRestContract(controller.endpoints, controller.dtoFqcn)) {
+    for (const client of clients) {
+      if (client.extendedInterfaceFqcn.length > 0) {
         continue;
       }
 
-      const module = modulesById.get(controller.applicationModuleId);
+      if (!isEligibleForInferredRestContract(client.endpoints, client.dtoFqcn)) {
+        continue;
+      }
+
+      const module = modulesById.get(client.applicationModuleId);
       if (module === undefined) {
         continue;
       }
@@ -103,24 +107,20 @@ export class ControllersInferredApiContractsProcessor extends AbstractProcessor<
       );
       folderIntents.push(...targetFolder.folderIntents);
 
-      const contractId = inferredRestContractId(controller.fqcn);
+      const contractId = inferredRestContractId(client.fqcn);
 
       if (
         input.archi.getElement(contractId) === undefined &&
         !createdContractIds.has(contractId)
       ) {
         let elementBuilder = ApplicationInterface.withId(contractId)
-          .name(
-            decorateElementName("inferred-rest-contract", controller.name, {}, input.options),
-          )
-          .documentation(
-            buildInferredContractDocumentation(controller.endpoints, controller.dtoFqcn),
-          )
+          .name(decorateElementName("inferred-rest-contract", client.name, {}, input.options))
+          .documentation(buildInferredContractDocumentation(client.endpoints, client.dtoFqcn))
           .inFolder(targetFolder.folderId)
           .profiles(inferredApiContractProfile.id);
 
         for (const property of standardGenerateElementProperties({
-          logicalId: inferredRestContractLogicalId(controller.fqcn),
+          logicalId: inferredRestContractLogicalId(client.fqcn),
           generatorCoordinate: GENERATOR_COORDINATE,
           slot: "inferred-rest-contract",
           confidence: "inferred",
@@ -130,27 +130,27 @@ export class ControllersInferredApiContractsProcessor extends AbstractProcessor<
 
         const elementIntent = withEntityDebugProperties(elementBuilder.build().toCreateIntent(), [
           {
-            entityType: "RestController",
-            record: controller as unknown as DiscoveryEntityRecord,
+            entityType: "RestClient",
+            record: client as unknown as DiscoveryEntityRecord,
           },
         ]);
         elements.push(elementIntent);
         createdContractIds.add(contractId);
       }
 
-      const relationId = inferredContractAssignmentId(contractId, controller.id);
+      const relationId = inferredContractAssignmentToClientId(contractId, client.id);
       if (input.archi.getRelationship(relationId)) {
         continue;
       }
 
       let assignmentBuilder = AssignmentRelationship.withId(relationId)
         .source(contractId)
-        .target(controller.id);
+        .target(client.id);
 
       for (const property of standardGenerateElementProperties({
-        logicalId: inferredContractAssignmentLogicalId(controller.fqcn, controller.id),
+        logicalId: inferredContractAssignmentToClientLogicalId(client.fqcn, client.id),
         generatorCoordinate: GENERATOR_COORDINATE,
-        slot: "inferred-contract-assigned-to-rest-controller",
+        slot: "inferred-contract-assigned-to-rest-client",
         confidence: "inferred",
       })) {
         assignmentBuilder = assignmentBuilder.property(property.key, property.value);

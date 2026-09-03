@@ -23,7 +23,8 @@ export type ElementSlotId =
   | "rest-client"
   | "app-module-realizes-rest-client"
   | "inferred-rest-contract"
-  | "inferred-contract-assigned-to-rest-controller";
+  | "inferred-contract-assigned-to-rest-controller"
+  | "inferred-contract-assigned-to-rest-client";
 
 export interface StandardGenerateElementPropertiesInput {
   readonly logicalId: string;

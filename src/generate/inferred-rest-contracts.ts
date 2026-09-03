@@ -40,6 +40,20 @@ export function inferredContractAssignmentLogicalId(
   return `assignment:inferred-rest-contract:${fqcn}:${restControllerId}`;
 }
 
+export function inferredContractAssignmentToClientId(
+  contractId: string,
+  restClientId: string,
+): string {
+  return computeArchiId("AssignmentRelationship", contractId, restClientId);
+}
+
+export function inferredContractAssignmentToClientLogicalId(
+  fqcn: string,
+  restClientId: string,
+): string {
+  return `assignment:inferred-rest-contract:${fqcn}:${restClientId}`;
+}
+
 export function buildInferredContractDocumentation(
   endpoints: readonly string[],
   dtoFqcn: readonly string[],

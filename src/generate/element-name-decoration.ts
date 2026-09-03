@@ -21,7 +21,7 @@ const MODULE_ARTIFACT_SUFFIX_BY_BUILD_SYSTEM: Readonly<Record<BuildSystem, strin
 
 const LIBRARY_SUFFIX = " (lib)";
 const API_CONTRACT_SUFFIX = " API Contract";
-const INFERRED_REST_CONTROLLER_SUFFIX = " Inferred REST-controller";
+const INFERRED_REST_CONTRACT_SUFFIX = " Inferred REST Contract";
 
 function appendSuffixIfAbsent(baseName: string, suffix: string): string {
   if (baseName.endsWith(suffix)) {
@@ -61,6 +61,6 @@ export function decorateElementName(
     case "declared-rest-contract":
       return appendSuffixIfAbsent(baseName, API_CONTRACT_SUFFIX);
     case "inferred-rest-contract":
-      return appendSuffixIfAbsent(baseName, INFERRED_REST_CONTROLLER_SUFFIX);
+      return appendSuffixIfAbsent(baseName, INFERRED_REST_CONTRACT_SUFFIX);
   }
 }

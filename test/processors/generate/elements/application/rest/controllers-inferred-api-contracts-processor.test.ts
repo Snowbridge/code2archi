@@ -191,7 +191,7 @@ describe("ControllersInferredApiContractsProcessor", () => {
     const contractId = inferredRestContractId(controller.fqcn);
     const contract = output.elements?.find((element) => element.id === contractId);
     assert.equal(contract?.conceptType, "ApplicationInterface");
-    assert.equal(contract?.name, "LotsCrudController Inferred REST-controller");
+    assert.equal(contract?.name, "LotsCrudController Inferred REST Contract");
     assert.deepEqual(contract?.profileIds, [InferredApiContractProfile.create().id]);
     assert.equal(contract?.documentation, "Endpoints:\n- GET /lots");
     assert.equal(
@@ -360,7 +360,7 @@ describe("ControllersInferredApiContractsProcessor", () => {
     assert.equal(output.relations?.length ?? 0, 0);
   });
 
-  it("skips when rest-controller is missing from archi snapshot", () => {
+  it("emits contract and assignment when rest-controller is missing from archi snapshot", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -399,8 +399,9 @@ describe("ControllersInferredApiContractsProcessor", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(output.elements?.length ?? 0, 0);
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(output.elements?.length, 1);
+    assert.equal(output.relations?.length, 1);
+    assert.equal(output.relations?.[0]?.targetId, controller.id);
   });
 
   it("leaves names undecorated when decorate is false", () => {

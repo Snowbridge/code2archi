@@ -9,4 +9,5 @@ export const ELEMENT_SLOT_EN_LABELS: Readonly<Record<string, string>> = {
   "rest-controller": "REST controller application services",
   "declared-rest-contract": "Declared API contracts (from implemented interface FQCN)",
   "inferred-rest-contract": "Inferred API contracts (from endpoints and DTO types)",
+  "inferred-contract-assigned-to-rest-client": "Inferred API contracts assigned to REST clients",
 };
