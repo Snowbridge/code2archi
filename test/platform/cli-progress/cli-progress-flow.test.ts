@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { MultiBar } from "cli-progress";
 import { describe, it } from "node:test";
+import { createCliProgressFlow } from "../../../src/platform/cli-progress/cli-progress-flow.js";
 import { createFlowProgress } from "../../../src/platform/cli-progress/create-flow-progress.js";
 import { forEachRepository } from "../../../src/platform/cli-progress/for-each-repository.js";
 import { noopFlowProgress } from "../../../src/platform/cli-progress/noop-flow-progress.js";
@@ -27,6 +29,41 @@ describe("createFlowProgress", () => {
       });
       assert.equal(progress, noopFlowProgress);
     } finally {
+      Object.defineProperty(process.stderr, "isTTY", { value: originalIsTTY, configurable: true });
+    }
+  });
+});
+
+describe("createCliProgressFlow", () => {
+  it("forces MultiBar redraw after tick and setTotal", () => {
+    const originalIsTTY = process.stderr.isTTY;
+    Object.defineProperty(process.stderr, "isTTY", { value: true, configurable: true });
+
+    let updateCalls = 0;
+    const originalUpdate = MultiBar.prototype.update;
+    MultiBar.prototype.update = function update(this: MultiBar) {
+      updateCalls += 1;
+      return originalUpdate.call(this);
+    };
+
+    try {
+      const progress = createCliProgressFlow([
+        { id: "1", label: "Step 1", initialTotal: 2 },
+        { id: "2", label: "Step 2", initialTotal: 0 },
+      ]);
+
+      const initialUpdates = updateCalls;
+      assert.ok(initialUpdates >= 1, "expected initial redraw after bar creation");
+
+      progress.step("1").tick(1);
+      assert.equal(updateCalls, initialUpdates + 1);
+
+      progress.step("2").setTotal(10);
+      assert.equal(updateCalls, initialUpdates + 2);
+
+      progress.stop();
+    } finally {
+      MultiBar.prototype.update = originalUpdate;
       Object.defineProperty(process.stderr, "isTTY", { value: originalIsTTY, configurable: true });
     }
   });

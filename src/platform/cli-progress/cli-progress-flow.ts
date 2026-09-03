@@ -5,13 +5,15 @@ import type {
   StepProgressHandle,
 } from "./types.js";
 
-function createStepHandle(bar: SingleBar): StepProgressHandle {
+function createStepHandle(bar: SingleBar, redraw: () => void): StepProgressHandle {
   return {
     tick(count = 1): void {
       bar.increment(count);
+      redraw();
     },
     setTotal(total: number): void {
       bar.setTotal(total);
+      redraw();
     },
   };
 }
@@ -22,7 +24,8 @@ export function createCliProgressFlow(steps: readonly FlowStepDefinition[]): Flo
       stream: process.stderr,
       hideCursor: true,
       clearOnComplete: false,
-      format: " {bar} | {percentage}% | {name}",
+      emptyOnZero: true,
+      format: " {bar} | {percentage}%",
     },
     Presets.shades_classic,
   );
@@ -30,11 +33,21 @@ export function createCliProgressFlow(steps: readonly FlowStepDefinition[]): Flo
   const bars = new Map<string, SingleBar>();
   const stepHandles = new Map<string, StepProgressHandle>();
 
+  const redraw = (): void => {
+    multibar.update();
+  };
+
   for (const step of steps) {
-    const bar = multibar.create(step.initialTotal, 0, { name: step.label });
+    const bar = multibar.create(step.initialTotal, 0, {}, {
+      format: ` {bar} | {percentage}% | ${step.label}`,
+    });
     bars.set(step.id, bar);
-    stepHandles.set(step.id, createStepHandle(bar));
+    stepHandles.set(step.id, createStepHandle(bar, redraw));
   }
+
+  // MultiBar redraws on a timer; synchronous scan/generate work blocks the event loop.
+  // Force an initial paint so bars are visible before the first processor runs.
+  redraw();
 
   let stopped = false;
 
