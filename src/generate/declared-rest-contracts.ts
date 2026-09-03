@@ -27,3 +27,17 @@ export function declaredContractAssignmentLogicalId(
 ): string {
   return `assignment:declared-rest-contract:${fqcn}:${restControllerId}`;
 }
+
+export function declaredContractAssignmentToClientId(
+  contractId: string,
+  restClientId: string,
+): string {
+  return computeArchiId("AssignmentRelationship", contractId, restClientId);
+}
+
+export function declaredContractAssignmentToClientLogicalId(
+  fqcn: string,
+  restClientId: string,
+): string {
+  return `assignment:declared-rest-contract:${fqcn}:${restClientId}`;
+}

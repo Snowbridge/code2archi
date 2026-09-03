@@ -11,6 +11,7 @@ import { MavenModulesAndDependenciesProcessor } from "../../processors/scan.sour
 import { NpmModulesAndDependenciesProcessor } from "../../processors/scan.source/npm-modules-and-dependencies-processor.js";
 import { ApplicationComponentsFromModulesProcessor } from "../../processors/generate.elements.application/application-components-from-modules-processor.js";
 import { ControllersProcessor } from "../../processors/generate.elements.application.rest/controllers-processor.js";
+import { ClientsAndDeclaredContractsProcessor } from "../../processors/generate.elements.application.rest/clients-and-declared-contracts-processor.js";
 import { DeclaredApiContractsProcessor } from "../../processors/generate.elements.application.rest/declared-api-contracts-processor.js";
 import { InferredApiContractsProcessor } from "../../processors/generate.elements.application.rest/inferred-api-contracts-processor.js";
 import { ModulesBuildSystemsAndRuntimesProcessor } from "../../processors/generate.elements.technology/modules-build-systems-and-runtimes-processor.js";
@@ -39,4 +40,5 @@ processorRegistry.register(new NoBuildOrRuntimeToolsProcessor());
 processorRegistry.register(new ApplicationComponentsFromModulesProcessor());
 processorRegistry.register(new ControllersProcessor());
 processorRegistry.register(new DeclaredApiContractsProcessor());
+processorRegistry.register(new ClientsAndDeclaredContractsProcessor());
 processorRegistry.register(new InferredApiContractsProcessor());

@@ -19,6 +19,9 @@ export type ElementSlotId =
   | "app-module-realizes-rest-controller"
   | "declared-rest-contract"
   | "declared-contract-assigned-to-rest-controller"
+  | "declared-contract-assigned-to-rest-client"
+  | "rest-client"
+  | "app-module-realizes-rest-client"
   | "inferred-rest-contract"
   | "inferred-contract-assigned-to-rest-controller";
 

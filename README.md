@@ -172,6 +172,7 @@ From discovery-model, built-in processors currently materialise these **element 
 - Application components per module (including library aggregation)
 - Declared API contracts (from implemented interface FQCN)
 - Inferred API contracts (from endpoints and DTO types)
+- REST Client
 - REST controller application services
 
 The result is a plain XML `.archimate` file compatible with Archi 5.x.
@@ -204,7 +205,7 @@ The README above describes the **current slice** of the vision. The table below 
 | **Diagrams** | `generate.views` — layout diagrams in Archi | Processor group exists; **no view processors** registered |
 | **Plugins** | Extend scan/generate without forking core | Processor registry is internal; **plugin host API not shipped** |
 | **Run configuration** | `config` command, merged CLI + file defaults | Not specified |
-| **Element slot coverage** | All documented `generate.elements` slots materialised in `.archimate` | 16/16 documented element slots implemented |
+| **Element slot coverage** | All documented `generate.elements` slots materialised in `.archimate` | 19/19 documented element slots implemented |
 | **Model refresh at scale** | Repeatable refresh every release cycle in hours | Mechanically possible via re-run; automation, diff, and reconcile reporting still missing |
 
 In practice today, `c2a` gives a solid **first-pass AS-IS map** of repositories, modules, build/runtime facts, Java/Kotlin REST surface — enough to open in Archi and review structure. It does **not** yet replace modelling pipeline, reconciliation, business layer, inter-service links.
