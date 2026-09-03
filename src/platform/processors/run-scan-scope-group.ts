@@ -1,4 +1,5 @@
 import { SCAN_SCOPE_GROUP_ID } from "../../cli/processor-groups.js";
+import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
@@ -10,6 +11,7 @@ export function runScanScopeGroup(
   input: ScanScopeInput,
   filters: ProcessorFilters,
   store: RunEntityStore,
+  progress?: StepProgressHandle,
 ): void {
   const logger = getLogger("scan.scope");
   logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: input.length });
@@ -31,6 +33,7 @@ export function runScanScopeGroup(
 
     if (output.length === 0) {
       processor.logCompleted(0);
+      progress?.tick(1);
       continue;
     }
 
@@ -40,6 +43,7 @@ export function runScanScopeGroup(
       },
     });
     processor.logCompleted(output.length);
+    progress?.tick(1);
   }
 
   logger.info("group completed", {

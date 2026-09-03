@@ -8,6 +8,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { ModuleTypeIndex } from "../../../../../parsers/java/rest-client/module-type-index.js";
 import { extractRestClientsFromCompilationUnit } from "../../../../../parsers/java/rest-client/rest-client-extractor.js";
 import { parseKotlinSourceFile } from "../../../../../parsers/kotlin/kotlin-compilation-unit.js";
@@ -36,13 +37,12 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
     "Discovers declarative Kotlin REST clients (Feign, HttpExchange, MP REST Client, Micronaut, Retrofit).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const repositories = input
-      .listEntities("Repository")
-      .map((entity) => entity as unknown as RepositoryRecord);
-    const repositoryById = new Map(repositories.map((repository) => [repository.id, repository]));
-    const contexts = this.buildModuleContexts(input, repositoryById);
-    const fileContexts = collectSourceFiles(contexts, ".kt");
-    const clients = this.scanModules(fileContexts);
+    const clients: RestClient[] = [];
+    forEachRepository(input, (repository) => {
+      const contexts = this.buildModuleContextsForRepository(input, repository);
+      const fileContexts = collectSourceFiles(contexts, ".kt");
+      clients.push(...this.scanModules(fileContexts));
+    });
 
     return {
       entities: {
@@ -51,9 +51,9 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
     };
   }
 
-  private buildModuleContexts(
+  private buildModuleContextsForRepository(
     input: ScanAppInput,
-    repositoryById: ReadonlyMap<string, RepositoryRecord>,
+    repository: RepositoryRecord,
   ): ModuleSourceContext[] {
     const contexts: ModuleSourceContext[] = [];
 
@@ -63,8 +63,7 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
         continue;
       }
 
-      const repository = repositoryById.get(module.repositoryId);
-      if (!repository) {
+      if (module.repositoryId !== repository.id) {
         continue;
       }
 

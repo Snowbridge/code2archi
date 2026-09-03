@@ -1,6 +1,6 @@
 {
   "name": "code2archi",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "Code to Archimate Modeler CLI",
   "type": "module",
   "engines": {
@@ -19,6 +19,7 @@
     "readme:check": "tsx scripts/sync-readme-status.ts --check"
   },
   "dependencies": {
+    "cli-progress": "^3.12.0",
     "fast-xml-parser": "^5.11.1",
     "java-parser": "^3.0.1",
     "tree-sitter": "^0.21.1",
@@ -27,6 +28,7 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
     "@types/node": "^24.13.3",
     "@types/yargs": "^17.0.33",
     "tsx": "^4.20.5",

@@ -33,6 +33,7 @@ describe("runScanFlow", () => {
       force: false,
       scanId: "test-scan-id",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -91,6 +92,7 @@ describe("runScanFlow", () => {
       force: false,
       scanId: "test-scan-namespace",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
       processorFilters: {
         with: [],
         without: ["scan.scope.unversioned-folders"],
@@ -136,6 +138,7 @@ describe("runScanFlow", () => {
       force: false,
       scanId: "test-scan-maven",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -221,6 +224,7 @@ public class FlowController {
       force: false,
       scanId: "test-scan-rest-controllers",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -283,6 +287,7 @@ class FlowController {
       force: false,
       scanId: "test-scan-kotlin-rest-controllers",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -338,6 +343,7 @@ class FlowController {
       force: false,
       scanId: "test-scan-functional-router",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -370,7 +376,8 @@ class FlowController {
         force: false,
         scanId: "test-scan-profile",
         runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
-        processorFilters: {
+        verbose: false,
+      processorFilters: {
           with: ["scan.scope.unversioned-folders"],
           without: [],
           withOnly: [],

@@ -87,6 +87,7 @@ describe("runGenerateFlow", () => {
 
       runGenerateFlow({
         ...generateArgs,
+        verbose: false,
         processorFilters: {
           with: [],
           without: [],
@@ -123,6 +124,7 @@ describe("runGenerateFlow", () => {
 
       runGenerateFlow({
         ...generateArgs,
+        verbose: false,
         processorFilters: {
           with: [],
           without: [],
@@ -176,6 +178,7 @@ describe("runGenerateFlow", () => {
 
       runGenerateFlow({
         ...generateArgs,
+        verbose: false,
         processorFilters: {
           with: [],
           without: [],
@@ -224,6 +227,7 @@ describe("runGenerateFlow", () => {
 
       runGenerateFlow({
         ...generateArgs,
+        verbose: false,
         processorFilters: {
           with: [],
           without: [],

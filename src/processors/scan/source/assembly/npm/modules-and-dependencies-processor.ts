@@ -6,10 +6,10 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import { parseNpmRepository } from "../../../../../parsers/package-json-parser.js";
 import {
-  asRepositoryFromSnapshot,
   buildModuleDiscoveryIntents,
   moduleIdForCoordinates,
   npmDependencyParts,
@@ -33,9 +33,10 @@ export class ModulesAndDependenciesProcessor extends AbstractProcessor<
     "Discovers npm modules (including workspaces) and dependencies in repositories whose buildSystems include npm.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const modules = input
-      .listEntities("Repository")
-      .flatMap((entity) => this.discoverModules(asRepositoryFromSnapshot(entity)));
+    const modules: ModuleDiscoveryInput[] = [];
+    forEachRepository(input, (repository) => {
+      modules.push(...this.discoverModules(repository));
+    });
     return buildModuleDiscoveryIntents(modules);
   }
 

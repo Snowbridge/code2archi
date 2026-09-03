@@ -1,9 +1,12 @@
 import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
+import { SCAN_SOURCE_GROUP_ID } from "../../cli/processor-groups.js";
+import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot, RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
+import type { ScanAppInput } from "./processor.js";
 import { getLogger } from "../logging/index.js";
 
 function countCreateIntents(output: CreateIntents): number {
@@ -29,19 +32,35 @@ export function runCreateIntentProcessorGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   filters: ProcessorFilters,
   store: RunEntityStore,
+  progress?: StepProgressHandle,
 ): void {
   const logger = getLogger(`scan.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
 
   const processors = processorRegistry.listForBuiltInStep<
-    DiscoveryModelSnapshot,
+    ScanAppInput,
     CreateIntents
   >(builtInGroupId, filters);
+
+  const passProgress = builtInGroupId === SCAN_SOURCE_GROUP_ID && progress !== undefined;
 
   for (const processor of processors) {
     processor.logStart();
 
-    const output = runProcessorWithMetrics(processor.id, () => processor.process(store.snapshot()));
+    const snapshot = store.snapshot();
+    const input: ScanAppInput = passProgress
+      ? new Proxy(snapshot, {
+          get(target, prop, receiver) {
+            if (prop === "progress") {
+              return progress;
+            }
+            const value = Reflect.get(target, prop, receiver);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        })
+      : snapshot;
+
+    const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
     if (output instanceof Promise) {
       throw new Error(
         `Processor ${processor.id.groupId}/${processor.id.artifactId} returned a Promise; sync execution expected`,

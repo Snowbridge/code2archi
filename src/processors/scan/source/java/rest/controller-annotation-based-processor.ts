@@ -10,6 +10,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { UNKNOWN_VERSION } from "../../../../../parsers/build-tool-versions.js";
 import {
   parseGradleProductionJavaSourceRoots,
@@ -45,15 +46,14 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
     "Discovers Java REST controllers from annotation-based frameworks in Maven and Gradle modules.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const repositories = this.loadRepositories(input);
-    const repositoryById = new Map(repositories.map((repository) => [repository.id, repository]));
-    const moduleContexts = this.buildModuleContexts(input, repositoryById);
-    const javaFiles = this.collectJavaFiles(moduleContexts);
     const controllers: RestController[] = [];
-
-    for (const fileContext of javaFiles) {
-      controllers.push(...this.scanJavaFile(fileContext));
-    }
+    forEachRepository(input, (repository) => {
+      const moduleContexts = this.buildModuleContextsForRepository(input, repository);
+      const javaFiles = this.collectJavaFiles(moduleContexts);
+      for (const fileContext of javaFiles) {
+        controllers.push(...this.scanJavaFile(fileContext));
+      }
+    });
 
     return {
       entities: {
@@ -62,15 +62,9 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
     };
   }
 
-  private loadRepositories(input: ScanAppInput): RepositoryRecord[] {
-    return input
-      .listEntities("Repository")
-      .map((entity) => entity as unknown as RepositoryRecord);
-  }
-
-  private buildModuleContexts(
+  private buildModuleContextsForRepository(
     input: ScanAppInput,
-    repositoryById: ReadonlyMap<string, RepositoryRecord>,
+    repository: RepositoryRecord,
   ): ModuleSourceContext[] {
     const contexts: ModuleSourceContext[] = [];
 
@@ -80,8 +74,7 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
         continue;
       }
 
-      const repository = repositoryById.get(module.repositoryId);
-      if (!repository) {
+      if (module.repositoryId !== repository.id) {
         continue;
       }
 

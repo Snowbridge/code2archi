@@ -8,6 +8,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { parseKotlinSourceFile } from "../../../../../parsers/kotlin/kotlin-compilation-unit.js";
 import { extractKotlinProgrammaticRestClients } from "../../../../../parsers/kotlin/kotlin-programmatic-rest-client-adapter.js";
 import {
@@ -34,13 +35,12 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
     "Discovers programmatic Kotlin REST clients (WebClient wrappers, Ktor HttpClient).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const repositories = input
-      .listEntities("Repository")
-      .map((entity) => entity as unknown as RepositoryRecord);
-    const repositoryById = new Map(repositories.map((repository) => [repository.id, repository]));
-    const contexts = this.buildModuleContexts(input, repositoryById);
-    const fileContexts = collectSourceFiles(contexts, ".kt");
-    const clients = this.scanModules(fileContexts);
+    const clients: RestClient[] = [];
+    forEachRepository(input, (repository) => {
+      const contexts = this.buildModuleContextsForRepository(input, repository);
+      const fileContexts = collectSourceFiles(contexts, ".kt");
+      clients.push(...this.scanModules(fileContexts));
+    });
 
     return {
       entities: {
@@ -49,9 +49,9 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
     };
   }
 
-  private buildModuleContexts(
+  private buildModuleContextsForRepository(
     input: ScanAppInput,
-    repositoryById: ReadonlyMap<string, RepositoryRecord>,
+    repository: RepositoryRecord,
   ): ModuleSourceContext[] {
     const contexts: ModuleSourceContext[] = [];
 
@@ -61,8 +61,7 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
         continue;
       }
 
-      const repository = repositoryById.get(module.repositoryId);
-      if (!repository) {
+      if (module.repositoryId !== repository.id) {
         continue;
       }
 

@@ -3,6 +3,7 @@ import type { ArchiModelSnapshot } from "../../archimate-model/archi-model-store
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { Repository } from "../../discovery-model/entities/repository.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
+import type { StepProgressHandle } from "../cli-progress/types.js";
 import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
 
 export interface ProcessorId {
@@ -19,7 +20,9 @@ export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";
 export type ScanScopeInput = readonly string[];
 export type ScanScopeOutput = readonly Repository[];
 
-export type ScanAppInput = DiscoveryModelSnapshot;
+export type ScanAppInput = DiscoveryModelSnapshot & {
+  readonly progress?: StepProgressHandle;
+};
 export type ScanAppOutput = CreateIntents;
 
 export interface GenerateOptions {

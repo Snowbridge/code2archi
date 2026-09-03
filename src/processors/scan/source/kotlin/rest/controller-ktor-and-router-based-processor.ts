@@ -10,6 +10,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { UNKNOWN_VERSION } from "../../../../../parsers/build-tool-versions.js";
 import {
   parseGradleProductionKotlinSourceRoots,
@@ -45,15 +46,14 @@ export class KotlinRestControllerKtorAndRouterBasedProcessor extends AbstractPro
     "Discovers Kotlin REST controllers from functional routing: Spring RouterFunction/CoRouterFunction, Micronaut RouteBuilder, Quarkus Vert.x Router and @Route, and Ktor routing.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const repositories = this.loadRepositories(input);
-    const repositoryById = new Map(repositories.map((repository) => [repository.id, repository]));
-    const moduleContexts = this.buildModuleContexts(input, repositoryById);
-    const kotlinFiles = this.collectKotlinFiles(moduleContexts);
     const controllers: RestController[] = [];
-
-    for (const fileContext of kotlinFiles) {
-      controllers.push(...this.scanKotlinFile(fileContext));
-    }
+    forEachRepository(input, (repository) => {
+      const moduleContexts = this.buildModuleContextsForRepository(input, repository);
+      const kotlinFiles = this.collectKotlinFiles(moduleContexts);
+      for (const fileContext of kotlinFiles) {
+        controllers.push(...this.scanKotlinFile(fileContext));
+      }
+    });
 
     return {
       entities: {
@@ -62,15 +62,9 @@ export class KotlinRestControllerKtorAndRouterBasedProcessor extends AbstractPro
     };
   }
 
-  private loadRepositories(input: ScanAppInput): RepositoryRecord[] {
-    return input
-      .listEntities("Repository")
-      .map((entity) => entity as unknown as RepositoryRecord);
-  }
-
-  private buildModuleContexts(
+  private buildModuleContextsForRepository(
     input: ScanAppInput,
-    repositoryById: ReadonlyMap<string, RepositoryRecord>,
+    repository: RepositoryRecord,
   ): ModuleSourceContext[] {
     const contexts: ModuleSourceContext[] = [];
 
@@ -80,8 +74,7 @@ export class KotlinRestControllerKtorAndRouterBasedProcessor extends AbstractPro
         continue;
       }
 
-      const repository = repositoryById.get(module.repositoryId);
-      if (!repository) {
+      if (module.repositoryId !== repository.id) {
         continue;
       }
 

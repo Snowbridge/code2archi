@@ -6,6 +6,7 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { parseJavaSourceFile } from "../../../../../parsers/java/java-compilation-unit.js";
 import { extractProgrammaticRestClients } from "../../../../../parsers/java/rest-client/programmatic-http-client-extractor.js";
 import {
@@ -33,13 +34,12 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
     "Discovers programmatic Java REST clients (WebClient, RestTemplate, Spring RestClient, Apache HttpClient).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const repositories = input
-      .listEntities("Repository")
-      .map((entity) => entity as unknown as RepositoryRecord);
-    const repositoryById = new Map(repositories.map((repository) => [repository.id, repository]));
-    const contexts = this.buildModuleContexts(input, repositoryById);
-    const fileContexts = collectSourceFiles(contexts, ".java");
-    const clients = this.scanModules(fileContexts);
+    const clients: RestClient[] = [];
+    forEachRepository(input, (repository) => {
+      const contexts = this.buildModuleContextsForRepository(input, repository);
+      const fileContexts = collectSourceFiles(contexts, ".java");
+      clients.push(...this.scanModules(fileContexts));
+    });
 
     return {
       entities: {
@@ -48,9 +48,9 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
     };
   }
 
-  private buildModuleContexts(
+  private buildModuleContextsForRepository(
     input: ScanAppInput,
-    repositoryById: ReadonlyMap<string, RepositoryRecord>,
+    repository: RepositoryRecord,
   ): ModuleSourceContext[] {
     const contexts: ModuleSourceContext[] = [];
 
@@ -60,8 +60,7 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
         continue;
       }
 
-      const repository = repositoryById.get(module.repositoryId);
-      if (!repository) {
+      if (module.repositoryId !== repository.id) {
         continue;
       }
 

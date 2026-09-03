@@ -6,10 +6,10 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
+import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import { parseMavenRepository } from "../../../../../parsers/maven-pom-parser.js";
 import {
-  asRepositoryFromSnapshot,
   buildModuleDiscoveryIntents,
   moduleIdForCoordinates,
   type ModuleDiscoveryInput,
@@ -32,9 +32,10 @@ export class ModulesAndDependenciesProcessor extends AbstractProcessor<
     "Discovers Maven modules and their dependencies in repositories whose buildSystems include maven.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const modules = input
-      .listEntities("Repository")
-      .flatMap((entity) => this.discoverModules(asRepositoryFromSnapshot(entity)));
+    const modules: ModuleDiscoveryInput[] = [];
+    forEachRepository(input, (repository) => {
+      modules.push(...this.discoverModules(repository));
+    });
     return buildModuleDiscoveryIntents(modules);
   }
 

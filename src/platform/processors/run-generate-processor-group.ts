@@ -1,4 +1,5 @@
 import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
+import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelStore } from "../../archimate-model/archi-model-store.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
@@ -23,6 +24,7 @@ export function runGenerateProcessorGroup(
   archiStore: ArchiModelStore,
   filters: ProcessorFilters,
   options: GenerateOptions,
+  progress?: StepProgressHandle,
 ): void {
   const logger = getLogger(`generate.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
@@ -55,11 +57,13 @@ export function runGenerateProcessorGroup(
       !output.relations?.length
     ) {
       processor.logCompleted(0);
+      progress?.tick(1);
       continue;
     }
 
     archiStore.addCreateIntents(builtInGroupId, processor.id, output);
     processor.logCompleted(count);
+    progress?.tick(1);
   }
 
   logger.info("group completed", { groupId: builtInGroupId });
