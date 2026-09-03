@@ -48,6 +48,29 @@ export function validateFilterPattern(pattern: string): void {
   }
 }
 
+export function validateGroupPattern(pattern: string): void {
+  if (pattern.length === 0) {
+    throw new Error("Processor group pattern must not be empty");
+  }
+
+  if (pattern.includes("*") && !pattern.endsWith(".*")) {
+    throw new Error(`Invalid processor group pattern: "${pattern}"`);
+  }
+
+  if (pattern.endsWith(".*") && pattern.length === 2) {
+    throw new Error(`Invalid processor group pattern: "${pattern}"`);
+  }
+}
+
+export function matchesGroupPattern(groupId: string, pattern: string): boolean {
+  if (isWildcardPattern(pattern)) {
+    const prefix = pattern.slice(0, -2);
+    return groupId === prefix || groupId.startsWith(`${prefix}.`);
+  }
+
+  return groupId === pattern;
+}
+
 export function resolveBuiltInGroupId(groupId: string): BuiltInProcessorGroupId {
   if (isBuiltInProcessorGroupId(groupId)) {
     return groupId;

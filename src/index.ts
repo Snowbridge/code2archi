@@ -5,6 +5,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { scanCommand } from "./cli/commands/scan.js";
 import { generateCommand } from "./cli/commands/generate.js";
+import { listCommand } from "./cli/commands/list.js";
 import { CliError } from "./cli/cli-error.js";
 import { ExitCode } from "./cli/exit-codes.js";
 import { globalOptions } from "./cli/global-options.js";
@@ -40,6 +41,7 @@ yargs(hideBin(process.argv))
   })
   .command(scanCommand)
   .command(generateCommand)
+  .command(listCommand)
   .demandCommand(1, "Specify a command")
   .strict()
   .help()
