@@ -534,6 +534,76 @@ describe("SyssoftForBuildSystemsAndRuntimesProcessor", () => {
     assert.equal(schemaProperty?.value, packageVersion);
   });
 
+  it("adds repository name folder for module-artifact when repository has multiple eligible modules", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "fuzz/bar",
+      buildSystems: ["maven"],
+    });
+    const serverModule = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "server",
+      version: "1",
+      name: "server",
+      repoPath: "server",
+      buildScript: "server/pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+    const clientModule = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "client",
+      version: "1",
+      name: "client",
+      repoPath: "client",
+      buildScript: "client/pom.xml",
+      isMultimodule: false,
+      javaVersion: "17",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const processor = new SyssoftForBuildSystemsAndRuntimesProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [serverModule, clientModule]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    store.addCreateIntents(
+      GENERATE_ELEMENTS_GROUP_ID,
+      {
+        groupId: "generate.elements.technology",
+        artifactId: "syssoft-for-build-systems-and-runtimes",
+      },
+      output,
+    );
+
+    const technologyFolderId = store.getPredefinedFolderId("technology");
+    const expectedFolderId = ArchiFolderIds.nestedId(
+      ArchiFolderIds.nestedId(
+        ArchiFolderIds.nestedId(
+          ArchiFolderIds.nestedId(technologyFolderId, APPLICATION_MODULES_FOLDER),
+          "fuzz",
+        ),
+        "bar",
+      ),
+      "demo",
+    );
+    assert.equal(
+      store.listElements().find((element) => element.id === serverModule.id)?.folderId,
+      expectedFolderId,
+    );
+    assert.equal(
+      store.listElements().find((element) => element.id === clientModule.id)?.folderId,
+      expectedFolderId,
+    );
+  });
+
   it("keeps raw module artifact name when no-decorate option is enabled", () => {
     const repository = repositoryRecord({
       url: "",

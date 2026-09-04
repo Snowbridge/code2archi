@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { ArchiModelStore } from "../../../../../../src/archimate-model/archi-model-store.js";
+import { ArchiFolderIds } from "../../../../../../src/archimate-model/folders/archi-folder.js";
 import { ApplicationComponent, ApplicationService } from "../../../../../../src/archimate-model/elements/archi-element.js";
 import { MavenModuleProfile, RestControllerProfile } from "../../../../../../src/archimate-model/profiles/profile.js";
 import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
@@ -162,6 +163,11 @@ describe("ControllersProcessor", () => {
       restControllerServiceLogicalId(declarativeController.id),
     );
     assert.equal(declarativeService?.documentation, "Endpoints:\n- GET /limits");
+    const applicationFolderId = store.getPredefinedFolderId("application");
+    assert.equal(
+      declarativeService?.folderId,
+      ArchiFolderIds.nestedId(applicationFolderId, "demo"),
+    );
 
     const realization = output.relations?.find(
       (relation) => relation.targetId === declarativeController.id,

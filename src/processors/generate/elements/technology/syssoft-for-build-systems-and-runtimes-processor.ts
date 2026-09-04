@@ -20,7 +20,7 @@ import { standardGenerateElementProperties } from "../../../../generate/archi-el
 import {
   ensureChildFolder,
   ensureFolderPath,
-  parseNamespaceSegments,
+  repositoryFolderSegments,
   dedupeAndSortFolderIntents,
 } from "../../../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../../../generate/generate-debug.js";
@@ -121,13 +121,24 @@ export class SyssoftForBuildSystemsAndRuntimesProcessor extends AbstractProcesso
       .map((record) => record as unknown as ApplicationModuleRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
+    const eligibleModuleCountByRepositoryId = new Map<string, number>();
+    for (const module of modules) {
+      const repositoryId = String(module.repositoryId);
+      eligibleModuleCountByRepositoryId.set(
+        repositoryId,
+        (eligibleModuleCountByRepositoryId.get(repositoryId) ?? 0) + 1,
+      );
+    }
+
     for (const module of modules) {
       const repository = repositoriesById.get(String(module.repositoryId));
-      const namespaceSegments = parseNamespaceSegments(String(repository?.namespace ?? ""));
+      const includeRepoName =
+        (eligibleModuleCountByRepositoryId.get(String(module.repositoryId)) ?? 0) > 1;
+      const folderSegments = repositoryFolderSegments(repository, { includeRepoName });
       const targetFolder = ensureFolderPath(
         input.archi,
         applicationModulesFolder.folderId,
-        namespaceSegments,
+        folderSegments,
         pendingFolders,
       );
       folderIntents.push(...targetFolder.folderIntents);

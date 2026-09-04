@@ -446,11 +446,14 @@ describe("AppComponentsFromModulesProcessor", () => {
       store.listElements().find((element) => element.id === applicationComponentIdForModule(module.id))
         ?.folderId,
       ArchiFolderIds.nestedId(
-        ArchiFolderIds.nestedId(applicationFolderId, "fuzz"),
-        "bar",
+        ArchiFolderIds.nestedId(
+          ArchiFolderIds.nestedId(applicationFolderId, "fuzz"),
+          "bar",
+        ),
+        "demo",
       ),
     );
-    assert.ok(store.listFolders().some((folder) => folder.name === "bar"));
+    assert.ok(store.listFolders().some((folder) => folder.name === "demo"));
     assert.notEqual(CODE_REPOSITORIES_FOLDER, "application");
     assert.notEqual(GradleModuleArtifactProfile.create().id, MavenModuleProfile.create().id);
   });

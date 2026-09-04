@@ -7,6 +7,7 @@ import {
   ensureChildFolder,
   ensureFolderPath,
   parseNamespaceSegments,
+  repositoryFolderSegments,
   sortFolderIntentsParentFirst,
 } from "../../src/generate/archi-folder-path.js";
 import { CODE_REPOSITORIES_FOLDER } from "../../src/processors/generate/elements/technology/code-repositories-processor.js";
@@ -73,6 +74,26 @@ describe("archi-folder-path", () => {
     assert.deepEqual(parseNamespaceSegments(""), []);
     assert.deepEqual(parseNamespaceSegments("fuzz/bar/buzz"), ["fuzz", "bar", "buzz"]);
     assert.deepEqual(parseNamespaceSegments("/fuzz//bar/"), ["fuzz", "bar"]);
+  });
+
+  it("builds repository folder segments with optional repository name", () => {
+    assert.deepEqual(
+      repositoryFolderSegments({ namespace: "fuzz/bar", name: "demo" }, { includeRepoName: false }),
+      ["fuzz", "bar"],
+    );
+    assert.deepEqual(
+      repositoryFolderSegments({ namespace: "fuzz/bar", name: "demo" }, { includeRepoName: true }),
+      ["fuzz", "bar", "demo"],
+    );
+    assert.deepEqual(
+      repositoryFolderSegments({ namespace: "", name: "order-service" }, { includeRepoName: true }),
+      ["order-service"],
+    );
+    assert.deepEqual(
+      repositoryFolderSegments({ namespace: "", name: "  " }, { includeRepoName: true }),
+      [],
+    );
+    assert.deepEqual(repositoryFolderSegments(undefined, { includeRepoName: true }), []);
   });
 
   it("sorts folder intents parent before child regardless of id order", () => {

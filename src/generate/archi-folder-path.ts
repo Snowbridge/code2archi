@@ -83,6 +83,28 @@ export function parseNamespaceSegments(namespace: string): string[] {
   return namespace.split("/").filter((segment) => segment.length > 0);
 }
 
+export interface RepositoryFolderSegmentsOptions {
+  readonly includeRepoName: boolean;
+}
+
+export function repositoryFolderSegments(
+  repository: unknown,
+  options: RepositoryFolderSegmentsOptions,
+): string[] {
+  const record = repository as { readonly namespace?: unknown; readonly name?: unknown } | undefined;
+  const segments = parseNamespaceSegments(String(record?.namespace ?? ""));
+  if (!options.includeRepoName) {
+    return segments;
+  }
+
+  const repoName = String(record?.name ?? "").trim();
+  if (repoName.length > 0) {
+    segments.push(repoName);
+  }
+
+  return segments;
+}
+
 export function sortFolderIntentsParentFirst(
   folderIntents: readonly ArchiFolderCreateIntent[],
   existingFolderIds: ReadonlySet<string> = new Set(),

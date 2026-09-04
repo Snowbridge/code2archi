@@ -15,7 +15,7 @@ import { standardGenerateElementProperties } from "../../../../../generate/archi
 import {
   dedupeAndSortFolderIntents,
   ensureFolderPath,
-  parseNamespaceSegments,
+  repositoryFolderSegments,
 } from "../../../../../generate/archi-folder-path.js";
 import {
   declaredContractAssignmentToClientId,
@@ -105,11 +105,11 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
       const appComponentId = applicationComponentIdForModule(module.id);
 
       const repository = repositoriesById.get(String(module.repositoryId));
-      const namespaceSegments = parseNamespaceSegments(String(repository?.namespace ?? ""));
+      const folderSegments = repositoryFolderSegments(repository, { includeRepoName: true });
       const targetFolder = ensureFolderPath(
         input.archi,
         applicationFolderId,
-        namespaceSegments,
+        folderSegments,
         pendingFolders,
       );
       folderIntents.push(...targetFolder.folderIntents);

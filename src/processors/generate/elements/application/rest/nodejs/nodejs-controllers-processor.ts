@@ -13,7 +13,7 @@ import { standardGenerateElementProperties } from "../../../../../../generate/ar
 import {
   dedupeAndSortFolderIntents,
   ensureFolderPath,
-  parseNamespaceSegments,
+  repositoryFolderSegments,
 } from "../../../../../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../../../../../generate/generate-debug.js";
 import {
@@ -87,11 +87,11 @@ export class NodejsControllersProcessor extends AbstractProcessor<
 
       const appComponentId = applicationComponentIdForModule(module.id);
       const repository = repositoriesById.get(String(module.repositoryId));
-      const namespaceSegments = parseNamespaceSegments(String(repository?.namespace ?? ""));
+      const folderSegments = repositoryFolderSegments(repository, { includeRepoName: true });
       const targetFolder = ensureFolderPath(
         input.archi,
         applicationFolderId,
-        namespaceSegments,
+        folderSegments,
         pendingFolders,
       );
       folderIntents.push(...targetFolder.folderIntents);

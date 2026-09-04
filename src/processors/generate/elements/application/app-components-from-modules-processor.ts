@@ -33,7 +33,7 @@ import { standardGenerateElementProperties } from "../../../../generate/archi-el
 import {
   dedupeAndSortFolderIntents,
   ensureFolderPath,
-  parseNamespaceSegments,
+  repositoryFolderSegments,
 } from "../../../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../../../generate/generate-debug.js";
 import { decorateElementName } from "../../../../generate/element-name-decoration.js";
@@ -108,11 +108,11 @@ export class AppComponentsFromModulesProcessor extends AbstractProcessor<
 
     for (const module of modules) {
       const repository = repositoriesById.get(String(module.repositoryId));
-      const namespaceSegments = parseNamespaceSegments(String(repository?.namespace ?? ""));
+      const folderSegments = repositoryFolderSegments(repository, { includeRepoName: true });
       const targetFolder = ensureFolderPath(
         input.archi,
         applicationFolderId,
-        namespaceSegments,
+        folderSegments,
         pendingFolders,
       );
       folderIntents.push(...targetFolder.folderIntents);
