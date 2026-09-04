@@ -6,9 +6,7 @@ export type ElementNameSlot =
   | "module-artifact"
   | "app-module-component"
   | "declared-rest-contract"
-  | "inferred-rest-contract"
-  | "nodejs-declared-rest-contract"
-  | "nodejs-inferred-rest-contract";
+  | "nodejs-declared-rest-contract";
 
 export interface DecorateElementNameContext {
   readonly buildSystem?: BuildSystem;
@@ -23,7 +21,6 @@ const MODULE_ARTIFACT_SUFFIX_BY_BUILD_SYSTEM: Readonly<Record<BuildSystem, strin
 
 const LIBRARY_SUFFIX = " (lib)";
 const API_CONTRACT_SUFFIX = " API Contract";
-const INFERRED_REST_CONTRACT_SUFFIX = " Inferred REST Contract";
 
 function appendSuffixIfAbsent(baseName: string, suffix: string): string {
   if (baseName.endsWith(suffix)) {
@@ -62,11 +59,7 @@ export function decorateElementName(
       return appendSuffixIfAbsent(baseName, LIBRARY_SUFFIX);
     case "declared-rest-contract":
       return appendSuffixIfAbsent(baseName, API_CONTRACT_SUFFIX);
-    case "inferred-rest-contract":
-      return appendSuffixIfAbsent(baseName, INFERRED_REST_CONTRACT_SUFFIX);
     case "nodejs-declared-rest-contract":
       return appendSuffixIfAbsent(baseName, API_CONTRACT_SUFFIX);
-    case "nodejs-inferred-rest-contract":
-      return appendSuffixIfAbsent(baseName, INFERRED_REST_CONTRACT_SUFFIX);
   }
 }

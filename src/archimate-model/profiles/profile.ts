@@ -184,7 +184,6 @@ export const LibraryModuleProfile = defineApplicationComponentProfile("Library m
 export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
 export const RestClientProfile = defineApplicationServiceProfile("REST Client");
 export const ApiContractProfile = defineApplicationInterfaceProfile("API Contract");
-export const InferredApiContractProfile = defineApplicationInterfaceProfile("Inferred API Contract");
 export const RunsOnProfile = defineAssignmentRelationshipProfile("Runs on");
 export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with");
 export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");

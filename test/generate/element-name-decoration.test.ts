@@ -155,30 +155,4 @@ describe("decorateElementName", () => {
       );
     });
   });
-
-  describe("inferred-rest-contract", () => {
-    it("appends Inferred REST Contract suffix", () => {
-      assert.equal(
-        decorateElementName(
-          "inferred-rest-contract",
-          "LotsCrudController",
-          {},
-          defaultGenerateProcessorOptions,
-        ),
-        "LotsCrudController Inferred REST Contract",
-      );
-    });
-
-    it("is idempotent for Inferred REST Contract suffix", () => {
-      assert.equal(
-        decorateElementName(
-          "inferred-rest-contract",
-          "LotsCrudController Inferred REST Contract",
-          {},
-          defaultGenerateProcessorOptions,
-        ),
-        "LotsCrudController Inferred REST Contract",
-      );
-    });
-  });
 });

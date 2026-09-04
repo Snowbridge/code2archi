@@ -25,7 +25,7 @@ import {
   nodejsDeclaredRestContractId,
   nodejsDeclaredRestContractLogicalId,
 } from "../../../../../../generate/nodejs-declared-rest-contracts.js";
-import { simpleNameFromQualifiedSymbol } from "../../../../../../generate/nodejs-inferred-rest-contracts.js";
+import { simpleNameFromQualifiedSymbol } from "../../../../../../generate/nodejs-qualified-symbol.js";
 import {
   buildNodejsRestClientEndpointsDocumentation,
   nodejsExtendedTypeNamesList,

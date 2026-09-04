@@ -22,9 +22,6 @@ export type ElementSlotId =
   | "declared-contract-assigned-to-rest-client"
   | "rest-client"
   | "app-module-realizes-rest-client"
-  | "inferred-rest-contract"
-  | "inferred-contract-assigned-to-rest-controller"
-  | "inferred-contract-assigned-to-rest-client"
   | "direct-rest-requests-serving"
   | "nodejs-rest-controller"
   | "nodejs-app-module-realizes-rest-controller"
@@ -33,9 +30,6 @@ export type ElementSlotId =
   | "nodejs-declared-contract-assigned-to-rest-client"
   | "nodejs-rest-client"
   | "nodejs-app-module-realizes-rest-client"
-  | "nodejs-inferred-rest-contract"
-  | "nodejs-inferred-contract-assigned-to-rest-controller"
-  | "nodejs-inferred-contract-assigned-to-rest-client"
   | "nodejs-direct-rest-requests-serving";
 
 export interface StandardGenerateElementPropertiesInput {

@@ -22,7 +22,7 @@ import {
   nodejsDeclaredRestContractId,
   nodejsDeclaredRestContractLogicalId,
 } from "../../../../../../generate/nodejs-declared-rest-contracts.js";
-import { simpleNameFromQualifiedSymbol } from "../../../../../../generate/nodejs-inferred-rest-contracts.js";
+import { simpleNameFromQualifiedSymbol } from "../../../../../../generate/nodejs-qualified-symbol.js";
 import type { ApplicationModuleRecord } from "../../../../../../discovery-model/entities/application-module.js";
 import type { DiscoveryEntityRecord } from "../../../../../../discovery-model/entities/entity-types.js";
 import type { NodejsRestControllerRecord } from "../../../../../../discovery-model/entities/nodejs-rest-controller.js";
