@@ -29,7 +29,7 @@ describe("GitRepositoriesProcessor", () => {
     createGitRepo(repo);
 
     const processor = new GitRepositoriesProcessor();
-    const result = processor.process([repo]);
+    const result = processor.process({ sourceDirs: [repo] });
 
     assert.equal(result.length, 1);
     assert.equal(result[0]?.name, "service");
@@ -44,7 +44,7 @@ describe("GitRepositoriesProcessor", () => {
     writeFileSync(path.join(repo, "pom.xml"), "<project/>", "utf8");
 
     const processor = new GitRepositoriesProcessor();
-    const [repository] = processor.process([repo]);
+    const [repository] = processor.process({ sourceDirs: [repo] });
 
     assert.equal(repository?.name, "my-app");
     assert.equal(repository?.localPath, path.resolve(repo));
@@ -72,7 +72,7 @@ describe("GitRepositoriesProcessor", () => {
     createGitRepo(repo);
 
     const processor = new GitRepositoriesProcessor();
-    const [repository] = processor.process([workspaceA, workspaceB]);
+    const [repository] = processor.process({ sourceDirs: [workspaceA, workspaceB] });
 
     assert.equal(repository?.namespace, "");
   });
@@ -86,7 +86,7 @@ describe("GitRepositoriesProcessor", () => {
     mkdirSync(path.join(root, "src"));
 
     const processor = new GitRepositoriesProcessor();
-    const [repository] = processor.process([root]);
+    const [repository] = processor.process({ sourceDirs: [root] });
 
     assert.deepEqual(repository?.buildSystems, ["maven", "gradle", "npm"]);
   });
@@ -97,7 +97,7 @@ describe("GitRepositoriesProcessor", () => {
     mkdirSync(path.join(root, "src"));
 
     const processor = new GitRepositoriesProcessor();
-    const [repository] = processor.process([root]);
+    const [repository] = processor.process({ sourceDirs: [root] });
 
     assert.deepEqual(repository?.buildSystems, []);
   });
@@ -110,7 +110,7 @@ describe("GitRepositoriesProcessor", () => {
     writeFileSync(path.join(nested, "pom.xml"), "<project/>", "utf8");
 
     const processor = new GitRepositoriesProcessor();
-    const [repository] = processor.process([root]);
+    const [repository] = processor.process({ sourceDirs: [root] });
 
     assert.deepEqual(repository?.buildSystems, []);
   });
@@ -127,8 +127,36 @@ describe("GitRepositoriesProcessor", () => {
     symlinkSync(realRepo, linkTarget, "dir");
 
     const processor = new GitRepositoriesProcessor();
-    const result = processor.process([linkParent]);
+    const result = processor.process({ sourceDirs: [linkParent] });
 
     assert.deepEqual(result, []);
+  });
+
+  it("ticks progress once per discovered repository", () => {
+    const root = createTestTempDir("c2a-progress-");
+    const first = path.join(root, "first");
+    const second = path.join(root, "second");
+    mkdirSync(first, { recursive: true });
+    mkdirSync(second, { recursive: true });
+    createGitRepo(first);
+    createGitRepo(second);
+
+    let tickCount = 0;
+    let lastTotal = 0;
+    const progress = {
+      tick(count = 1): void {
+        tickCount += count;
+      },
+      setTotal(total: number): void {
+        lastTotal = total;
+      },
+    };
+
+    const processor = new GitRepositoriesProcessor();
+    const result = processor.process({ sourceDirs: [root], progress });
+
+    assert.equal(result.length, 2);
+    assert.equal(tickCount, 2);
+    assert.equal(lastTotal, 2);
   });
 });

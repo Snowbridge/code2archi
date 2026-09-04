@@ -27,7 +27,7 @@ describe("UnversionedFoldersProcessor", () => {
     writeFileSync(path.join(first, "pom.xml"), "<project/>", "utf8");
 
     const processor = new UnversionedFoldersProcessor();
-    const result = processor.process([first, second]);
+    const result = processor.process({ sourceDirs: [first, second] });
 
     assert.equal(result.length, 2);
     assert.equal(result[0]?.name, "first");

@@ -8,13 +8,15 @@ import type { ScanScopeInput, ScanScopeOutput } from "./processor.js";
 import { getLogger } from "../logging/index.js";
 
 export function runScanScopeGroup(
-  input: ScanScopeInput,
+  sourceDirs: readonly string[],
   filters: ProcessorFilters,
   store: RunEntityStore,
   progress?: StepProgressHandle,
 ): void {
   const logger = getLogger("scan.scope");
-  logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: input.length });
+  logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: sourceDirs.length });
+
+  const input: ScanScopeInput = { sourceDirs, progress };
 
   const processors = processorRegistry.listForBuiltInStep<ScanScopeInput, ScanScopeOutput>(
     SCAN_SCOPE_GROUP_ID,
@@ -33,7 +35,6 @@ export function runScanScopeGroup(
 
     if (output.length === 0) {
       processor.logCompleted(0);
-      progress?.tick(1);
       continue;
     }
 
@@ -43,7 +44,6 @@ export function runScanScopeGroup(
       },
     });
     processor.logCompleted(output.length);
-    progress?.tick(1);
   }
 
   logger.info("group completed", {

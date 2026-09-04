@@ -4,11 +4,13 @@ import path from "node:path";
 
 export class GitWorkingCopy {
   static findRepoRoots(sourceDir: string): string[] {
-    const results: string[] = [];
+    return [...GitWorkingCopy.iterateRepoRoots(sourceDir)];
+  }
 
-    function walk(dir: string): void {
+  static *iterateRepoRoots(sourceDir: string): Generator<string> {
+    function* walk(dir: string): Generator<string> {
       if (GitWorkingCopy.hasGitDirectory(dir)) {
-        results.push(path.resolve(dir));
+        yield path.resolve(dir);
         return;
       }
 
@@ -26,22 +28,27 @@ export class GitWorkingCopy {
         if (entry.name === ".git") {
           continue;
         }
-        walk(path.join(dir, entry.name));
+        yield* walk(path.join(dir, entry.name));
       }
     }
 
-    walk(path.resolve(sourceDir));
-    return results;
+    yield* walk(path.resolve(sourceDir));
   }
 
   static findRepoRootsInSourceDirs(sourceDirs: readonly string[]): string[] {
+    return [...GitWorkingCopy.iterateRepoRootsInSourceDirs(sourceDirs)];
+  }
+
+  static *iterateRepoRootsInSourceDirs(sourceDirs: readonly string[]): Generator<string> {
     const repoRoots = new Set<string>();
     for (const sourceDir of sourceDirs) {
-      for (const repoRoot of GitWorkingCopy.findRepoRoots(sourceDir)) {
-        repoRoots.add(repoRoot);
+      for (const repoRoot of GitWorkingCopy.iterateRepoRoots(sourceDir)) {
+        if (!repoRoots.has(repoRoot)) {
+          repoRoots.add(repoRoot);
+          yield repoRoot;
+        }
       }
     }
-    return [...repoRoots];
   }
 
   static parseRemoteUrlFromOutput(stdout: string, stderr: string): string {

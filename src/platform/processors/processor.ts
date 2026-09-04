@@ -17,7 +17,10 @@ export function processorKey(id: ProcessorId): string {
 
 export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";
 
-export type ScanScopeInput = readonly string[];
+export type ScanScopeInput = {
+  readonly sourceDirs: readonly string[];
+  readonly progress?: StepProgressHandle;
+};
 export type ScanScopeOutput = readonly Repository[];
 
 export type ScanAppInput = DiscoveryModelSnapshot & {

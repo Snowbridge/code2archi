@@ -4,8 +4,23 @@ import { createCliProgressFlow } from "../../../src/platform/cli-progress/cli-pr
 import {
   defineFlowSteps,
   processorGroupFlowStep,
+  scopeDiscoveryFlowStep,
 } from "../../../src/platform/cli-progress/flow-progress-steps.js";
 import { noopStepHandle } from "../../../src/platform/cli-progress/noop-flow-progress.js";
+
+describe("scopeDiscoveryFlowStep", () => {
+  it("uses source dir count as initial total when scope processors exist", () => {
+    assert.deepEqual(scopeDiscoveryFlowStep(3, 1), {
+      id: "1",
+      label: "Repository discovery",
+      initialTotal: 3,
+    });
+  });
+
+  it("returns undefined when scope processor count is zero", () => {
+    assert.equal(scopeDiscoveryFlowStep(3, 0), undefined);
+  });
+});
 
 describe("processorGroupFlowStep", () => {
   it("returns step definition when processor count is positive", () => {

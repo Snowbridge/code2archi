@@ -6,6 +6,7 @@ import {
 } from "../../../platform/processors/processor.js";
 import { RepositoryBuilder } from "../../../utils/repository-builder.js";
 import { GitWorkingCopy } from "../../../utils/git-working-copy.js";
+import { Repository } from "../../../discovery-model/entities/repository.js";
 
 export class GitRepositoriesProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id: ProcessorId = {
@@ -21,14 +22,22 @@ export class GitRepositoriesProcessor extends AbstractProcessor<ScanScopeInput, 
     "Discovers Git repository roots in sourceDirs and creates Repository entities with remote URL and buildSystems.";
 
   protected doProcess(input: ScanScopeInput): ScanScopeOutput {
-    const repoRoots = GitWorkingCopy.findRepoRootsInSourceDirs(input);
-    return repoRoots.map((repoRoot) => {
-      const localPath = repoRoot;
-      const url = GitWorkingCopy.resolveRemoteUrl(localPath);
+    const repositories: Repository[] = [];
+    let discovered = 0;
+
+    for (const repoRoot of GitWorkingCopy.iterateRepoRootsInSourceDirs(input.sourceDirs)) {
+      discovered += 1;
+      input.progress?.setTotal(discovered);
+
+      const url = GitWorkingCopy.resolveRemoteUrl(repoRoot);
       if (!url) {
-        this.logger.warn("git remote not resolved", { path: localPath });
+        this.logger.warn("git remote not resolved", { path: repoRoot });
       }
-      return RepositoryBuilder.buildFromRoot(input, repoRoot, url);
-    });
+
+      repositories.push(RepositoryBuilder.buildFromRoot(input.sourceDirs, repoRoot, url));
+      input.progress?.tick(1);
+    }
+
+    return repositories;
   }
 }

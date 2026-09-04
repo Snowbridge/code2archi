@@ -24,8 +24,16 @@ export class UnversionedFoldersProcessor extends AbstractProcessor<
     "Creates a Repository for each sourceDir as a ready repository root without directory traversal or VCS remote.";
 
   protected doProcess(input: ScanScopeInput): ScanScopeOutput {
-    return input.map((sourceDir) =>
-      RepositoryBuilder.buildFromRoot(input, path.resolve(sourceDir), ""),
-    );
+    input.progress?.setTotal(input.sourceDirs.length);
+
+    return input.sourceDirs.map((sourceDir) => {
+      const repository = RepositoryBuilder.buildFromRoot(
+        input.sourceDirs,
+        path.resolve(sourceDir),
+        "",
+      );
+      input.progress?.tick(1);
+      return repository;
+    });
   }
 }
