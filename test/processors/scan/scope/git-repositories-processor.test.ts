@@ -142,12 +142,16 @@ describe("GitRepositoriesProcessor", () => {
     createGitRepo(second);
 
     let tickCount = 0;
+    let setTotalCount = 0;
     let lastTotal = 0;
+    const progressSnapshots: { value: number; total: number }[] = [];
     const progress = {
       tick(count = 1): void {
         tickCount += count;
+        progressSnapshots.push({ value: tickCount, total: lastTotal });
       },
       setTotal(total: number): void {
+        setTotalCount += 1;
         lastTotal = total;
       },
     };
@@ -157,6 +161,11 @@ describe("GitRepositoriesProcessor", () => {
 
     assert.equal(result.length, 2);
     assert.equal(tickCount, 2);
+    assert.equal(setTotalCount, 1);
     assert.equal(lastTotal, 2);
+    assert.deepEqual(progressSnapshots, [
+      { value: 1, total: 2 },
+      { value: 2, total: 2 },
+    ]);
   });
 });

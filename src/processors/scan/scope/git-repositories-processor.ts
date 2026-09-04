@@ -22,13 +22,11 @@ export class GitRepositoriesProcessor extends AbstractProcessor<ScanScopeInput, 
     "Discovers Git repository roots in sourceDirs and creates Repository entities with remote URL and buildSystems.";
 
   protected doProcess(input: ScanScopeInput): ScanScopeOutput {
+    const repoRoots = GitWorkingCopy.findRepoRootsInSourceDirs(input.sourceDirs);
+    input.progress?.setTotal(repoRoots.length);
+
     const repositories: Repository[] = [];
-    let discovered = 0;
-
-    for (const repoRoot of GitWorkingCopy.iterateRepoRootsInSourceDirs(input.sourceDirs)) {
-      discovered += 1;
-      input.progress?.setTotal(discovered);
-
+    for (const repoRoot of repoRoots) {
       const url = GitWorkingCopy.resolveRemoteUrl(repoRoot);
       if (!url) {
         this.logger.warn("git remote not resolved", { path: repoRoot });
