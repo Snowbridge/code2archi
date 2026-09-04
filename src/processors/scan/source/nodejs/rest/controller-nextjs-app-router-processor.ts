@@ -37,12 +37,12 @@ export class NodejsRestControllerNextjsAppRouterProcessor extends AbstractProces
     forEachRepository(input, (repository) => {
       for (const entity of input.listEntities("ApplicationModule")) {
         const module = entity as unknown as ApplicationModuleRecord;
-        if (!isEligibleNpmModule(module) || module.repositoryId !== repository.id) {
+        if (!isEligibleNpmModule(module, repository) || module.repositoryId !== repository.id) {
           continue;
         }
 
         const packageRoot = resolveNpmPackageRoot(repository, module);
-        if (!hasFrameworkPackage(packageRoot, "next")) {
+        if (!hasFrameworkPackage(packageRoot, "next", repository.localPath)) {
           continue;
         }
 

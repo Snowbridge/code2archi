@@ -21,13 +21,13 @@ export function buildNpmModuleContexts(
 
   for (const entity of input.listEntities("ApplicationModule")) {
     const module = entity as unknown as ApplicationModuleRecord;
-    if (!isEligibleNpmModule(module) || module.repositoryId !== repository.id) {
+    if (!isEligibleNpmModule(module, repository) || module.repositoryId !== repository.id) {
       continue;
     }
 
     const packageRoot = resolveNpmPackageRoot(repository, module);
     const hasRequiredFramework = requiredFrameworks.some((framework) =>
-      hasFrameworkPackage(packageRoot, framework),
+      hasFrameworkPackage(packageRoot, framework, repository.localPath),
     );
 
     if (!hasRequiredFramework) {

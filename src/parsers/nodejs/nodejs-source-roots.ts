@@ -4,19 +4,42 @@ import type { ApplicationModuleRecord } from "../../discovery-model/entities/app
 import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
 import { UNKNOWN_VERSION } from "../build-tool-versions.js";
 import {
+  hasAnyNodejsRestFrameworkInPackageTree,
+  hasNpmToolchainInPackageTree,
+} from "./package-json-framework-deps.js";
+import {
   resolveIncludeDirectories,
   resolveNextJsAppDirectory,
   resolveTsconfig,
   shouldExcludePath,
 } from "./tsconfig-resolver.js";
 
-export function isEligibleNpmModule(module: ApplicationModuleRecord): boolean {
-  return (
-    module.buildSystem === "npm" &&
-    (module.nodeVersion !== UNKNOWN_VERSION ||
-      module.typescriptVersion !== UNKNOWN_VERSION ||
-      module.tsxVersion !== UNKNOWN_VERSION)
-  );
+export function isEligibleNpmModule(
+  module: ApplicationModuleRecord,
+  repository?: RepositoryRecord,
+): boolean {
+  if (module.buildSystem !== "npm") {
+    return false;
+  }
+
+  if (
+    module.nodeVersion !== UNKNOWN_VERSION ||
+    module.typescriptVersion !== UNKNOWN_VERSION ||
+    module.tsxVersion !== UNKNOWN_VERSION
+  ) {
+    return true;
+  }
+
+  if (repository === undefined) {
+    return false;
+  }
+
+  const packageRoot = resolveNpmPackageRoot(repository, module);
+  if (hasNpmToolchainInPackageTree(packageRoot, repository.localPath)) {
+    return true;
+  }
+
+  return hasAnyNodejsRestFrameworkInPackageTree(packageRoot, repository.localPath);
 }
 
 export function resolveNpmPackageRoot(
