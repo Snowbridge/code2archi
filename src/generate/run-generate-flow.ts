@@ -13,7 +13,7 @@ import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
 import { ArchiModelWriter } from "../archimate-model/archi-model-writer.js";
 import { ArchiModelDomWriter } from "../archimate-model/archi-model-dom-writer.js";
 import { DiscoveryModelReader } from "../discovery-model/discovery-model-reader.js";
-import { createFlowProgress } from "../platform/cli-progress/index.js";
+import { createFlowProgress, defineFlowSteps, processorGroupFlowStep } from "../platform/cli-progress/index.js";
 import { getLogger, isDebugEnabled } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
 import type { GenerateArgs } from "./validate-generate-args.js";
@@ -52,11 +52,11 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
 
   const progress = createFlowProgress({
     verbose: input.verbose,
-    steps: [
-      { id: "1", label: "Elements generation", initialTotal: elementsProcessorCount },
-      { id: "2", label: "Views generation", initialTotal: viewsProcessorCount },
+    steps: defineFlowSteps(
+      processorGroupFlowStep("1", "Elements generation", elementsProcessorCount),
+      processorGroupFlowStep("2", "Views generation", viewsProcessorCount),
       { id: "3", label: "Writing archimate-model", initialTotal: 1 },
-    ],
+    ),
   });
 
   let activeStep = "1";

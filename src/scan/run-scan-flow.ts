@@ -12,7 +12,7 @@ import { runCreateIntentProcessorGroup } from "../platform/processors/run-create
 import { runScanScopeGroup } from "../platform/processors/run-scan-scope-group.js";
 import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../discovery-model/run-entity-store.js";
-import { createFlowProgress } from "../platform/cli-progress/index.js";
+import { createFlowProgress, defineFlowSteps, processorGroupFlowStep } from "../platform/cli-progress/index.js";
 import { getLogger } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
 import type { ScanArgs } from "./validate-scan-args.js";
@@ -52,12 +52,12 @@ export function runScanFlow(input: RunScanFlowInput): void {
 
   const progress = createFlowProgress({
     verbose: input.verbose,
-    steps: [
-      { id: "1", label: "Repository discovery", initialTotal: scopeProcessorCount },
+    steps: defineFlowSteps(
+      processorGroupFlowStep("1", "Repository discovery", scopeProcessorCount),
       { id: "1b", label: "Repository namespaces", initialTotal: 1 },
-      { id: "2", label: "Source discovery", initialTotal: 0 },
+      processorGroupFlowStep("2", "Source discovery", sourceProcessorCount),
       { id: "3", label: "Writing discovery-model", initialTotal: 1 },
-    ],
+    ),
   });
 
   let activeStep = "1";

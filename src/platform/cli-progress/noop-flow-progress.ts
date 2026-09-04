@@ -5,6 +5,8 @@ const noopStepHandle: StepProgressHandle = {
   setTotal(): void {},
 };
 
+export { noopStepHandle };
+
 export const noopFlowProgress: FlowProgressReporter = {
   step(): StepProgressHandle {
     return noopStepHandle;

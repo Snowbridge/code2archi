@@ -1,4 +1,5 @@
 import { MultiBar, Presets, type SingleBar } from "cli-progress";
+import { noopStepHandle } from "./noop-flow-progress.js";
 import type {
   FlowProgressReporter,
   FlowStepDefinition,
@@ -55,7 +56,7 @@ export function createCliProgressFlow(steps: readonly FlowStepDefinition[]): Flo
     step(stepId: string): StepProgressHandle {
       const handle = stepHandles.get(stepId);
       if (!handle) {
-        throw new Error(`Unknown flow progress step: ${stepId}`);
+        return noopStepHandle;
       }
       return handle;
     },
