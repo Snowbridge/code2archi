@@ -7,6 +7,6 @@ export const ELEMENT_SLOT_EN_LABELS: Readonly<Record<string, string>> = {
   "syssoft-compiled": "Compiler catalog (Kotlin, TypeScript, tsx)",
   "app-module-component": "Application components per module (including library aggregation)",
   "rest-controller": "REST controller application services",
-  "declared-rest-contract": "Declared API contracts (from implemented interface FQCN)",
+  "rest-client": "REST client application services",
   "direct-rest-requests-serving": "Direct REST serving between application module components",
 };

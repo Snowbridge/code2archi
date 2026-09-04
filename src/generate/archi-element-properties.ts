@@ -17,20 +17,9 @@ export type ElementSlotId =
   | "module-lib-aggregation"
   | "rest-controller"
   | "app-module-realizes-rest-controller"
-  | "declared-rest-contract"
-  | "declared-contract-assigned-to-rest-controller"
-  | "declared-contract-assigned-to-rest-client"
   | "rest-client"
   | "app-module-realizes-rest-client"
-  | "direct-rest-requests-serving"
-  | "nodejs-rest-controller"
-  | "nodejs-app-module-realizes-rest-controller"
-  | "nodejs-declared-rest-contract"
-  | "nodejs-declared-contract-assigned-to-rest-controller"
-  | "nodejs-declared-contract-assigned-to-rest-client"
-  | "nodejs-rest-client"
-  | "nodejs-app-module-realizes-rest-client"
-  | "nodejs-direct-rest-requests-serving";
+  | "direct-rest-requests-serving";
 
 export interface StandardGenerateElementPropertiesInput {
   readonly logicalId: string;

@@ -1,15 +1,13 @@
 import type { ArchiCreateIntents } from "../../../../../archimate-model/archi-create-intents.js";
 import {
-  ApplicationInterface,
   ApplicationService,
   type ArchiElementCreateIntent,
 } from "../../../../../archimate-model/elements/archi-element.js";
 import type { ArchiFolderCreateIntent } from "../../../../../archimate-model/folders/archi-folder.js";
 import type { ArchiProfile } from "../../../../../archimate-model/profiles/profile.js";
-import { ApiContractProfile, RestClientProfile } from "../../../../../archimate-model/profiles/profile.js";
-import { AssignmentRelationship } from "../../../../../archimate-model/relationships/archi-relationship.js";
-import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
+import { RestClientProfile } from "../../../../../archimate-model/profiles/profile.js";
 import { RealizationRelationship } from "../../../../../archimate-model/relationships/archi-relationship.js";
+import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import { applicationComponentIdForModule } from "../../../../../generate/application-module-components.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
 import {
@@ -17,18 +15,9 @@ import {
   ensureFolderPath,
   repositoryFolderSegments,
 } from "../../../../../generate/archi-folder-path.js";
-import {
-  declaredContractAssignmentToClientId,
-  declaredContractAssignmentToClientLogicalId,
-  declaredRestContractId,
-  declaredRestContractLogicalId,
-  simpleNameFromFqcn,
-} from "../../../../../generate/declared-rest-contracts.js";
-import { decorateElementName } from "../../../../../generate/element-name-decoration.js";
 import { withEntityDebugProperties } from "../../../../../generate/generate-debug.js";
 import {
   buildRestClientEndpointsDocumentation,
-  extendedInterfaceFqcnList,
   restClientRealizationLogicalId,
   restClientRealizationRelationshipId,
   restClientServiceLogicalId,
@@ -42,21 +31,14 @@ import {
   type ProcessorId,
 } from "../../../../../platform/processors/processor.js";
 
-const GENERATOR_COORDINATE =
-  "generate.elements.application.rest:clients-and-declared-contracts";
+const GENERATOR_COORDINATE = "generate.elements.application.rest:clients";
 
-const REQUIRED_PROFILES: readonly ArchiProfile[] = [
-  RestClientProfile.create(),
-  ApiContractProfile.create(),
-];
+const REQUIRED_PROFILES: readonly ArchiProfile[] = [RestClientProfile.create()];
 
-export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
-  GenerateProcessorInput,
-  ArchiCreateIntents
-> {
+export class ClientsProcessor extends AbstractProcessor<GenerateProcessorInput, ArchiCreateIntents> {
   readonly id: ProcessorId = {
     groupId: "generate.elements.application.rest",
-    artifactId: "clients-and-declared-contracts",
+    artifactId: "clients",
   };
 
   readonly version = "0.1.0";
@@ -64,7 +46,7 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps RestClient entities to ApplicationServices with Realization from ApplicationComponents and declared API contracts.";
+    "Maps RestClient entities to ApplicationServices with Realization from ApplicationComponents.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -93,8 +75,6 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
     const restClientProfile = RestClientProfile.create();
-    const apiContractProfile = ApiContractProfile.create();
-    const createdContractIds = new Set<string>();
 
     for (const client of clients) {
       const module = modulesById.get(client.applicationModuleId);
@@ -165,66 +145,6 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
         }
 
         relations.push(realizationBuilder.build().toCreateIntent());
-      }
-
-      if (client.extendedInterfaceFqcn.length === 0) {
-        continue;
-      }
-
-      for (const interfaceFqcn of extendedInterfaceFqcnList(client)) {
-        const contractId = declaredRestContractId(interfaceFqcn);
-
-        if (
-          input.archi.getElement(contractId) === undefined &&
-          !createdContractIds.has(contractId)
-        ) {
-          const simpleName = simpleNameFromFqcn(interfaceFqcn);
-          let contractBuilder = ApplicationInterface.withId(contractId)
-            .name(
-              decorateElementName("declared-rest-contract", simpleName, {}, input.options),
-            )
-            .inFolder(targetFolder.folderId)
-            .profiles(apiContractProfile.id);
-
-          for (const property of standardGenerateElementProperties({
-            logicalId: declaredRestContractLogicalId(interfaceFqcn),
-            generatorCoordinate: GENERATOR_COORDINATE,
-            slot: "declared-rest-contract",
-          })) {
-            contractBuilder = contractBuilder.property(property.key, property.value);
-          }
-
-          const contractIntent = withEntityDebugProperties(
-            contractBuilder.build().toCreateIntent(),
-            [
-              {
-                entityType: "RestClient",
-                record: client as unknown as DiscoveryEntityRecord,
-              },
-            ],
-          );
-          elements.push(contractIntent);
-          createdContractIds.add(contractId);
-        }
-
-        const assignmentId = declaredContractAssignmentToClientId(contractId, client.id);
-        if (input.archi.getRelationship(assignmentId)) {
-          continue;
-        }
-
-        let assignmentBuilder = AssignmentRelationship.withId(assignmentId)
-          .source(contractId)
-          .target(client.id);
-
-        for (const property of standardGenerateElementProperties({
-          logicalId: declaredContractAssignmentToClientLogicalId(interfaceFqcn, client.id),
-          generatorCoordinate: GENERATOR_COORDINATE,
-          slot: "declared-contract-assigned-to-rest-client",
-        })) {
-          assignmentBuilder = assignmentBuilder.property(property.key, property.value);
-        }
-
-        relations.push(assignmentBuilder.build().toCreateIntent());
       }
     }
 
