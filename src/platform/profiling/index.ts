@@ -11,6 +11,7 @@ import {
   isProfilingEnabled,
   setActiveProfiler,
 } from "./profiling-state.js";
+import { formatCliCommandLine } from "../../cli/format-cli-command-line.js";
 import { writeMetricsReport } from "./report-writer.js";
 
 let runStartedAt: number | undefined;
@@ -57,6 +58,7 @@ export function getValue(
 export function finalizeProfiling(options: {
   command: string;
   verbose: boolean;
+  commandLine?: string;
 }): string | undefined {
   const activeProfiler = getActiveProfiler();
   if (!isProfilingEnabled() || !(activeProfiler instanceof Profiler)) {
@@ -67,7 +69,11 @@ export function finalizeProfiling(options: {
     activeProfiler.recordValue(METRIC_RUN_DURATION_TOTAL, performance.now() - runStartedAt);
   }
 
-  const reportPath = writeMetricsReport(activeProfiler, options.command);
+  const commandLine = options.commandLine ?? formatCliCommandLine();
+  const reportPath = writeMetricsReport(activeProfiler, {
+    commandLine,
+    fileSlug: options.command,
+  });
   getLogger("platform.profiling").info("metrics written", { path: reportPath });
 
   if (options.verbose) {

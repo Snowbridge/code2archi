@@ -14,7 +14,15 @@ export interface MetricsReport {
   readonly metrics: Record<string, number>;
 }
 
-export function buildMetricsReport(profiler: Profiler, command: string): MetricsReport {
+export interface MetricsReportWriteOptions {
+  readonly commandLine: string;
+  readonly fileSlug: string;
+}
+
+export function buildMetricsReport(
+  profiler: Profiler,
+  commandLine: string,
+): MetricsReport {
   const metrics: Record<string, number> = {};
 
   for (const series of profiler.listSeries()) {
@@ -25,7 +33,7 @@ export function buildMetricsReport(profiler: Profiler, command: string): Metrics
 
   return {
     _meta: {
-      command,
+      command: commandLine,
       writtenAt: formatIso8601WithOffset(),
     },
     metrics,
@@ -34,12 +42,12 @@ export function buildMetricsReport(profiler: Profiler, command: string): Metrics
 
 export function writeMetricsReport(
   profiler: Profiler,
-  command: string,
+  options: MetricsReportWriteOptions,
   outputDir: string = os.tmpdir(),
 ): string {
-  const report = buildMetricsReport(profiler, command);
+  const report = buildMetricsReport(profiler, options.commandLine);
   const timestamp = formatRunTimestamp();
-  const baseName = `code2archi-metrics-${command}-${timestamp}.json`;
+  const baseName = `code2archi-metrics-${options.fileSlug}-${timestamp}.json`;
   const absolutePath = resolveUniqueFilePath(outputDir, baseName);
 
   fs.writeFileSync(absolutePath, `${JSON.stringify(report, null, 2)}\n`, "utf8");

@@ -16,8 +16,8 @@ describe("metrics report writer", () => {
     profiler.recordValue("run.duration.total", 100);
     profiler.recordValue("run.step.duration", 40, ["1"]);
 
-    const report = buildMetricsReport(profiler, "scan");
-    assert.equal(report._meta.command, "scan");
+    const report = buildMetricsReport(profiler, "code2archi scan /src --profile");
+    assert.equal(report._meta.command, "code2archi scan /src --profile");
     assert.ok(report._meta.writtenAt.length > 0);
     assert.equal(report.metrics["run.duration.total"], 100);
     assert.equal(report.metrics['run.step.duration{step="1"}'], 40);
@@ -45,6 +45,27 @@ describe("profiling lifecycle", () => {
     resetProfilingState();
     initProfiling({ enabled: false });
     assert.equal(finalizeProfiling({ command: "scan", verbose: false }), undefined);
+  });
+
+  it("writes full command line into report meta", () => {
+    resetProfilingState();
+    initProfiling({ enabled: true });
+    const reportPath = finalizeProfiling({
+      command: "scan",
+      verbose: false,
+      commandLine: "code2archi scan /src --threads 10 --profile",
+    });
+    assert.ok(reportPath);
+
+    const report = JSON.parse(readFileSync(reportPath!, "utf8")) as {
+      _meta: { command: string };
+      metrics: Record<string, number>;
+    };
+    assert.equal(report._meta.command, "code2archi scan /src --threads 10 --profile");
+    assert.ok(typeof report.metrics["run.duration.total"] === "number");
+
+    rmSync(reportPath!, { force: true });
+    resetProfilingState();
   });
 
   it("writes report when enabled", () => {
