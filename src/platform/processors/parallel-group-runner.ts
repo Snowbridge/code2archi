@@ -51,17 +51,17 @@ export function throwOnPoolErrors(
   throw firstError ?? new Error(`${poolLabel}: task failed`);
 }
 
-export function runScanProcessorPool(
+export async function runScanProcessorPool(
   pool: WorkerPool,
   bridge: MainThreadBridge,
   tasks: ReadonlyArray<{ taskId: string; input: unknown }>,
   continueOnError: boolean,
   poolLabel: string,
-): {
+): Promise<{
   readonly results: ReadonlyMap<string, CreateIntents>;
   readonly errors: ReadonlyMap<string, Error>;
-} {
-  const { results, errors } = pool.runTasks({
+}> {
+  const { results, errors } = await pool.runTasks({
     handlerId: WORKER_HANDLER_SCAN_PROCESSOR,
     tasks,
     bridge,

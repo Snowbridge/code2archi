@@ -1,5 +1,5 @@
 import { parentPort, workerData } from "node:worker_threads";
-import "../../processors/builtin-processors.js";
+import "../processors/builtin-processors.js";
 import { dispatchWorkerTask } from "./worker-dispatch.js";
 import { initWorkerRuntime, resetWorkerRuntime } from "./worker-runtime.js";
 import type { WorkerOutboundMessage, WorkerTaskRequest } from "./worker-messages.js";

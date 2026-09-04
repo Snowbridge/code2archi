@@ -14,7 +14,7 @@ import { createTestTempDir } from "../../test-temp-dir.js";
 import { testParallelismContinueOnError, testParallelismOptions } from "../../parallelism-test-defaults.js";
 
 describe("worker pool", () => {
-  it("runs scope unit tasks inline with sync mode", () => {
+  it("runs scope unit tasks inline with sync mode", async () => {
     const sourceDir = createTestTempDir("c2a-scope-unit-");
     const progressTicks: string[] = [];
     const bridge = createMainThreadBridge(
@@ -33,7 +33,7 @@ describe("worker pool", () => {
 
     const pool = createWorkerPool(testParallelismOptions, false);
     try {
-      const { results, errors } = pool.runTasks({
+      const { results, errors } = await pool.runTasks({
         handlerId: WORKER_HANDLER_SCAN_SCOPE_UNIT,
         bridge,
         tasks: [
@@ -57,7 +57,50 @@ describe("worker pool", () => {
     }
   });
 
-  it("records worker task success and error metrics with continue-on-error profiling", () => {
+  it("runs scope unit tasks in worker threads", async () => {
+    const sourceDir = createTestTempDir("c2a-scope-thread-");
+    const progressTicks: string[] = [];
+    const bridge = createMainThreadBridge(
+      new Map([
+        [
+          "1",
+          {
+            tick() {
+              progressTicks.push("tick");
+            },
+            setTotal() {},
+          },
+        ],
+      ]),
+    );
+
+    const pool = createWorkerPool({ threads: 2, sync: false, continueOnError: false }, false);
+    try {
+      const { results, errors } = await pool.runTasks({
+        handlerId: WORKER_HANDLER_SCAN_SCOPE_UNIT,
+        bridge,
+        tasks: [
+          {
+            taskId: "scope:dir",
+            input: {
+              processor: { groupId: "scan.scope", artifactId: "unversioned-folders" },
+              sourceDirs: [sourceDir],
+              unit: { kind: "sourceDir", path: sourceDir },
+              progressStepId: "1",
+            },
+          },
+        ],
+      });
+
+      assert.equal(errors.size, 0);
+      assert.equal(results.size, 1);
+      assert.equal(progressTicks.length, 1);
+    } finally {
+      pool.shutdown();
+    }
+  });
+
+  it("records worker task success and error metrics with continue-on-error profiling", async () => {
     const okDir = createTestTempDir("c2a-worker-ok-");
     initLogging({ logLevel: "INFO", verbose: false });
     initProfiling({ enabled: true, continueOnError: true });
@@ -66,7 +109,7 @@ describe("worker pool", () => {
     const pool = createWorkerPool(testParallelismContinueOnError, true);
 
     try {
-      const { errors } = pool.runTasks({
+      const { errors } = await pool.runTasks({
         handlerId: WORKER_HANDLER_SCAN_SCOPE_UNIT,
         bridge,
         tasks: [

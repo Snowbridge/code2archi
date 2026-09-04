@@ -49,7 +49,7 @@ export function createRunScanFlowInput(
   };
 }
 
-export function runScanFlow(input: RunScanFlowInput): void {
+export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
   const logger = getLogger("scan.flow");
   logger.info("flow start", {
     sourceDirCount: input.sourceDirs.length,
@@ -102,8 +102,8 @@ export function runScanFlow(input: RunScanFlowInput): void {
   try {
     logger.info("step start", { step: 1, action: "repository discovery", groupId: SCAN_SCOPE_GROUP_ID });
     activeStep = "1";
-    measureFlowStep("1", () => {
-      runScanScopeGroup(
+    await measureFlowStep("1", async () => {
+      await runScanScopeGroup(
         input.sourceDirs,
         input.processorFilters,
         store,
@@ -118,7 +118,7 @@ export function runScanFlow(input: RunScanFlowInput): void {
 
     logger.info("step start", { step: "1b", action: "repository common root" });
     activeStep = "1b";
-    measureFlowStep("1b", () => {
+    await measureFlowStep("1b", async () => {
       const repositoryCommonRoot = store.finalizeRepositoryNamespaces();
       logger.info("repository common root computed", { repositoryCommonRoot });
       progress.step("1b").tick(1);
@@ -126,8 +126,8 @@ export function runScanFlow(input: RunScanFlowInput): void {
 
     logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_SOURCE_GROUP_ID });
     activeStep = "2";
-    measureFlowStep("2", () => {
-      runCreateIntentProcessorGroup(
+    await measureFlowStep("2", async () => {
+      await runCreateIntentProcessorGroup(
         SCAN_SOURCE_GROUP_ID,
         input.processorFilters,
         store,
@@ -140,8 +140,8 @@ export function runScanFlow(input: RunScanFlowInput): void {
 
     logger.info("step start", { step: 3, action: "link discovery", groupId: SCAN_LINK_GROUP_ID });
     activeStep = "3";
-    measureFlowStep("3", () => {
-      runCreateIntentProcessorGroup(
+    await measureFlowStep("3", async () => {
+      await runCreateIntentProcessorGroup(
         SCAN_LINK_GROUP_ID,
         input.processorFilters,
         store,
@@ -154,7 +154,7 @@ export function runScanFlow(input: RunScanFlowInput): void {
 
     logger.info("step start", { step: 4, action: "writing discovery-model", outputDir: input.outputDir });
     activeStep = "4";
-    measureFlowStep("4", () => {
+    await measureFlowStep("4", async () => {
       new DiscoveryModelWriter().write({
         outputDir: input.outputDir,
         store,

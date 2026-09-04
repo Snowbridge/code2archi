@@ -95,12 +95,12 @@ function runSequentialCreateIntentGroup(
   }
 }
 
-function runParallelScanSourceGroup(
+async function runParallelScanSourceGroup(
   processors: ReturnType<typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>>,
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
-): void {
+): Promise<void> {
   for (const processor of processors) {
     const snapshot = store.snapshot();
     const tasks = buildScanSourceTasks([processor], snapshot, progressStepId);
@@ -112,7 +112,7 @@ function runParallelScanSourceGroup(
       tasks.map((task) => [task.taskId, task.input.processor]),
     );
 
-    const { results } = runScanProcessorPool(
+    const { results } = await runScanProcessorPool(
       parallel.pool,
       parallel.bridge,
       tasks,
@@ -124,19 +124,19 @@ function runParallelScanSourceGroup(
   }
 }
 
-function runParallelScanLinkGroup(
+async function runParallelScanLinkGroup(
   processors: ReturnType<typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>>,
   snapshot: DiscoveryModelSnapshot,
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progress?: StepProgressHandle,
-): void {
+): Promise<void> {
   const tasks = buildScanLinkTasks(processors, snapshot);
   const processorByTaskId = new Map<string, ProcessorId>(
     tasks.map((task) => [task.taskId, task.input.processor]),
   );
 
-  const { results } = runScanProcessorPool(
+  const { results } = await runScanProcessorPool(
     parallel.pool,
     parallel.bridge,
     tasks,
@@ -151,14 +151,14 @@ function runParallelScanLinkGroup(
   }
 }
 
-export function runCreateIntentProcessorGroup(
+export async function runCreateIntentProcessorGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   filters: ProcessorFilters,
   store: RunEntityStore,
   progress?: StepProgressHandle,
   parallel?: ProcessorGroupParallelContext,
   progressStepId?: string,
-): void {
+): Promise<void> {
   const logger = getLogger(`scan.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
 
@@ -181,9 +181,9 @@ export function runCreateIntentProcessorGroup(
   const snapshot = store.snapshot();
 
   if (builtInGroupId === SCAN_SOURCE_GROUP_ID) {
-    runParallelScanSourceGroup(processors, store, parallel, progressStepId ?? "2");
+    await runParallelScanSourceGroup(processors, store, parallel, progressStepId ?? "2");
   } else if (builtInGroupId === "scan.link") {
-    runParallelScanLinkGroup(processors, snapshot, store, parallel, progress);
+    await runParallelScanLinkGroup(processors, snapshot, store, parallel, progress);
   } else {
     runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress);
   }

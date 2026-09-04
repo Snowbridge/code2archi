@@ -33,7 +33,7 @@ export const scanCommand: CommandModule = {
         describe: "Overwrite non-empty output directory",
       })
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
-  handler: (argv) => {
+  handler: async (argv) => {
     const logger = getLogger("cli.scan");
     const globalArgv = argv as unknown as GlobalArgv;
     try {
@@ -48,7 +48,7 @@ export const scanCommand: CommandModule = {
         sourceDirCount: sourceDirs.length,
         outputDir: scanArgs.outputDir,
       });
-      runScanFlow(
+      await runScanFlow(
         createRunScanFlowInput(scanArgs, globalArgv),
       );
       logger.info("command completed", { outputDir: scanArgs.outputDir });

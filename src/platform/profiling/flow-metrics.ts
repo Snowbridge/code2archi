@@ -10,10 +10,10 @@ import {
 import { recordValue } from "../profiling/index.js";
 import type { ProcessorId } from "../processors/processor.js";
 
-export function measureFlowStep(step: string, run: () => void): void {
+export async function measureFlowStep(step: string, run: () => void | Promise<void>): Promise<void> {
   const startedAt = performance.now();
   try {
-    run();
+    await run();
   } finally {
     recordValue(METRIC_RUN_STEP_DURATION, performance.now() - startedAt, [step]);
   }

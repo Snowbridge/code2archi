@@ -40,7 +40,7 @@ describe("runScanScopeGroup", () => {
     processorRegistry.unregister("scan.scope", STUB_STORE);
   });
 
-  it("unions repositories by id and throws on duplicate id", () => {
+  it("unions repositories by id and throws on duplicate id", async () => {
     const repository: RepositoryCreateIntent = {
       id: "repo-1",
       name: "a",
@@ -63,9 +63,9 @@ describe("runScanScopeGroup", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    assert.throws(
-      () =>
-        runScanScopeGroup(
+    await assert.rejects(
+      async () => {
+        await runScanScopeGroup(
           ["/tmp"],
           {
             with: [],
@@ -73,12 +73,13 @@ describe("runScanScopeGroup", () => {
             withOnly: [`scan.scope.${STUB_ONE}`, `scan.scope.${STUB_TWO}`],
           },
           store,
-        ),
+        );
+      },
       /Duplicate id: repo-1/,
     );
   });
 
-  it("stores merged repositories in run entity store with scannerExtractor", () => {
+  it("stores merged repositories in run entity store with scannerExtractor", async () => {
     const repository: RepositoryCreateIntent = {
       id: "repo-1",
       name: "a",
@@ -98,7 +99,7 @@ describe("runScanScopeGroup", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    runScanScopeGroup(
+    await runScanScopeGroup(
       ["/tmp"],
       {
         with: [],

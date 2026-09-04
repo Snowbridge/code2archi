@@ -35,7 +35,7 @@ export const generateCommand: CommandModule = {
         describe: "Do not decorate element names for visual distinction in Archi",
       })
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
-  handler: (argv) => {
+  handler: async (argv) => {
     const logger = getLogger("cli.generate");
     const globalArgv = argv as unknown as GlobalArgv;
     try {
@@ -49,7 +49,7 @@ export const generateCommand: CommandModule = {
         outputFile: generateArgs.outputFile,
         discoveryModelDir: generateArgs.discoveryModelDir,
       });
-      runGenerateFlow(
+      await runGenerateFlow(
         createRunGenerateFlowInput(generateArgs, globalArgv),
       );
       logger.info("command completed", { outputFile: generateArgs.outputFile });

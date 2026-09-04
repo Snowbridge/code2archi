@@ -20,15 +20,15 @@ function createGitRepo(dir: string): void {
   mkdirSync(path.join(dir, ".git"), { recursive: true });
 }
 
-describe("runScanFlow", () => {
-  it("writes discovery-model after scan.scope", () => {
+describe("runScanFlow", async () => {
+  it("writes discovery-model after scan.scope", async () => {
     const root = createTestTempDir("c2a-scan-flow-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
     mkdirSync(sourceDir);
     mkdirSync(outputDir);
 
-    runScanFlow({
+    await runScanFlow({
       sourceDirs: [sourceDir],
       outputDir,
       force: false,
@@ -67,7 +67,7 @@ describe("runScanFlow", () => {
     assert.equal(repositories[0]?.namespace, "");
   });
 
-  it("finalizes repository namespace from common root before scan.source", () => {
+  it("finalizes repository namespace from common root before scan.source", async () => {
     const root = createTestTempDir("c2a-scan-flow-ns-");
     const sourceDir = path.join(root, "fizz");
     const repoDir = path.join(sourceDir, "fuzz", "bar", "buzz", "flow-app");
@@ -89,7 +89,7 @@ describe("runScanFlow", () => {
 </project>`,
     );
 
-    runScanFlow({
+    await runScanFlow({
       sourceDirs: [sourceDir],
       outputDir,
       force: false,
@@ -113,7 +113,7 @@ describe("runScanFlow", () => {
     assert.equal(flowApp?.namespace, "fuzz/bar/buzz");
   });
 
-  it("writes application modules after scan.source for maven repository", () => {
+  it("writes application modules after scan.source for maven repository", async () => {
     const root = createTestTempDir("c2a-scan-flow-maven-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
@@ -137,7 +137,7 @@ describe("runScanFlow", () => {
 </project>`,
     );
 
-    runScanFlow({
+    await runScanFlow({
       sourceDirs: [sourceDir],
       outputDir,
       force: false,
@@ -190,7 +190,7 @@ describe("runScanFlow", () => {
     assert.equal(dependencies[0]?.artifactId, "shared");
   });
 
-  it("discovers RestController entities after maven modules are scanned in scan.source", () => {
+  it("discovers RestController entities after maven modules are scanned in scan.source", async () => {
     const root = createTestTempDir("c2a-scan-flow-rest-");
     const sourceDir = path.join(root, "src");
     const javaDir = path.join(sourceDir, "src", "main", "java", "com", "flow");
@@ -225,7 +225,7 @@ public class FlowController {
 `,
     );
 
-    runScanFlow({
+    await runScanFlow({
       sourceDirs: [sourceDir],
       outputDir,
       force: false,
@@ -255,7 +255,7 @@ public class FlowController {
     assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
   });
 
-  it("discovers Kotlin RestController entities from maven kotlin sources in scan.source", () => {
+  it("discovers Kotlin RestController entities from maven kotlin sources in scan.source", async () => {
     const root = createTestTempDir("c2a-scan-flow-kotlin-");
     const sourceDir = path.join(root, "src");
     const kotlinDir = path.join(sourceDir, "src", "main", "kotlin", "com", "flow");
@@ -290,7 +290,7 @@ class FlowController {
 `,
     );
 
-    runScanFlow({
+    await runScanFlow({
       sourceDirs: [sourceDir],
       outputDir,
       force: false,
@@ -317,7 +317,7 @@ class FlowController {
     assert.equal(controllers[0]?.sourceFile, "src/main/kotlin/com/flow/FlowController.kt");
   });
 
-  it("discovers functional RouterFunction controllers in scan.source", () => {
+  it("discovers functional RouterFunction controllers in scan.source", async () => {
     const root = createTestTempDir("c2a-scan-flow-functional-");
     const sourceDir = path.join(root, "src");
     const javaDir = path.join(sourceDir, "src", "main", "java", "com", "example");
@@ -348,7 +348,7 @@ class FlowController {
       ),
     );
 
-    runScanFlow({
+    await runScanFlow({
       sourceDirs: [sourceDir],
       outputDir,
       force: false,
@@ -374,7 +374,7 @@ class FlowController {
     assert.equal(controllers[0]?.fqcn, "com.example.UserRouterConfig#userRoutes");
   });
 
-  it("records profiling metrics when profiling is enabled", () => {
+  it("records profiling metrics when profiling is enabled", async () => {
     const root = createTestTempDir("c2a-scan-flow-profile-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
@@ -383,7 +383,7 @@ class FlowController {
 
     initProfiling({ enabled: true });
     try {
-      runScanFlow({
+      await runScanFlow({
         sourceDirs: [sourceDir],
         outputDir,
         force: false,

@@ -26,7 +26,7 @@ function countArchiCreateIntents(output: ArchiCreateIntents): number {
   );
 }
 
-export function runGenerateProcessorGroup(
+export async function runGenerateProcessorGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   discovery: DiscoveryModelSnapshot,
   archiStore: ArchiModelStore,
@@ -34,7 +34,7 @@ export function runGenerateProcessorGroup(
   options: GenerateOptions,
   progress?: StepProgressHandle,
   parallel?: ProcessorGroupParallelContext,
-): void {
+): Promise<void> {
   const logger = getLogger(`generate.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
 
@@ -89,7 +89,7 @@ export function runGenerateProcessorGroup(
     options.decorate,
   );
 
-  const { results, errors } = parallel.pool.runTasks({
+  const { results, errors } = await parallel.pool.runTasks({
     handlerId: WORKER_HANDLER_GENERATE_PROCESSOR,
     tasks,
     bridge: parallel.bridge,

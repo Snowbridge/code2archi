@@ -48,7 +48,7 @@ export function createRunGenerateFlowInput(
   };
 }
 
-export function runGenerateFlow(input: RunGenerateFlowInput): void {
+export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void> {
   const logger = getLogger("generate.flow");
   logger.info("flow start", {
     outputFile: input.outputFile,
@@ -94,8 +94,8 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
   try {
     logger.info("step start", { step: 1, action: "elements generation", groupId: GENERATE_ELEMENTS_GROUP_ID });
     activeStep = "1";
-    measureFlowStep("1", () => {
-      runGenerateProcessorGroup(
+    await measureFlowStep("1", async () => {
+      await runGenerateProcessorGroup(
         GENERATE_ELEMENTS_GROUP_ID,
         discovery,
         archiStore,
@@ -108,8 +108,8 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
 
     logger.info("step start", { step: 2, action: "views generation", groupId: GENERATE_VIEWS_GROUP_ID });
     activeStep = "2";
-    measureFlowStep("2", () => {
-      runGenerateProcessorGroup(
+    await measureFlowStep("2", async () => {
+      await runGenerateProcessorGroup(
         GENERATE_VIEWS_GROUP_ID,
         discovery,
         archiStore,
@@ -122,7 +122,7 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
 
     logger.info("step start", { step: 3, action: "writing archimate-model", outputFile: input.outputFile });
     activeStep = "3";
-    measureFlowStep("3", () => {
+    await measureFlowStep("3", async () => {
       new ArchiModelWriter().write({
         outputFile: input.outputFile,
         store: archiStore,

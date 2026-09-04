@@ -28,7 +28,7 @@ export interface WorkerPoolRunResult<TOutput> {
 export interface WorkerPool {
   runTasks<TInput, TOutput>(
     options: WorkerPoolRunOptions<TInput, TOutput>,
-  ): WorkerPoolRunResult<TOutput>;
+  ): Promise<WorkerPoolRunResult<TOutput>>;
   shutdown(): void;
 }
 
@@ -63,9 +63,9 @@ class InlineWorkerPool implements WorkerPool {
     private readonly trackWorkerTaskMetrics: boolean,
   ) {}
 
-  runTasks<TInput, TOutput>(
+  async runTasks<TInput, TOutput>(
     options: WorkerPoolRunOptions<TInput, TOutput>,
-  ): WorkerPoolRunResult<TOutput> {
+  ): Promise<WorkerPoolRunResult<TOutput>> {
     const results = new Map<string, TOutput>();
     const errors = new Map<string, Error>();
 
@@ -92,11 +92,10 @@ interface WorkerSlot {
   readonly worker: Worker;
   readonly threadId: string;
   busy: boolean;
-  lock?: Int32Array;
   pendingTaskId?: string;
-  taskResult?: unknown;
-  taskError?: Error;
   onMessage?: (message: WorkerOutboundMessage) => void;
+  taskResolve?: (value: unknown) => void;
+  taskReject?: (error: Error) => void;
 }
 
 class ThreadWorkerPool implements WorkerPool {
@@ -121,13 +120,51 @@ class ThreadWorkerPool implements WorkerPool {
       const worker = new Worker(new URL("./worker-entry.js", import.meta.url), {
         workerData: { threadId },
       });
-      this.workers.push({ worker, threadId, busy: false });
+      const slot: WorkerSlot = { worker, threadId, busy: false };
+      worker.on("error", (error) => {
+        this.failWorkerSlot(slot, error);
+      });
+      worker.on("exit", (code) => {
+        if (code !== 0 && slot.busy) {
+          this.failWorkerSlot(
+            slot,
+            new Error(`Worker ${threadId} exited with code ${code}`),
+          );
+        }
+      });
+      this.workers.push(slot);
     }
   }
 
-  runTasks<TInput, TOutput>(
+  private failWorkerSlot(slot: WorkerSlot, error: Error): void {
+    if (!slot.busy) {
+      getLogger("platform.parallelism").warn("worker failed while idle", {
+        threadId: slot.threadId,
+        message: error.message,
+      });
+      return;
+    }
+
+    this.finishWorkerTask(slot, () => {
+      slot.taskReject?.(error);
+    });
+  }
+
+  private finishWorkerTask(slot: WorkerSlot, complete: () => void): void {
+    if (slot.onMessage) {
+      slot.worker.off("message", slot.onMessage);
+      slot.onMessage = undefined;
+    }
+    slot.busy = false;
+    slot.pendingTaskId = undefined;
+    complete();
+    slot.taskResolve = undefined;
+    slot.taskReject = undefined;
+  }
+
+  async runTasks<TInput, TOutput>(
     options: WorkerPoolRunOptions<TInput, TOutput>,
-  ): WorkerPoolRunResult<TOutput> {
+  ): Promise<WorkerPoolRunResult<TOutput>> {
     const results = new Map<string, TOutput>();
     const errors = new Map<string, Error>();
     const concurrency = this.workers.length;
@@ -138,20 +175,33 @@ class ThreadWorkerPool implements WorkerPool {
       }
 
       const batch = options.tasks.slice(batchStart, batchStart + concurrency);
-      const batchStates = batch.map((task, index) =>
-        this.startTaskOnWorker(this.workers[index]!, options, task),
+      const batchOutcomes = await Promise.all(
+        batch.map(async (task, index) => {
+          try {
+            const result = await this.runTaskOnWorker<TInput, TOutput>(
+              this.workers[index]!,
+              options,
+              task,
+            );
+            return { taskId: task.taskId, result };
+          } catch (error) {
+            const failure = error instanceof Error ? error : new Error(String(error));
+            return { taskId: task.taskId, error: failure };
+          }
+        }),
       );
 
-      for (const state of batchStates) {
-        try {
-          const result = this.awaitTask<TOutput>(state);
-          results.set(state.taskId, result);
-        } catch (error) {
-          const failure = error instanceof Error ? error : new Error(String(error));
-          errors.set(state.taskId, failure);
+      for (const outcome of batchOutcomes) {
+        if ("error" in outcome && outcome.error) {
+          errors.set(outcome.taskId, outcome.error);
           if (!this.options.continueOnError) {
             return { results, errors };
           }
+          continue;
+        }
+
+        if ("result" in outcome) {
+          results.set(outcome.taskId, outcome.result);
         }
       }
     }
@@ -159,16 +209,11 @@ class ThreadWorkerPool implements WorkerPool {
     return { results, errors };
   }
 
-  private startTaskOnWorker<TInput>(
+  private runTaskOnWorker<TInput, TOutput>(
     slot: WorkerSlot,
-    options: WorkerPoolRunOptions<TInput, unknown>,
+    options: WorkerPoolRunOptions<TInput, TOutput>,
     task: ParallelTask<TInput>,
-  ): {
-    readonly taskId: string;
-    readonly slot: WorkerSlot;
-    readonly lock: Int32Array;
-    readonly bridge: MainThreadBridge;
-  } {
+  ): Promise<TOutput> {
     const request: WorkerTaskRequest = {
       taskId: task.taskId,
       handlerId: options.handlerId,
@@ -176,71 +221,40 @@ class ThreadWorkerPool implements WorkerPool {
       trackWorkerTaskMetrics: this.trackWorkerTaskMetrics,
     };
 
-    const lock = new Int32Array(new SharedArrayBuffer(4));
-    slot.busy = true;
-    slot.pendingTaskId = task.taskId;
-    slot.lock = lock;
-    slot.taskResult = undefined;
-    slot.taskError = undefined;
+    return new Promise<TOutput>((resolve, reject) => {
+      slot.busy = true;
+      slot.pendingTaskId = task.taskId;
+      slot.taskResolve = (value) => resolve(value as TOutput);
+      slot.taskReject = reject;
 
-    const onMessage = (message: WorkerOutboundMessage) => {
-      if (message.type === "log" || message.type === "progress" || message.type === "metric") {
-        options.bridge.dispatch(message);
-        return;
-      }
-
-      if (message.taskId !== task.taskId) {
-        return;
-      }
-
-      if (message.type === "taskResult") {
-        slot.taskResult = message.result;
-      } else if (message.type === "taskError") {
-        const error = new Error(message.message);
-        if (message.stack) {
-          error.stack = message.stack;
+      const onMessage = (message: WorkerOutboundMessage) => {
+        if (message.type === "log" || message.type === "progress" || message.type === "metric") {
+          options.bridge.dispatch(message);
+          return;
         }
-        slot.taskError = error;
-      }
 
-      Atomics.store(lock, 0, 1);
-      Atomics.notify(lock, 0, 1);
-    };
+        if (message.taskId !== task.taskId) {
+          return;
+        }
 
-    slot.onMessage = onMessage;
-    slot.worker.on("message", onMessage);
-    slot.worker.postMessage(request);
+        if (message.type === "taskResult") {
+          this.finishWorkerTask(slot, () => resolve(message.result as TOutput));
+          return;
+        }
 
-    return { taskId: task.taskId, slot, lock, bridge: options.bridge };
-  }
+        if (message.type === "taskError") {
+          const error = new Error(message.message);
+          if (message.stack) {
+            error.stack = message.stack;
+          }
+          this.finishWorkerTask(slot, () => reject(error));
+        }
+      };
 
-  private awaitTask<TOutput>(state: {
-    readonly taskId: string;
-    readonly slot: WorkerSlot;
-    readonly lock: Int32Array;
-  }): TOutput {
-    while (Atomics.load(state.lock, 0) === 0) {
-      Atomics.wait(state.lock, 0, 0, 50);
-    }
-
-    const slot = state.slot;
-    if (slot.onMessage) {
-      slot.worker.off("message", slot.onMessage);
-      slot.onMessage = undefined;
-    }
-    slot.busy = false;
-    slot.lock = undefined;
-    slot.pendingTaskId = undefined;
-
-    if (slot.taskError) {
-      const error = slot.taskError;
-      slot.taskError = undefined;
-      throw error;
-    }
-
-    const result = slot.taskResult as TOutput;
-    slot.taskResult = undefined;
-    return result;
+      slot.onMessage = onMessage;
+      slot.worker.on("message", onMessage);
+      slot.worker.postMessage(request);
+    });
   }
 
   shutdown(): void {

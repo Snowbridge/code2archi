@@ -13,13 +13,13 @@ import { getLogger } from "../logging/index.js";
 import { throwOnPoolErrors } from "./parallel-group-runner.js";
 import type { Repository } from "../../discovery-model/entities/repository.js";
 
-export function runScanScopeGroup(
+export async function runScanScopeGroup(
   sourceDirs: readonly string[],
   filters: ProcessorFilters,
   store: RunEntityStore,
   progress?: StepProgressHandle,
   parallel?: ProcessorGroupParallelContext,
-): void {
+): Promise<void> {
   const logger = getLogger("scan.scope");
   logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: sourceDirs.length });
 
@@ -50,7 +50,7 @@ export function runScanScopeGroup(
         }
       }
 
-      const { results, errors } = parallel.pool.runTasks({
+      const { results, errors } = await parallel.pool.runTasks({
         handlerId: WORKER_HANDLER_SCAN_SCOPE_UNIT,
         tasks,
         bridge: parallel.bridge,

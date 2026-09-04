@@ -69,8 +69,8 @@ function writeDiscoveryManifest(
   }
 }
 
-describe("runGenerateFlow", () => {
-  it("writes bootstrap archimate model from discovery-model", () => {
+describe("runGenerateFlow", async () => {
+  it("writes bootstrap archimate model from discovery-model", async () => {
     const tempDir = createTestTempDir("c2a-generate-flow-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir, { recursive: true });
@@ -86,7 +86,7 @@ describe("runGenerateFlow", () => {
         ...defaultValidateArgs,
       });
 
-      runGenerateFlow({
+      await runGenerateFlow({
         ...generateArgs,
         verbose: false,
         profile: false,
@@ -108,7 +108,7 @@ describe("runGenerateFlow", () => {
     assert.equal(existsSync(archiModelDomOutputPath(outputFile)), false);
   });
 
-  it("writes dom json alongside archimate when log level is DEBUG", () => {
+  it("writes dom json alongside archimate when log level is DEBUG", async () => {
     const tempDir = createTestTempDir("c2a-generate-flow-debug-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir, { recursive: true });
@@ -125,7 +125,7 @@ describe("runGenerateFlow", () => {
         ...defaultValidateArgs,
       });
 
-      runGenerateFlow({
+      await runGenerateFlow({
         ...generateArgs,
         verbose: false,
         profile: false,
@@ -153,7 +153,7 @@ describe("runGenerateFlow", () => {
     assert.ok(Array.isArray(dom.relations));
   });
 
-  it("writes repository artifacts from discovery-model repositories", () => {
+  it("writes repository artifacts from discovery-model repositories", async () => {
     const tempDir = createTestTempDir("c2a-generate-flow-repos-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir, { recursive: true });
@@ -181,7 +181,7 @@ describe("runGenerateFlow", () => {
         ...defaultValidateArgs,
       });
 
-      runGenerateFlow({
+      await runGenerateFlow({
         ...generateArgs,
         verbose: false,
         profile: false,
@@ -203,7 +203,7 @@ describe("runGenerateFlow", () => {
     assert.match(xml, /<property key="c2a:url" value="https:\/\/example\.com\/flow-app\.git"\/>/);
   });
 
-  it("keeps raw repository names when no-decorate is enabled", () => {
+  it("keeps raw repository names when no-decorate is enabled", async () => {
     const tempDir = createTestTempDir("c2a-generate-flow-no-decorate-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir, { recursive: true });
@@ -232,7 +232,7 @@ describe("runGenerateFlow", () => {
         noDecorate: true,
       });
 
-      runGenerateFlow({
+      await runGenerateFlow({
         ...generateArgs,
         verbose: false,
         profile: false,
