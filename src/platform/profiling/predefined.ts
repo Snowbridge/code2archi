@@ -1,4 +1,6 @@
 import {
+  METRIC_FILES_CACHE_HIT,
+  METRIC_FILES_CACHE_MISS,
   METRIC_FILES_PROCESSED,
   METRIC_PROCESSOR_DURATION_AVG,
   METRIC_PROCESSOR_DURATION_MAX,
@@ -27,6 +29,8 @@ export function registerPredefinedMetrics(
   profiler.registerMetric(METRIC_PROCESSOR_SUCCESS, "counter");
   profiler.registerMetric(METRIC_PROCESSOR_ERROR, "counter");
   profiler.registerMetric(METRIC_FILES_PROCESSED, "counter");
+  profiler.registerMetric(METRIC_FILES_CACHE_HIT, "counter");
+  profiler.registerMetric(METRIC_FILES_CACHE_MISS, "counter");
   profiler.registerMetric(METRIC_SLOTS_GENERATED, "counter");
   profiler.registerMetric(METRIC_WORKER_TASK_DURATION, "average");
   profiler.registerMetric(METRIC_WORKER_PHASE_SETUP, "max");

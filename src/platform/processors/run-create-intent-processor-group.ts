@@ -1,9 +1,9 @@
-import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
-import { SCAN_SOURCE_GROUP_ID } from "../../cli/processor-groups.js";
+import { SCAN_SOURCE_GROUP_ID, type BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot, RunEntityStore } from "../../discovery-model/run-entity-store.js";
 import type { MainThreadBridge } from "../parallelism/main-thread-bridge.js";
+import { resetScanIoCache } from "../scan-io/index.js";
 import {
   buildScanLinkTasks,
   buildScanSourceTasks,
@@ -57,6 +57,10 @@ function runSequentialCreateIntentGroup(
   );
 
   const passProgress = builtInGroupId === SCAN_SOURCE_GROUP_ID && progress !== undefined;
+
+  if (builtInGroupId === SCAN_SOURCE_GROUP_ID) {
+    resetScanIoCache();
+  }
 
   for (const processor of processors) {
     processor.logStart();

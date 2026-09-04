@@ -3,7 +3,6 @@ import path from "node:path";
 import type { SyntaxNode } from "tree-sitter";
 import type { ApplicationModuleRecord } from "../../discovery-model/entities/application-module.js";
 import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
-import { recordProcessedFile } from "../../platform/profiling/index.js";
 import { isNodejsSourceFileName } from "./nodejs-tree-sitter.js";
 import {
   isExcludedNpmSourceFile,
@@ -96,7 +95,6 @@ export function collectNodejsSourceFiles(
       for (const absolutePath of walkNodejsFiles(sourceRoot, context.packageRoot)) {
         const existing = fileToContext.get(absolutePath);
         if (!existing) {
-          recordProcessedFile(absolutePath);
           fileToContext.set(absolutePath, {
             absolutePath,
             module: context.module,
@@ -136,7 +134,6 @@ export function collectNodejsRouteFiles(
         continue;
       }
 
-      recordProcessedFile(absolutePath);
       matches.push({
         absolutePath,
         module: context.module,

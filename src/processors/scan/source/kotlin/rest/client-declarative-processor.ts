@@ -11,12 +11,12 @@ import {
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { ModuleTypeIndex } from "../../../../../parsers/java/rest-client/module-type-index.js";
 import { extractRestClientsFromCompilationUnit } from "../../../../../parsers/java/rest-client/rest-client-extractor.js";
-import { parseKotlinSourceFile } from "../../../../../parsers/kotlin/kotlin-compilation-unit.js";
+import { parseScanKotlinFile } from "../../../../../platform/scan-io/index.js";
 import { adaptKotlinCompilationUnitToJava } from "../../../../../parsers/kotlin/kotlin-rest-source-adapter.js";
 import {
   collectSourceFiles,
+  groupSourceFilesByModule,
   isEligibleJavaOrKotlinModule,
-  readSourcesByModule,
   resolveKotlinSourceRoots,
   type ModuleSourceContext,
   type SourceFileContext,
@@ -79,18 +79,18 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
   }
 
   private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
-    const byModule = readSourcesByModule(fileContexts);
+    const byModule = groupSourceFilesByModule(fileContexts);
     const clients: RestClient[] = [];
 
-    for (const { context, sources } of byModule.values()) {
+    for (const { context, paths } of byModule.values()) {
       const index = new ModuleTypeIndex();
       const units: { absolutePath: string; unit: ReturnType<typeof adaptKotlinCompilationUnitToJava> }[] =
         [];
 
-      for (const [absolutePath, source] of sources.entries()) {
+      for (const absolutePath of paths) {
         try {
           const fileBaseName = path.basename(absolutePath, ".kt");
-          const kotlinUnit = parseKotlinSourceFile(source, { fileBaseName });
+          const kotlinUnit = parseScanKotlinFile(absolutePath, { fileBaseName });
           const unit = adaptKotlinCompilationUnitToJava(kotlinUnit);
           index.addCompilationUnit(unit);
           units.push({ absolutePath, unit });

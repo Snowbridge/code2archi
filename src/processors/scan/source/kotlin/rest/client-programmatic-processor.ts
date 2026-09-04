@@ -9,12 +9,12 @@ import {
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
-import { parseKotlinSourceFile } from "../../../../../parsers/kotlin/kotlin-compilation-unit.js";
+import { parseScanKotlinFile } from "../../../../../platform/scan-io/index.js";
 import { extractKotlinProgrammaticRestClients } from "../../../../../parsers/kotlin/kotlin-programmatic-rest-client-adapter.js";
 import {
   collectSourceFiles,
+  groupSourceFilesByModule,
   isEligibleJavaOrKotlinModule,
-  readSourcesByModule,
   resolveKotlinSourceRoots,
   type ModuleSourceContext,
   type SourceFileContext,
@@ -77,14 +77,14 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
   }
 
   private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
-    const byModule = readSourcesByModule(fileContexts);
+    const byModule = groupSourceFilesByModule(fileContexts);
     const clients: RestClient[] = [];
 
-    for (const { context, sources } of byModule.values()) {
-      for (const [absolutePath, source] of sources.entries()) {
+    for (const { context, paths } of byModule.values()) {
+      for (const absolutePath of paths) {
         try {
           const fileBaseName = path.basename(absolutePath, ".kt");
-          const unit = parseKotlinSourceFile(source, { fileBaseName });
+          const unit = parseScanKotlinFile(absolutePath, { fileBaseName });
           for (const parsed of extractKotlinProgrammaticRestClients(unit)) {
             clients.push(
               toProgrammaticRestClientEntity(

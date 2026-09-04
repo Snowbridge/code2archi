@@ -1,6 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { recordProcessedFile } from "../../../../../platform/profiling/index.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
@@ -12,25 +9,15 @@ import {
 } from "../../../../../platform/processors/processor.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { UNKNOWN_VERSION } from "../../../../../parsers/build-tool-versions.js";
-import {
-  parseGradleProductionJavaSourceRoots,
-  resolveMavenProductionJavaSourceRoot,
-} from "../../../../../parsers/gradle-source-roots.js";
-import { parseJavaSourceFile } from "../../../../../parsers/java/java-compilation-unit.js";
 import { extractRestControllers } from "../../../../../parsers/java/rest/rest-controller-extractor.js";
+import {
+  collectSourceFiles,
+  resolveJavaSourceRoots,
+  type ModuleSourceContext,
+  type SourceFileContext,
+} from "../../../../../parsers/rest-client-module-scan.js";
+import { parseScanJavaFile } from "../../../../../platform/scan-io/index.js";
 import { toRepoRelativePath } from "../../../../../utils/repo-relative-path.js";
-
-interface ModuleSourceContext {
-  readonly module: ApplicationModuleRecord;
-  readonly repository: RepositoryRecord;
-  readonly sourceRoots: readonly string[];
-}
-
-interface JavaFileContext {
-  readonly absolutePath: string;
-  readonly module: ApplicationModuleRecord;
-  readonly repository: RepositoryRecord;
-}
 
 export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, ScanAppOutput> {
   readonly id: ProcessorId = {
@@ -49,7 +36,7 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
     const controllers: RestController[] = [];
     forEachRepository(input, (repository) => {
       const moduleContexts = this.buildModuleContextsForRepository(input, repository);
-      const javaFiles = this.collectJavaFiles(moduleContexts);
+      const javaFiles = collectSourceFiles(moduleContexts, ".java");
       for (const fileContext of javaFiles) {
         controllers.push(...this.scanJavaFile(fileContext));
       }
@@ -78,7 +65,7 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
         continue;
       }
 
-      const sourceRoots = this.resolveSourceRoots(repository, module);
+      const sourceRoots = resolveJavaSourceRoots(repository, module);
       if (sourceRoots.length === 0) {
         continue;
       }
@@ -96,103 +83,10 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
     );
   }
 
-  private resolveSourceRoots(
-    repository: RepositoryRecord,
-    module: ApplicationModuleRecord,
-  ): string[] {
-    if (module.buildSystem === "maven") {
-      const sourceRoot = resolveMavenProductionJavaSourceRoot(repository.localPath, module.repoPath);
-      return sourceRoot ? [sourceRoot] : [];
-    }
-
-    return parseGradleProductionJavaSourceRoots(
-      repository.localPath,
-      module.repoPath,
-      module.buildScript,
-    );
-  }
-
-  private collectJavaFiles(contexts: readonly ModuleSourceContext[]): JavaFileContext[] {
-    const fileToContext = new Map<string, JavaFileContext>();
-
-    for (const context of contexts) {
-      for (const sourceRoot of context.sourceRoots) {
-        for (const absolutePath of this.walkJavaFiles(sourceRoot)) {
-          const existing = fileToContext.get(absolutePath);
-          if (!existing) {
-            fileToContext.set(absolutePath, {
-              absolutePath,
-              module: context.module,
-              repository: context.repository,
-            });
-            continue;
-          }
-
-          if (context.module.repoPath.length > existing.module.repoPath.length) {
-            fileToContext.set(absolutePath, {
-              absolutePath,
-              module: context.module,
-              repository: context.repository,
-            });
-          }
-        }
-      }
-    }
-
-    return [...fileToContext.values()].sort((left, right) =>
-      left.absolutePath.localeCompare(right.absolutePath),
-    );
-  }
-
-  private walkJavaFiles(rootDir: string): string[] {
-    const files: string[] = [];
-    const stack = [rootDir];
-
-    while (stack.length > 0) {
-      const currentDir = stack.pop();
-      if (!currentDir) {
-        continue;
-      }
-
-      let entries;
-      try {
-        entries = readdirSync(currentDir, { withFileTypes: true });
-      } catch {
-        continue;
-      }
-
-      for (const entry of entries) {
-        const absolutePath = path.join(currentDir, entry.name);
-        if (entry.isDirectory()) {
-          stack.push(absolutePath);
-          continue;
-        }
-
-        if (entry.isFile() && entry.name.endsWith(".java")) {
-          recordProcessedFile(absolutePath);
-          files.push(absolutePath);
-        }
-      }
-    }
-
-    return files;
-  }
-
-  private scanJavaFile(fileContext: JavaFileContext): RestController[] {
-    let source: string;
-    try {
-      source = readFileSync(fileContext.absolutePath, "utf8");
-    } catch (error) {
-      this.logger.warn("failed to read java source file", {
-        file: fileContext.absolutePath,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return [];
-    }
-
+  private scanJavaFile(fileContext: SourceFileContext): RestController[] {
     let compilationUnit;
     try {
-      compilationUnit = parseJavaSourceFile(source);
+      compilationUnit = parseScanJavaFile(fileContext.absolutePath);
     } catch (error) {
       this.logger.warn("failed to parse java source file", {
         file: fileContext.absolutePath,

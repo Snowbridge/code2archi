@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
+import { readScanUtf8File } from "../platform/scan-io/index.js";
 
 export const UNKNOWN_VERSION = "unknown";
 
@@ -51,7 +52,7 @@ function readWrapperDistributionVersion(repoRoot: string, relativePath: string):
     return UNKNOWN_VERSION;
   }
 
-  const content = readFileSync(absolutePath, "utf8");
+  const content = readScanUtf8File(absolutePath);
   const distributionMatch = content.match(
     /distributionUrl=.*?(?:gradle|apache-maven)-([0-9][0-9.]*)/,
   );
@@ -95,7 +96,7 @@ export function readGradleProperties(repoRoot: string, modulePath = "."): Record
   const rootPropertiesPath = path.join(repoRoot, "gradle.properties");
   if (existsSync(rootPropertiesPath)) {
     merged = {
-      ...parseGradleProperties(readFileSync(rootPropertiesPath, "utf8")),
+      ...parseGradleProperties(readScanUtf8File(rootPropertiesPath)),
     };
   }
 
@@ -104,7 +105,7 @@ export function readGradleProperties(repoRoot: string, modulePath = "."): Record
     if (existsSync(modulePropertiesPath)) {
       merged = {
         ...merged,
-        ...parseGradleProperties(readFileSync(modulePropertiesPath, "utf8")),
+        ...parseGradleProperties(readScanUtf8File(modulePropertiesPath)),
       };
     }
   }

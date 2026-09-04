@@ -2,6 +2,7 @@ import type {
   SerializableDiscoverySnapshot,
   SnapshotRepositoryFilterScope,
 } from "./snapshot-serialization.js";
+import { getScanIoCacheOptions, initScanIoCache, resetScanIoCache } from "../scan-io/index.js";
 import { resetSnapshotCache } from "./worker-snapshot-cache.js";
 
 export interface WorkerPhaseContext {
@@ -18,6 +19,8 @@ export function setWorkerPhase(
   snapshotFilterScope: SnapshotRepositoryFilterScope,
 ): void {
   resetSnapshotCache();
+  resetScanIoCache();
+  initScanIoCache(getScanIoCacheOptions());
   currentPhase = { phaseId, snapshot, snapshotFilterScope };
 }
 

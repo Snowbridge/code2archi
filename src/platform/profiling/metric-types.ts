@@ -13,12 +13,15 @@ export const METRIC_PROCESSOR_DURATION_MIN = "run.processor.duration.min";
 export const METRIC_PROCESSOR_SUCCESS = "run.processor.success";
 export const METRIC_PROCESSOR_ERROR = "run.processor.error";
 export const METRIC_FILES_PROCESSED = "run.files.processed";
+export const METRIC_FILES_CACHE_HIT = "run.files.cache.hit";
+export const METRIC_FILES_CACHE_MISS = "run.files.cache.miss";
 export const METRIC_SLOTS_GENERATED = "run.slots.generated";
 
 export const LABEL_STEP = "step";
 export const LABEL_GROUP_ID = "groupId";
 export const LABEL_ARTIFACT_ID = "artifactId";
 export const LABEL_EXT = "ext";
+export const LABEL_CACHE_KIND = "kind";
 export const LABEL_SLOT_NAME = "slotName";
 export const LABEL_PHASE_ID = "phaseId";
 
@@ -30,6 +33,8 @@ export const METRIC_LABEL_NAMES: Readonly<Record<string, readonly string[]>> = {
   [METRIC_PROCESSOR_SUCCESS]: [LABEL_GROUP_ID, LABEL_ARTIFACT_ID],
   [METRIC_PROCESSOR_ERROR]: [LABEL_GROUP_ID, LABEL_ARTIFACT_ID],
   [METRIC_FILES_PROCESSED]: [LABEL_EXT],
+  [METRIC_FILES_CACHE_HIT]: [LABEL_CACHE_KIND],
+  [METRIC_FILES_CACHE_MISS]: [LABEL_CACHE_KIND],
   [METRIC_SLOTS_GENERATED]: [LABEL_SLOT_NAME],
   [METRIC_WORKER_TASK_DURATION]: [LABEL_GROUP_ID, LABEL_ARTIFACT_ID],
   [METRIC_WORKER_PHASE_SETUP]: [LABEL_PHASE_ID],

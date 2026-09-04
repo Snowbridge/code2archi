@@ -7,11 +7,10 @@ import {
 } from "../../../../../platform/processors/processor.js";
 import { collectNodejsSourceFiles } from "../../../../../parsers/nodejs/nodejs-module-scan.js";
 import { extractProgrammaticHttpClients } from "../../../../../parsers/nodejs/programmatic-http-client-extractor.js";
-import { parseNodejsSourceFile } from "../../../../../parsers/nodejs/typescript-compilation-unit.js";
+import { parseScanNodejsFile } from "../../../../../platform/scan-io/index.js";
 import {
   buildNpmModuleContexts,
   forEachNpmRepository,
-  readSourceFile,
 } from "./nodejs-rest-scan-utils.js";
 import { toProgrammaticClientEntity } from "./nodejs-rest-entity-mapper.js";
 
@@ -51,8 +50,7 @@ export class NodejsRestClientProgrammaticProcessor extends AbstractProcessor<
 
       for (const fileContext of collectNodejsSourceFiles(contexts)) {
         try {
-          const source = readSourceFile(fileContext.absolutePath);
-          const unit = parseNodejsSourceFile(source, fileContext.absolutePath);
+          const unit = parseScanNodejsFile(fileContext.absolutePath);
           for (const parsed of extractProgrammaticHttpClients(unit)) {
             clients.push(
               toProgrammaticClientEntity(

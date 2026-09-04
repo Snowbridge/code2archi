@@ -8,13 +8,12 @@ import {
 import { extractNextJsAppRouterRoutes } from "../../../../../parsers/nodejs/nextjs-app-router-extractor.js";
 import { collectNodejsRouteFiles } from "../../../../../parsers/nodejs/nodejs-module-scan.js";
 import { resolveNpmNextJsAppRoot, toRepositoryRelativePath } from "../../../../../parsers/nodejs/nodejs-source-roots.js";
-import { parseNodejsSourceFile } from "../../../../../parsers/nodejs/typescript-compilation-unit.js";
+import { parseScanNodejsFile } from "../../../../../platform/scan-io/index.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import { isEligibleNpmModule, resolveNpmPackageRoot } from "../../../../../parsers/nodejs/nodejs-source-roots.js";
 import { hasFrameworkPackage } from "../../../../../parsers/nodejs/package-json-framework-deps.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { toNextJsRouteControllerEntity } from "./nodejs-rest-entity-mapper.js";
-import { readSourceFile } from "./nodejs-rest-scan-utils.js";
 
 export class NodejsRestControllerNextjsAppRouterProcessor extends AbstractProcessor<
   ScanAppInput,
@@ -63,8 +62,7 @@ export class NodejsRestControllerNextjsAppRouterProcessor extends AbstractProces
         for (const routeExtension of ["route.ts", "route.js", "route.tsx", "route.jsx"]) {
           for (const fileContext of collectNodejsRouteFiles(contexts, routeExtension)) {
             try {
-              const source = readSourceFile(fileContext.absolutePath);
-              const unit = parseNodejsSourceFile(source, fileContext.absolutePath);
+              const unit = parseScanNodejsFile(fileContext.absolutePath);
               const repositoryRelativePath = toRepositoryRelativePath(
                 fileContext.repository,
                 fileContext.absolutePath,

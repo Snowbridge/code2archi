@@ -8,13 +8,13 @@ import {
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
-import { parseJavaSourceFile } from "../../../../../parsers/java/java-compilation-unit.js";
+import { parseScanJavaFile } from "../../../../../platform/scan-io/index.js";
 import { ModuleTypeIndex } from "../../../../../parsers/java/rest-client/module-type-index.js";
 import { extractRestClientsFromCompilationUnit } from "../../../../../parsers/java/rest-client/rest-client-extractor.js";
 import {
   collectSourceFiles,
+  groupSourceFilesByModule,
   isEligibleJavaOrKotlinModule,
-  readSourcesByModule,
   resolveJavaSourceRoots,
   type ModuleSourceContext,
   type SourceFileContext,
@@ -77,16 +77,16 @@ export class JavaRestClientDeclarativeProcessor extends AbstractProcessor<ScanAp
   }
 
   private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
-    const byModule = readSourcesByModule(fileContexts);
+    const byModule = groupSourceFilesByModule(fileContexts);
     const clients: RestClient[] = [];
 
-    for (const { context, sources } of byModule.values()) {
+    for (const { context, paths } of byModule.values()) {
       const index = new ModuleTypeIndex();
-      const units: { absolutePath: string; unit: ReturnType<typeof parseJavaSourceFile> }[] = [];
+      const units: { absolutePath: string; unit: ReturnType<typeof parseScanJavaFile> }[] = [];
 
-      for (const [absolutePath, source] of sources.entries()) {
+      for (const absolutePath of paths) {
         try {
-          const unit = parseJavaSourceFile(source);
+          const unit = parseScanJavaFile(absolutePath);
           index.addCompilationUnit(unit);
           units.push({ absolutePath, unit });
         } catch (error) {

@@ -21,6 +21,8 @@ import type {
 } from "./worker-messages.js";
 import { setWorkerPhase } from "./worker-phase-context.js";
 import { initWorkerRuntime, resetWorkerRuntime } from "./worker-runtime.js";
+import type { ScanIoCacheOptions } from "../scan-io/scan-io-options.js";
+import { DISABLED_SCAN_IO_CACHE_OPTIONS } from "../scan-io/scan-io-options.js";
 
 export interface ParallelTask<TInput> {
   readonly taskId: string;
@@ -81,6 +83,7 @@ class InlineWorkerPool implements WorkerPool {
   constructor(
     private readonly options: ParallelismOptions,
     private readonly trackWorkerTaskMetrics: boolean,
+    private readonly scanIoCache: ScanIoCacheOptions,
   ) {}
 
   async setupPhase(setup: WorkerPhaseSetup, _bridge: MainThreadBridge): Promise<void> {
@@ -136,7 +139,11 @@ class ThreadWorkerPool implements WorkerPool {
   private readonly options: ParallelismOptions;
   private readonly trackWorkerTaskMetrics: boolean;
 
-  constructor(options: ParallelismOptions, trackWorkerTaskMetrics: boolean) {
+  constructor(
+    options: ParallelismOptions,
+    trackWorkerTaskMetrics: boolean,
+    scanIoCache: ScanIoCacheOptions,
+  ) {
     this.options = options;
     this.trackWorkerTaskMetrics = trackWorkerTaskMetrics;
     const concurrency = effectiveThreadCount(options);
@@ -151,7 +158,7 @@ class ThreadWorkerPool implements WorkerPool {
     for (let index = 0; index < concurrency; index += 1) {
       const threadId = `worker-${index + 1}`;
       const worker = new Worker(new URL("./worker-entry.js", import.meta.url), {
-        workerData: { threadId },
+        workerData: { threadId, scanIoCache },
       });
       const slot: WorkerSlot = { worker, threadId, busy: false };
       worker.on("error", (error) => {
@@ -333,9 +340,10 @@ class ThreadWorkerPool implements WorkerPool {
 export function createWorkerPool(
   options: ParallelismOptions,
   trackWorkerTaskMetrics: boolean,
+  scanIoCache: ScanIoCacheOptions = DISABLED_SCAN_IO_CACHE_OPTIONS,
 ): WorkerPool {
   if (shouldUseWorkerThreads(options)) {
-    return new ThreadWorkerPool(options, trackWorkerTaskMetrics);
+    return new ThreadWorkerPool(options, trackWorkerTaskMetrics, scanIoCache);
   }
-  return new InlineWorkerPool(options, trackWorkerTaskMetrics);
+  return new InlineWorkerPool(options, trackWorkerTaskMetrics, scanIoCache);
 }

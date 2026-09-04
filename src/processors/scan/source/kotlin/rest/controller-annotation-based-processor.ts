@@ -1,6 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { recordProcessedFile } from "../../../../../platform/profiling/index.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
@@ -12,25 +9,15 @@ import {
 } from "../../../../../platform/processors/processor.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
 import { UNKNOWN_VERSION } from "../../../../../parsers/build-tool-versions.js";
-import {
-  parseGradleProductionKotlinSourceRoots,
-  resolveMavenProductionKotlinSourceRoot,
-} from "../../../../../parsers/gradle-source-roots.js";
-import { parseKotlinSourceFile } from "../../../../../parsers/kotlin/kotlin-compilation-unit.js";
 import { extractKotlinRestControllers } from "../../../../../parsers/kotlin/kotlin-rest-source-adapter.js";
+import {
+  collectSourceFiles,
+  resolveKotlinSourceRoots,
+  type ModuleSourceContext,
+  type SourceFileContext,
+} from "../../../../../parsers/rest-client-module-scan.js";
+import { parseScanKotlinFile } from "../../../../../platform/scan-io/index.js";
 import { toRepoRelativePath } from "../../../../../utils/repo-relative-path.js";
-
-interface ModuleSourceContext {
-  readonly module: ApplicationModuleRecord;
-  readonly repository: RepositoryRecord;
-  readonly sourceRoots: readonly string[];
-}
-
-interface KotlinFileContext {
-  readonly absolutePath: string;
-  readonly module: ApplicationModuleRecord;
-  readonly repository: RepositoryRecord;
-}
 
 export class KotlinRestControllerAnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, ScanAppOutput> {
   readonly id: ProcessorId = {
@@ -49,7 +36,7 @@ export class KotlinRestControllerAnnotationBasedProcessor extends AbstractProces
     const controllers: RestController[] = [];
     forEachRepository(input, (repository) => {
       const moduleContexts = this.buildModuleContextsForRepository(input, repository);
-      const kotlinFiles = this.collectKotlinFiles(moduleContexts);
+      const kotlinFiles = collectSourceFiles(moduleContexts, ".kt");
       for (const fileContext of kotlinFiles) {
         controllers.push(...this.scanKotlinFile(fileContext));
       }
@@ -78,7 +65,7 @@ export class KotlinRestControllerAnnotationBasedProcessor extends AbstractProces
         continue;
       }
 
-      const sourceRoots = this.resolveSourceRoots(repository, module);
+      const sourceRoots = resolveKotlinSourceRoots(repository, module);
       if (sourceRoots.length === 0) {
         continue;
       }
@@ -96,103 +83,10 @@ export class KotlinRestControllerAnnotationBasedProcessor extends AbstractProces
     );
   }
 
-  private resolveSourceRoots(
-    repository: RepositoryRecord,
-    module: ApplicationModuleRecord,
-  ): string[] {
-    if (module.buildSystem === "maven") {
-      const sourceRoot = resolveMavenProductionKotlinSourceRoot(repository.localPath, module.repoPath);
-      return sourceRoot ? [sourceRoot] : [];
-    }
-
-    return parseGradleProductionKotlinSourceRoots(
-      repository.localPath,
-      module.repoPath,
-      module.buildScript,
-    );
-  }
-
-  private collectKotlinFiles(contexts: readonly ModuleSourceContext[]): KotlinFileContext[] {
-    const fileToContext = new Map<string, KotlinFileContext>();
-
-    for (const context of contexts) {
-      for (const sourceRoot of context.sourceRoots) {
-        for (const absolutePath of this.walkKotlinFiles(sourceRoot)) {
-          const existing = fileToContext.get(absolutePath);
-          if (!existing) {
-            fileToContext.set(absolutePath, {
-              absolutePath,
-              module: context.module,
-              repository: context.repository,
-            });
-            continue;
-          }
-
-          if (context.module.repoPath.length > existing.module.repoPath.length) {
-            fileToContext.set(absolutePath, {
-              absolutePath,
-              module: context.module,
-              repository: context.repository,
-            });
-          }
-        }
-      }
-    }
-
-    return [...fileToContext.values()].sort((left, right) =>
-      left.absolutePath.localeCompare(right.absolutePath),
-    );
-  }
-
-  private walkKotlinFiles(rootDir: string): string[] {
-    const files: string[] = [];
-    const stack = [rootDir];
-
-    while (stack.length > 0) {
-      const currentDir = stack.pop();
-      if (!currentDir) {
-        continue;
-      }
-
-      let entries;
-      try {
-        entries = readdirSync(currentDir, { withFileTypes: true });
-      } catch {
-        continue;
-      }
-
-      for (const entry of entries) {
-        const absolutePath = path.join(currentDir, entry.name);
-        if (entry.isDirectory()) {
-          stack.push(absolutePath);
-          continue;
-        }
-
-        if (entry.isFile() && entry.name.endsWith(".kt")) {
-          recordProcessedFile(absolutePath);
-          files.push(absolutePath);
-        }
-      }
-    }
-
-    return files;
-  }
-
-  private scanKotlinFile(fileContext: KotlinFileContext): RestController[] {
-    let source: string;
-    try {
-      source = readFileSync(fileContext.absolutePath, "utf8");
-    } catch (error) {
-      this.logger.warn("failed to read kotlin source file", {
-        file: fileContext.absolutePath,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return [];
-    }
-
+  private scanKotlinFile(fileContext: SourceFileContext): RestController[] {
     let compilationUnit;
     try {
-      compilationUnit = parseKotlinSourceFile(source);
+      compilationUnit = parseScanKotlinFile(fileContext.absolutePath);
     } catch (error) {
       this.logger.warn("failed to parse kotlin source file", {
         file: fileContext.absolutePath,

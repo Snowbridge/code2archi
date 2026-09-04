@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
+import { readScanUtf8File } from "../platform/scan-io/index.js";
 
 const TEST_PATH_SEGMENT = /(^|[\\/])(test|it|integrationTest)([\\/]|$)/i;
 
@@ -73,7 +74,7 @@ export function parseGradleProductionJavaSourceRoots(
     return existsSync(fallback) ? [fallback] : [];
   }
 
-  const content = readFileSync(buildFilePath, "utf8");
+  const content = readScanUtf8File(buildFilePath);
   const extracted = extractQuotedPaths(content, false)
     .map((sourceDir) => normalizeSourceDir(moduleRoot, sourceDir))
     .filter((sourceDir): sourceDir is string => sourceDir !== undefined);
@@ -113,7 +114,7 @@ export function parseGradleProductionKotlinSourceRoots(
     return existsSync(fallback) ? [fallback] : [];
   }
 
-  const content = readFileSync(buildFilePath, "utf8");
+  const content = readScanUtf8File(buildFilePath);
   const extracted = extractQuotedPaths(content, true)
     .map((sourceDir) => normalizeSourceDir(moduleRoot, sourceDir))
     .filter((sourceDir): sourceDir is string => sourceDir !== undefined);

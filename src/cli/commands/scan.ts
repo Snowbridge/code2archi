@@ -10,6 +10,10 @@ import { validateScanArgs } from "../../scan/validate-scan-args.js";
 import { getLogger, logError } from "../../platform/logging/index.js";
 import { finalizeProfiling } from "../../platform/profiling/index.js";
 import { packageVersion } from "../../package-version.js";
+import {
+  scanCommandCacheOptions,
+  type ScanCommandCacheArgv,
+} from "../scan-cache-options.js";
 
 export const scanCommand: CommandModule = {
   command: "scan <source-dir..>",
@@ -32,6 +36,7 @@ export const scanCommand: CommandModule = {
         default: false,
         describe: "Overwrite non-empty output directory",
       })
+      .options(scanCommandCacheOptions)
       .epilogue(`code2archi (c2a) version ${packageVersion}\nFor more options get help with --show-hidden flag`),
   handler: async (argv) => {
     const logger = getLogger("cli.scan");
@@ -48,8 +53,15 @@ export const scanCommand: CommandModule = {
         sourceDirCount: sourceDirs.length,
         outputDir: scanArgs.outputDir,
       });
+      const cacheArgv: ScanCommandCacheArgv = {
+        cache: argv.cache as boolean,
+        cacheFileMb: argv["cache-file-mb"] as number,
+        cacheDirEntries: argv["cache-dir-entries"] as number,
+        cacheParse: argv["cache-parse"] as boolean,
+        cacheParseEntries: argv["cache-parse-entries"] as number,
+      };
       await runScanFlow(
-        createRunScanFlowInput(scanArgs, globalArgv),
+        createRunScanFlowInput(scanArgs, globalArgv, cacheArgv),
       );
       logger.info("command completed", { outputDir: scanArgs.outputDir });
     } catch (error) {

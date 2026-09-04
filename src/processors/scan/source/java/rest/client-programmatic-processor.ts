@@ -7,12 +7,12 @@ import {
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
-import { parseJavaSourceFile } from "../../../../../parsers/java/java-compilation-unit.js";
+import { parseScanJavaFile } from "../../../../../platform/scan-io/index.js";
 import { extractProgrammaticRestClients } from "../../../../../parsers/java/rest-client/programmatic-http-client-extractor.js";
 import {
   collectSourceFiles,
+  groupSourceFilesByModule,
   isEligibleJavaOrKotlinModule,
-  readSourcesByModule,
   resolveJavaSourceRoots,
   type ModuleSourceContext,
   type SourceFileContext,
@@ -76,13 +76,13 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
   }
 
   private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
-    const byModule = readSourcesByModule(fileContexts);
+    const byModule = groupSourceFilesByModule(fileContexts);
     const clients: RestClient[] = [];
 
-    for (const { context, sources } of byModule.values()) {
-      for (const [absolutePath, source] of sources.entries()) {
+    for (const { context, paths } of byModule.values()) {
+      for (const absolutePath of paths) {
         try {
-          const unit = parseJavaSourceFile(source);
+          const unit = parseScanJavaFile(absolutePath);
           for (const parsed of extractProgrammaticRestClients(unit)) {
             clients.push(
               toProgrammaticRestClientEntity(

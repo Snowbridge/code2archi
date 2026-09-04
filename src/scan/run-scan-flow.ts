@@ -23,18 +23,23 @@ import {
 import { getLogger } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
 import type { ParallelismOptions } from "../platform/parallelism/parallelism-options.js";
+import { initScanIoCache, type ScanIoCacheOptions } from "../platform/scan-io/index.js";
 import type { ScanArgs } from "./validate-scan-args.js";
+import type { ScanCommandCacheArgv } from "../cli/scan-cache-options.js";
+import { cacheArgvToScanIoOptions } from "../cli/scan-cache-options.js";
 
 export interface RunScanFlowInput extends ScanArgs {
   readonly processorFilters: ProcessorFilters;
   readonly verbose: boolean;
   readonly profile: boolean;
   readonly parallelism: ParallelismOptions;
+  readonly scanIoCache: ScanIoCacheOptions;
 }
 
 export function createRunScanFlowInput(
   scanArgs: ScanArgs,
   argv: GlobalArgv,
+  cacheArgv: ScanCommandCacheArgv,
 ): RunScanFlowInput {
   return {
     ...scanArgs,
@@ -46,11 +51,13 @@ export function createRunScanFlowInput(
       sync: argv.sync,
       continueOnError: argv.continueOnError,
     },
+    scanIoCache: cacheArgvToScanIoOptions(cacheArgv),
   };
 }
 
 export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
   const logger = getLogger("scan.flow");
+  initScanIoCache(input.scanIoCache);
   logger.info("flow start", {
     sourceDirCount: input.sourceDirs.length,
     outputDir: input.outputDir,
@@ -89,6 +96,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     progress,
     ["1", "2", "3"],
     input.profile,
+    input.scanIoCache,
   );
 
   let activeStep = "1";

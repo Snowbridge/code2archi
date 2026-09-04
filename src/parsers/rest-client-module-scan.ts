@@ -1,8 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { recordProcessedFile } from "../platform/profiling/index.js";
 import type { ApplicationModuleRecord } from "../discovery-model/entities/application-module.js";
 import type { RepositoryRecord } from "../discovery-model/entities/repository.js";
+import { listScanSourceFiles, readScanUtf8File } from "../platform/scan-io/index.js";
 import { UNKNOWN_VERSION } from "./build-tool-versions.js";
 import {
   parseGradleProductionJavaSourceRoots,
@@ -62,39 +60,6 @@ export function resolveKotlinSourceRoots(
   );
 }
 
-function walkSourceFiles(rootDir: string, extension: string): string[] {
-  const files: string[] = [];
-  const stack = [rootDir];
-
-  while (stack.length > 0) {
-    const currentDir = stack.pop();
-    if (!currentDir) {
-      continue;
-    }
-
-    let entries;
-    try {
-      entries = readdirSync(currentDir, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-
-    for (const entry of entries) {
-      const absolutePath = path.join(currentDir, entry.name);
-      if (entry.isDirectory()) {
-        stack.push(absolutePath);
-        continue;
-      }
-
-      if (entry.isFile() && entry.name.endsWith(extension)) {
-        files.push(absolutePath);
-      }
-    }
-  }
-
-  return files;
-}
-
 export function collectSourceFiles(
   contexts: readonly ModuleSourceContext[],
   extension: string,
@@ -103,10 +68,9 @@ export function collectSourceFiles(
 
   for (const context of contexts) {
     for (const sourceRoot of context.sourceRoots) {
-      for (const absolutePath of walkSourceFiles(sourceRoot, extension)) {
+      for (const absolutePath of listScanSourceFiles(sourceRoot, extension)) {
         const existing = fileToContext.get(absolutePath);
         if (!existing) {
-          recordProcessedFile(absolutePath);
           fileToContext.set(absolutePath, {
             absolutePath,
             module: context.module,
@@ -148,10 +112,28 @@ export function readSourcesByModule(
     }
 
     try {
-      entry.sources.set(fileContext.absolutePath, readFileSync(fileContext.absolutePath, "utf8"));
+      entry.sources.set(fileContext.absolutePath, readScanUtf8File(fileContext.absolutePath));
     } catch {
       continue;
     }
+  }
+
+  return byModule;
+}
+
+export function groupSourceFilesByModule(
+  fileContexts: readonly SourceFileContext[],
+): Map<string, { context: SourceFileContext; paths: string[] }> {
+  const byModule = new Map<string, { context: SourceFileContext; paths: string[] }>();
+
+  for (const fileContext of fileContexts) {
+    const moduleId = fileContext.module.id;
+    let entry = byModule.get(moduleId);
+    if (!entry) {
+      entry = { context: fileContext, paths: [] };
+      byModule.set(moduleId, entry);
+    }
+    entry.paths.push(fileContext.absolutePath);
   }
 
   return byModule;

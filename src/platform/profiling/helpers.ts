@@ -1,6 +1,6 @@
 import path from "node:path";
-import { readFileSync } from "node:fs";
 import { isWorkerRuntimeActive, workerRecordValue } from "../parallelism/worker-runtime.js";
+import { readScanUtf8File } from "../scan-io/index.js";
 import { METRIC_FILES_PROCESSED, METRIC_SLOTS_GENERATED } from "./metric-types.js";
 import { getActiveProfiler } from "./profiling-state.js";
 
@@ -17,8 +17,7 @@ function recordMetricValue(
 }
 
 export function readProcessedUtf8File(absolutePath: string): string {
-  recordProcessedFile(absolutePath);
-  return readFileSync(absolutePath, "utf8");
+  return readScanUtf8File(absolutePath);
 }
 
 export function recordProcessedFile(absolutePath: string): void {

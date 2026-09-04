@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readScanUtf8File } from "../../../../../platform/scan-io/index.js";
 import type { ScanAppInput } from "../../../../../platform/processors/processor.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
@@ -58,5 +58,5 @@ export function forEachNpmRepository(
 }
 
 export function readSourceFile(absolutePath: string): string {
-  return readFileSync(absolutePath, "utf8");
+  return readScanUtf8File(absolutePath);
 }

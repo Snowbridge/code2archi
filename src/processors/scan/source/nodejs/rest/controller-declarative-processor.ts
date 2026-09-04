@@ -7,11 +7,10 @@ import {
 } from "../../../../../platform/processors/processor.js";
 import { extractNestJsControllers } from "../../../../../parsers/nodejs/nestjs-controller-extractor.js";
 import { collectNodejsSourceFiles } from "../../../../../parsers/nodejs/nodejs-module-scan.js";
-import { parseNodejsSourceFile } from "../../../../../parsers/nodejs/typescript-compilation-unit.js";
+import { parseScanNodejsFile } from "../../../../../platform/scan-io/index.js";
 import {
   buildNpmModuleContexts,
   forEachNpmRepository,
-  readSourceFile,
 } from "./nodejs-rest-scan-utils.js";
 import { toNestJsControllerEntity } from "./nodejs-rest-entity-mapper.js";
 
@@ -38,8 +37,7 @@ export class NodejsRestControllerDeclarativeProcessor extends AbstractProcessor<
 
       for (const fileContext of collectNodejsSourceFiles(contexts)) {
         try {
-          const source = readSourceFile(fileContext.absolutePath);
-          const unit = parseNodejsSourceFile(source, fileContext.absolutePath);
+          const unit = parseScanNodejsFile(fileContext.absolutePath);
           for (const parsed of extractNestJsControllers(unit)) {
             controllers.push(
               toNestJsControllerEntity(
