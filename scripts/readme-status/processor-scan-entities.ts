@@ -25,9 +25,14 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
   "scan.source.java.rest/client-programmatic": ["RestClient"],
   "scan.source.kotlin.rest/client-declarative": ["RestClient"],
   "scan.source.kotlin.rest/client-programmatic": ["RestClient"],
+  "scan.source.nodejs.rest/controller-functional-router": ["NodejsRestController"],
+  "scan.source.nodejs.rest/controller-declarative": ["NodejsRestController"],
+  "scan.source.nodejs.rest/controller-nextjs-app-router": ["NodejsRestController"],
+  "scan.source.nodejs.rest/client-programmatic": ["NodejsRestClient"],
 };
 
 /** Scan processors in scan.link that create link collections (for gap detection). */
 export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {
   "scan.link.rest/direct-rest-requests-serving": ["DirectRestRequestsServingMatch"],
+  "scan.link.nodejs.rest/direct-rest-requests-serving": ["NodejsDirectRestRequestsServingMatch"],
 };

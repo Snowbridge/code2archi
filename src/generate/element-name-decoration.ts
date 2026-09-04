@@ -6,7 +6,9 @@ export type ElementNameSlot =
   | "module-artifact"
   | "app-module-component"
   | "declared-rest-contract"
-  | "inferred-rest-contract";
+  | "inferred-rest-contract"
+  | "nodejs-declared-rest-contract"
+  | "nodejs-inferred-rest-contract";
 
 export interface DecorateElementNameContext {
   readonly buildSystem?: BuildSystem;
@@ -61,6 +63,10 @@ export function decorateElementName(
     case "declared-rest-contract":
       return appendSuffixIfAbsent(baseName, API_CONTRACT_SUFFIX);
     case "inferred-rest-contract":
+      return appendSuffixIfAbsent(baseName, INFERRED_REST_CONTRACT_SUFFIX);
+    case "nodejs-declared-rest-contract":
+      return appendSuffixIfAbsent(baseName, API_CONTRACT_SUFFIX);
+    case "nodejs-inferred-rest-contract":
       return appendSuffixIfAbsent(baseName, INFERRED_REST_CONTRACT_SUFFIX);
   }
 }

@@ -8,4 +8,10 @@ export const LINK_REF_INDEX_FIELDS: Partial<Record<LinkType, readonly string[]>>
     "restControllerId",
     "restClientId",
   ],
+  NodejsDirectRestRequestsServingMatch: [
+    "sourceApplicationModuleId",
+    "targetApplicationModuleId",
+    "nodejsRestControllerId",
+    "nodejsRestClientId",
+  ],
 };

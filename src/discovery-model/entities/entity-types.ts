@@ -8,6 +8,8 @@ export const ENTITY_TYPES = [
   "ApplicationModuleDependency",
   "RestController",
   "RestClient",
+  "NodejsRestController",
+  "NodejsRestClient",
   "MessageConsumer",
   "MessageProducer",
 ] as const;

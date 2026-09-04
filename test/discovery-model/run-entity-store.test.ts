@@ -284,10 +284,15 @@ describe("RunEntityStore", () => {
       "ApplicationModuleDependency",
       "RestController",
       "RestClient",
+      "NodejsRestController",
+      "NodejsRestClient",
       "MessageConsumer",
       "MessageProducer",
     ]);
-    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.link"], ["DirectRestRequestsServingMatch"]);
+    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.link"], [
+      "DirectRestRequestsServingMatch",
+      "NodejsDirectRestRequestsServingMatch",
+    ]);
   });
 
   it("adds links allowed for scan.link with platform metadata", () => {

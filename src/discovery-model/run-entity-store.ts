@@ -42,6 +42,8 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
     "ApplicationModuleDependency",
     "RestController",
     "RestClient",
+    "NodejsRestController",
+    "NodejsRestClient",
     "MessageConsumer",
     "MessageProducer",
   ],
@@ -51,7 +53,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
 > = {
-  "scan.link": ["DirectRestRequestsServingMatch"],
+  "scan.link": ["DirectRestRequestsServingMatch", "NodejsDirectRestRequestsServingMatch"],
 };
 
 function isEntityTypeAllowedForGroup(

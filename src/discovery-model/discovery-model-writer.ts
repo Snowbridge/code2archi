@@ -25,6 +25,15 @@ export const REST_CLIENT_SCHEMA_ID =
 export const DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID =
   "https://code2archi.dev/specifications/discovery-model/schemas/DirectRestRequestsServingMatch.schema.json";
 
+export const NODEJS_REST_CONTROLLER_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/NodejsRestController.schema.json";
+
+export const NODEJS_REST_CLIENT_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/NodejsRestClient.schema.json";
+
+export const NODEJS_DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/NodejsDirectRestRequestsServingMatch.schema.json";
+
 interface ManifestCollectionEntry {
   readonly path: string;
   readonly contentType: "entities" | "many-to-many";
@@ -84,6 +93,14 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
     collectionPath: "rest-clients.json",
     schemaId: REST_CLIENT_SCHEMA_ID,
   },
+  NodejsRestController: {
+    collectionPath: "nodejs-rest-controllers.json",
+    schemaId: NODEJS_REST_CONTROLLER_SCHEMA_ID,
+  },
+  NodejsRestClient: {
+    collectionPath: "nodejs-rest-clients.json",
+    schemaId: NODEJS_REST_CLIENT_SCHEMA_ID,
+  },
   MessageConsumer: { collectionPath: "message-consumers.json" },
   MessageProducer: { collectionPath: "message-producers.json" },
 };
@@ -96,6 +113,14 @@ const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
     toEntityType: "RestClient",
     fromIdField: "restControllerId",
     toIdField: "restClientId",
+  },
+  NodejsDirectRestRequestsServingMatch: {
+    collectionPath: "nodejs-direct-rest-requests-serving-matches.json",
+    schemaId: NODEJS_DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID,
+    fromEntityType: "NodejsRestController",
+    toEntityType: "NodejsRestClient",
+    fromIdField: "nodejsRestControllerId",
+    toIdField: "nodejsRestClientId",
   },
 };
 
