@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { registerPredefinedMetrics } from "../../../src/platform/profiling/predefined.js";
 import { Profiler } from "../../../src/platform/profiling/profiler.js";
+import { packageVersion } from "../../../src/package-version.js";
 import { buildMetricsReport, resolveUniqueMetricsReportPath, writeMetricsReport } from "../../../src/platform/profiling/report-writer.js";
 import { initProfiling, finalizeProfiling } from "../../../src/platform/profiling/index.js";
 import { resetProfilingState } from "../../../src/platform/profiling/profiling-state.js";
@@ -18,6 +19,7 @@ describe("metrics report writer", () => {
 
     const report = buildMetricsReport(profiler, "code2archi scan /src --profile");
     assert.equal(report._meta.command, "code2archi scan /src --profile");
+    assert.equal(report._meta.version, packageVersion);
     assert.ok(report._meta.writtenAt.length > 0);
     assert.equal(report.metrics["run.duration.total"], 100);
     assert.equal(report.metrics['run.step.duration{step="1"}'], 40);
@@ -58,10 +60,11 @@ describe("profiling lifecycle", () => {
     assert.ok(reportPath);
 
     const report = JSON.parse(readFileSync(reportPath!, "utf8")) as {
-      _meta: { command: string };
+      _meta: { command: string; version: string };
       metrics: Record<string, number>;
     };
     assert.equal(report._meta.command, "code2archi scan /src --threads 10 --profile");
+    assert.equal(report._meta.version, packageVersion);
     assert.ok(typeof report.metrics["run.duration.total"] === "number");
 
     rmSync(reportPath!, { force: true });

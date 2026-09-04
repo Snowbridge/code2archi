@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { packageVersion } from "../../package-version.js";
 import { formatIso8601WithOffset, formatRunTimestamp } from "../timestamp.js";
 import { METRIC_LABEL_NAMES } from "./metric-types.js";
 import { formatMetricKey } from "./prometheus-key.js";
@@ -9,6 +10,7 @@ import type { Profiler } from "./profiler.js";
 export interface MetricsReport {
   readonly _meta: {
     readonly command: string;
+    readonly version: string;
     readonly writtenAt: string;
   };
   readonly metrics: Record<string, number>;
@@ -34,6 +36,7 @@ export function buildMetricsReport(
   return {
     _meta: {
       command: commandLine,
+      version: packageVersion,
       writtenAt: formatIso8601WithOffset(),
     },
     metrics,
