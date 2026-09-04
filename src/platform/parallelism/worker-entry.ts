@@ -1,8 +1,11 @@
+import { performance } from "node:perf_hooks";
 import { parentPort, workerData } from "node:worker_threads";
 import "../processors/builtin-processors.js";
+import { METRIC_WORKER_PHASE_SETUP } from "../profiling/metric-types.js";
 import { dispatchWorkerTask } from "./worker-dispatch.js";
-import { initWorkerRuntime, resetWorkerRuntime } from "./worker-runtime.js";
-import type { WorkerOutboundMessage, WorkerTaskRequest } from "./worker-messages.js";
+import { initWorkerRuntime, resetWorkerRuntime, workerRecordValue } from "./worker-runtime.js";
+import { setWorkerPhase } from "./worker-phase-context.js";
+import type { WorkerInboundMessage, WorkerOutboundMessage } from "./worker-messages.js";
 
 const threadId = typeof workerData?.threadId === "string" ? workerData.threadId : "worker";
 
@@ -10,7 +13,24 @@ function postEvent(message: WorkerOutboundMessage): void {
   parentPort?.postMessage(message);
 }
 
-parentPort?.on("message", (request: WorkerTaskRequest) => {
+function handlePhaseSetup(message: Extract<WorkerInboundMessage, { type: "phaseSetup" }>): void {
+  initWorkerRuntime({
+    threadId,
+    postEvent,
+    trackWorkerTaskMetrics: false,
+  });
+
+  const startedAt = performance.now();
+  setWorkerPhase(message.phaseId, message.snapshot, message.snapshotFilterScope);
+  workerRecordValue(METRIC_WORKER_PHASE_SETUP, performance.now() - startedAt, [message.phaseId]);
+
+  parentPort?.postMessage({
+    type: "phaseSetupAck",
+    phaseId: message.phaseId,
+  } satisfies WorkerOutboundMessage);
+}
+
+function handleTask(request: Extract<WorkerInboundMessage, { taskId: string }>): void {
   initWorkerRuntime({
     threadId,
     postEvent,
@@ -36,4 +56,13 @@ parentPort?.on("message", (request: WorkerTaskRequest) => {
   } finally {
     resetWorkerRuntime();
   }
+}
+
+parentPort?.on("message", (message: WorkerInboundMessage) => {
+  if (message.type === "phaseSetup") {
+    handlePhaseSetup(message);
+    return;
+  }
+
+  handleTask(message);
 });

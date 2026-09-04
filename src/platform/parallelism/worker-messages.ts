@@ -36,16 +36,32 @@ export interface WorkerTaskErrorMessage {
   readonly stack?: string;
 }
 
-export type WorkerOutboundMessage =
-  | WorkerLogMessage
-  | WorkerProgressMessage
-  | WorkerMetricMessage
-  | WorkerTaskResultMessage
-  | WorkerTaskErrorMessage;
-
 export interface WorkerTaskRequest {
+  readonly type?: "task";
   readonly taskId: string;
   readonly handlerId: string;
   readonly input: unknown;
   readonly trackWorkerTaskMetrics: boolean;
 }
+
+export interface WorkerPhaseSetupMessage {
+  readonly type: "phaseSetup";
+  readonly phaseId: string;
+  readonly snapshot: import("./snapshot-serialization.js").SerializableDiscoverySnapshot;
+  readonly snapshotFilterScope: import("./snapshot-serialization.js").SnapshotRepositoryFilterScope;
+}
+
+export interface WorkerPhaseSetupAckMessage {
+  readonly type: "phaseSetupAck";
+  readonly phaseId: string;
+}
+
+export type WorkerInboundMessage = WorkerPhaseSetupMessage | WorkerTaskRequest;
+
+export type WorkerOutboundMessage =
+  | WorkerLogMessage
+  | WorkerProgressMessage
+  | WorkerMetricMessage
+  | WorkerTaskResultMessage
+  | WorkerTaskErrorMessage
+  | WorkerPhaseSetupAckMessage;

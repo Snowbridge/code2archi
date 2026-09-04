@@ -157,14 +157,11 @@ describe("buildScanSourceTasks", () => {
       { id: { groupId: "scan.source.assembly.gradle", artifactId: "modules-and-dependencies" } },
     ];
 
-    const tasks = buildScanSourceTasks(processors, snapshot, "2", {
-      snapshotFilterScope: "assembly",
-    });
+    const tasks = buildScanSourceTasks(processors, snapshot, "2");
 
     assert.equal(tasks.length, 4);
-    assert.ok(
-      tasks.every((task) => task.input.snapshotFilterScope === "assembly"),
-    );
+    assert.ok(tasks.every((task) => task.input.repositoryId !== undefined));
+    assert.ok(tasks.every((task) => task.input.snapshot === undefined));
     assert.ok(
       tasks.some((task) =>
         task.taskId === "scan.source.assembly.maven/modules-and-dependencies:repo-a",

@@ -10,6 +10,8 @@ import {
   METRIC_SLOTS_GENERATED,
   METRIC_WORKER_TASK_ERROR,
   METRIC_WORKER_TASK_SUCCESS,
+  METRIC_WORKER_TASK_DURATION,
+  METRIC_WORKER_PHASE_SETUP,
 } from "./metric-types.js";
 import type { Profiler } from "./profiler.js";
 
@@ -26,6 +28,8 @@ export function registerPredefinedMetrics(
   profiler.registerMetric(METRIC_PROCESSOR_ERROR, "counter");
   profiler.registerMetric(METRIC_FILES_PROCESSED, "counter");
   profiler.registerMetric(METRIC_SLOTS_GENERATED, "counter");
+  profiler.registerMetric(METRIC_WORKER_TASK_DURATION, "average");
+  profiler.registerMetric(METRIC_WORKER_PHASE_SETUP, "max");
 
   if (options?.continueOnError) {
     profiler.registerMetric(METRIC_WORKER_TASK_SUCCESS, "counter");

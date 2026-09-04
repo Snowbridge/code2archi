@@ -2,6 +2,8 @@ export type MetricType = "counter" | "average" | "max" | "min";
 
 export const METRIC_WORKER_TASK_SUCCESS = "run.worker.task.success";
 export const METRIC_WORKER_TASK_ERROR = "run.worker.task.error";
+export const METRIC_WORKER_TASK_DURATION = "run.worker.task.duration";
+export const METRIC_WORKER_PHASE_SETUP = "run.worker.phase.setup";
 
 export const METRIC_RUN_DURATION_TOTAL = "run.duration.total";
 export const METRIC_RUN_STEP_DURATION = "run.step.duration";
@@ -18,6 +20,7 @@ export const LABEL_GROUP_ID = "groupId";
 export const LABEL_ARTIFACT_ID = "artifactId";
 export const LABEL_EXT = "ext";
 export const LABEL_SLOT_NAME = "slotName";
+export const LABEL_PHASE_ID = "phaseId";
 
 export const METRIC_LABEL_NAMES: Readonly<Record<string, readonly string[]>> = {
   [METRIC_RUN_STEP_DURATION]: [LABEL_STEP],
@@ -28,4 +31,6 @@ export const METRIC_LABEL_NAMES: Readonly<Record<string, readonly string[]>> = {
   [METRIC_PROCESSOR_ERROR]: [LABEL_GROUP_ID, LABEL_ARTIFACT_ID],
   [METRIC_FILES_PROCESSED]: [LABEL_EXT],
   [METRIC_SLOTS_GENERATED]: [LABEL_SLOT_NAME],
+  [METRIC_WORKER_TASK_DURATION]: [LABEL_GROUP_ID, LABEL_ARTIFACT_ID],
+  [METRIC_WORKER_PHASE_SETUP]: [LABEL_PHASE_ID],
 };

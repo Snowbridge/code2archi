@@ -1,7 +1,7 @@
 export type { ParallelismOptions } from "./parallelism-options.js";
 export { effectiveThreadCount, shouldUseWorkerThreads } from "./parallelism-options.js";
 export { createMainThreadBridge, type MainThreadBridge } from "./main-thread-bridge.js";
-export { createWorkerPool, type WorkerPool, type WorkerPoolRunResult } from "./worker-pool.js";
+export { createWorkerPool, type WorkerPool, type WorkerPoolRunResult, type WorkerPhaseSetup } from "./worker-pool.js";
 export {
   serializeDiscoverySnapshot,
   serializeArchiSnapshot,

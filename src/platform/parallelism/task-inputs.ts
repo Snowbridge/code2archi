@@ -11,7 +11,7 @@ export interface ScanScopeUnitDescriptor {
 
 export interface ScanProcessorTaskInput {
   readonly processor: ProcessorId;
-  readonly snapshot: SerializableDiscoverySnapshot;
+  readonly snapshot?: SerializableDiscoverySnapshot;
   readonly repositoryId?: string;
   readonly snapshotFilterScope?: SnapshotRepositoryFilterScope;
   readonly progressStepId?: string;

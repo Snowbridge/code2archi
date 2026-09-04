@@ -3,6 +3,7 @@ import type { CreateIntents } from "../../../discovery-model/entities/create-int
 import type { Repository } from "../../../discovery-model/entities/repository.js";
 import { processorRegistry } from "../../processors/processor-registry.js";
 import type { ScanAppInput, ScanScopeInput } from "../../processors/processor.js";
+import { runProcessorWithMetrics } from "../../profiling/flow-metrics.js";
 import { GitWorkingCopy } from "../../../utils/git-working-copy.js";
 import { RepositoryBuilder } from "../../../utils/repository-builder.js";
 import {
@@ -10,18 +11,35 @@ import {
   filterSerializableDiscoverySnapshotToRepository,
 } from "../snapshot-serialization.js";
 import type { ScanProcessorTaskInput, ScanScopeUnitTaskInput } from "../task-inputs.js";
+import { tryGetWorkerPhase } from "../worker-phase-context.js";
+import { getOrBuildRepositorySnapshot } from "../worker-snapshot-cache.js";
 import { createWorkerProgressHandle } from "../worker-runtime.js";
 import { WORKER_HANDLER_SCAN_SCOPE_UNIT } from "../worker-handler-id.js";
 
+function resolveScanProcessorSnapshot(input: ScanProcessorTaskInput): ScanAppInput {
+  const phase = tryGetWorkerPhase();
+  if (phase && input.repositoryId) {
+    return getOrBuildRepositorySnapshot(input.repositoryId);
+  }
+
+  if (input.repositoryId && input.snapshot) {
+    const snapshotData = filterSerializableDiscoverySnapshotToRepository(
+      input.snapshot,
+      input.repositoryId,
+      input.snapshotFilterScope ?? "rest",
+    );
+    return deserializeDiscoverySnapshot(snapshotData);
+  }
+
+  if (input.snapshot) {
+    return deserializeDiscoverySnapshot(input.snapshot);
+  }
+
+  throw new Error("Scan processor task requires phase setup or inline snapshot");
+}
+
 export function runScanProcessorTask(input: ScanProcessorTaskInput): CreateIntents {
-  const snapshotData = input.repositoryId
-    ? filterSerializableDiscoverySnapshotToRepository(
-        input.snapshot,
-        input.repositoryId,
-        input.snapshotFilterScope ?? "rest",
-      )
-    : input.snapshot;
-  const snapshot = deserializeDiscoverySnapshot(snapshotData);
+  const snapshot = resolveScanProcessorSnapshot(input);
   const progress = input.progressStepId
     ? createWorkerProgressHandle(input.progressStepId)
     : undefined;
@@ -46,7 +64,9 @@ export function runScanProcessorTask(input: ScanProcessorTaskInput): CreateInten
     : snapshot;
 
   processor.logStart();
-  const output = processor.process(scanInput) as CreateIntents;
+  const output = runProcessorWithMetrics(input.processor, () =>
+    processor.process(scanInput),
+  ) as CreateIntents;
   if (output instanceof Promise) {
     throw new Error(
       `Processor ${input.processor.groupId}/${input.processor.artifactId} returned a Promise`,
@@ -101,7 +121,9 @@ export function runScanScopeUnitTask(input: ScanScopeUnitTaskInput): readonly Re
     );
   }
 
-  const output = processor.process(scopeInput) as readonly Repository[];
+  const output = runProcessorWithMetrics(input.processor, () =>
+    processor.process(scopeInput),
+  ) as readonly Repository[];
   if (output instanceof Promise) {
     throw new Error(
       `Processor ${input.processor.groupId}/${input.processor.artifactId} returned a Promise`,

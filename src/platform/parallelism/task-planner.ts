@@ -7,7 +7,6 @@ import { isSupportedScanScopeUnitProcessor } from "./handlers/scan-handlers.js";
 import {
   serializeDiscoverySnapshot,
   type SerializableDiscoverySnapshot,
-  type SnapshotRepositoryFilterScope,
 } from "./snapshot-serialization.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
 
@@ -15,13 +14,7 @@ export function buildScanSourceTasks(
   processors: readonly { readonly id: ProcessorId }[],
   snapshot: DiscoveryModelSnapshot,
   progressStepId: string,
-  options?: {
-    readonly serialized?: SerializableDiscoverySnapshot;
-    readonly snapshotFilterScope?: SnapshotRepositoryFilterScope;
-  },
 ): ParallelTask<ScanProcessorTaskInput>[] {
-  const serialized = options?.serialized ?? serializeDiscoverySnapshot(snapshot);
-  const snapshotFilterScope = options?.snapshotFilterScope;
   const repositories = snapshot.listEntities("Repository");
   const tasks: ParallelTask<ScanProcessorTaskInput>[] = [];
 
@@ -31,9 +24,7 @@ export function buildScanSourceTasks(
         taskId: `${processor.id.groupId}/${processor.id.artifactId}:${repository.id}`,
         input: {
           processor: processor.id,
-          snapshot: serialized,
           repositoryId: repository.id,
-          snapshotFilterScope,
           progressStepId,
         },
       });

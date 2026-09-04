@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import { describe, it } from "node:test";
+import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
 import { createMainThreadBridge } from "../../../src/platform/parallelism/main-thread-bridge.js";
 import { dispatchWorkerTask } from "../../../src/platform/parallelism/worker-dispatch.js";
 import { createWorkerPool } from "../../../src/platform/parallelism/worker-pool.js";
-import { WORKER_HANDLER_SCAN_SCOPE_UNIT } from "../../../src/platform/parallelism/worker-handler-id.js";
+import { WORKER_HANDLER_SCAN_PROCESSOR, WORKER_HANDLER_SCAN_SCOPE_UNIT } from "../../../src/platform/parallelism/worker-handler-id.js";
+import { serializeDiscoverySnapshot } from "../../../src/platform/parallelism/snapshot-serialization.js";
 import { METRIC_WORKER_TASK_ERROR, METRIC_WORKER_TASK_SUCCESS } from "../../../src/platform/profiling/metric-types.js";
 import { initProfiling, getValue } from "../../../src/platform/profiling/index.js";
 import { resetProfilingState } from "../../../src/platform/profiling/profiling-state.js";
@@ -95,6 +98,108 @@ describe("worker pool", () => {
       assert.equal(errors.size, 0);
       assert.equal(results.size, 1);
       assert.equal(progressTicks.length, 1);
+    } finally {
+      pool.shutdown();
+    }
+  });
+
+  it("completes all work-queue tasks with multiple workers", async () => {
+    const bridge = createMainThreadBridge(new Map());
+    const pool = createWorkerPool({ threads: 4, sync: false, continueOnError: false }, false);
+    const tasks = Array.from({ length: 20 }, (_, index) => {
+      const sourceDir = createTestTempDir(`c2a-wq-${index}-`);
+      return {
+        taskId: `scope:${index}`,
+        input: {
+          processor: { groupId: "scan.scope", artifactId: "unversioned-folders" },
+          sourceDirs: [sourceDir],
+          unit: { kind: "sourceDir" as const, path: sourceDir },
+        },
+      };
+    });
+
+    try {
+      const { results, errors } = await pool.runTasks({
+        handlerId: WORKER_HANDLER_SCAN_SCOPE_UNIT,
+        bridge,
+        tasks,
+      });
+
+      assert.equal(errors.size, 0);
+      assert.equal(results.size, 20);
+    } finally {
+      pool.shutdown();
+    }
+  });
+
+  it("setupPhase delivers snapshot to workers for scan.source tasks", async () => {
+    const root = createTestTempDir("c2a-phase-setup-");
+    const repoDir = path.join(root, "app");
+    const { mkdirSync, writeFileSync } = await import("node:fs");
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      path.join(repoDir, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+
+    const snapshot = buildDiscoveryModelSnapshot({
+      scanId: "scan-1",
+      sourceRoot: root,
+      sourceDirs: [root],
+      repositoryCommonRoot: root,
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+      entityArrays: {
+        Repository: [
+          {
+            id: "repo-app",
+            name: "app",
+            namespace: "/app",
+            localPath: repoDir,
+            url: "",
+            buildSystems: ["maven"],
+          },
+        ],
+      },
+    });
+
+    const bridge = createMainThreadBridge(new Map());
+    const pool = createWorkerPool({ threads: 2, sync: false, continueOnError: false }, false);
+
+    try {
+      await pool.setupPhase(
+        {
+          phaseId: "scan.source.assembly",
+          snapshot: serializeDiscoverySnapshot(snapshot),
+          snapshotFilterScope: "assembly",
+        },
+        bridge,
+      );
+
+      const { results, errors } = await pool.runTasks({
+        handlerId: WORKER_HANDLER_SCAN_PROCESSOR,
+        bridge,
+        tasks: [
+          {
+            taskId: "maven:repo-app",
+            input: {
+              processor: {
+                groupId: "scan.source.assembly.maven",
+                artifactId: "modules-and-dependencies",
+              },
+              repositoryId: "repo-app",
+            },
+          },
+        ],
+      });
+
+      assert.equal(errors.size, 0);
+      assert.equal(results.size, 1);
     } finally {
       pool.shutdown();
     }

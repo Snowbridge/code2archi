@@ -113,10 +113,17 @@ async function runParallelScanSourcePhase(
 
   const snapshot = store.snapshot();
   const serialized = serializeDiscoverySnapshot(snapshot);
-  const tasks = buildScanSourceTasks(processors, snapshot, progressStepId, {
-    serialized,
-    snapshotFilterScope,
-  });
+  const phaseId = `scan.source.${snapshotFilterScope}`;
+  await parallel.pool.setupPhase(
+    {
+      phaseId,
+      snapshot: serialized,
+      snapshotFilterScope,
+    },
+    parallel.bridge,
+  );
+
+  const tasks = buildScanSourceTasks(processors, snapshot, progressStepId);
   if (tasks.length === 0) {
     return;
   }

@@ -1,17 +1,36 @@
 import os from "node:os";
+import { performance } from "node:perf_hooks";
 import { Worker } from "node:worker_threads";
 import { getLogger } from "../logging/index.js";
+import { recordValue } from "../profiling/index.js";
+import { METRIC_WORKER_PHASE_SETUP } from "../profiling/metric-types.js";
 import { dispatchWorkerTask } from "./worker-dispatch.js";
 import type { MainThreadBridge } from "./main-thread-bridge.js";
 import type { ParallelismOptions } from "./parallelism-options.js";
 import { effectiveThreadCount, shouldUseWorkerThreads } from "./parallelism-options.js";
+import type {
+  SerializableDiscoverySnapshot,
+  SnapshotRepositoryFilterScope,
+} from "./snapshot-serialization.js";
 import type { WorkerHandlerId } from "./worker-handler-id.js";
-import type { WorkerOutboundMessage, WorkerTaskRequest } from "./worker-messages.js";
+import type {
+  WorkerInboundMessage,
+  WorkerOutboundMessage,
+  WorkerPhaseSetupMessage,
+  WorkerTaskRequest,
+} from "./worker-messages.js";
+import { setWorkerPhase } from "./worker-phase-context.js";
 import { initWorkerRuntime, resetWorkerRuntime } from "./worker-runtime.js";
 
 export interface ParallelTask<TInput> {
   readonly taskId: string;
   readonly input: TInput;
+}
+
+export interface WorkerPhaseSetup {
+  readonly phaseId: string;
+  readonly snapshot: SerializableDiscoverySnapshot;
+  readonly snapshotFilterScope: SnapshotRepositoryFilterScope;
 }
 
 export interface WorkerPoolRunOptions<TInput, TOutput> {
@@ -26,6 +45,7 @@ export interface WorkerPoolRunResult<TOutput> {
 }
 
 export interface WorkerPool {
+  setupPhase(setup: WorkerPhaseSetup, bridge: MainThreadBridge): Promise<void>;
   runTasks<TInput, TOutput>(
     options: WorkerPoolRunOptions<TInput, TOutput>,
   ): Promise<WorkerPoolRunResult<TOutput>>;
@@ -63,25 +83,38 @@ class InlineWorkerPool implements WorkerPool {
     private readonly trackWorkerTaskMetrics: boolean,
   ) {}
 
+  async setupPhase(setup: WorkerPhaseSetup, _bridge: MainThreadBridge): Promise<void> {
+    const startedAt = performance.now();
+    setWorkerPhase(setup.phaseId, setup.snapshot, setup.snapshotFilterScope);
+    recordValue(METRIC_WORKER_PHASE_SETUP, performance.now() - startedAt, [setup.phaseId]);
+  }
+
   async runTasks<TInput, TOutput>(
     options: WorkerPoolRunOptions<TInput, TOutput>,
   ): Promise<WorkerPoolRunResult<TOutput>> {
     const results = new Map<string, TOutput>();
     const errors = new Map<string, Error>();
+    const pending = [...options.tasks];
+    let stopScheduling = false;
 
-    for (const task of options.tasks) {
-      try {
-        const result = runInlineTask(options, task, this.trackWorkerTaskMetrics);
-        results.set(task.taskId, result);
-      } catch (error) {
-        const failure = error instanceof Error ? error : new Error(String(error));
-        errors.set(task.taskId, failure);
-        if (!this.options.continueOnError) {
-          break;
+    const workerLoop = async (): Promise<void> => {
+      while (!stopScheduling && pending.length > 0) {
+        const task = pending.shift()!;
+        try {
+          const result = runInlineTask(options, task, this.trackWorkerTaskMetrics);
+          results.set(task.taskId, result);
+        } catch (error) {
+          const failure = error instanceof Error ? error : new Error(String(error));
+          errors.set(task.taskId, failure);
+          if (!this.options.continueOnError) {
+            stopScheduling = true;
+            break;
+          }
         }
       }
-    }
+    };
 
+    await workerLoop();
     return { results, errors };
   }
 
@@ -162,50 +195,78 @@ class ThreadWorkerPool implements WorkerPool {
     slot.taskReject = undefined;
   }
 
+  async setupPhase(setup: WorkerPhaseSetup, bridge: MainThreadBridge): Promise<void> {
+    await Promise.all(
+      this.workers.map((slot) => this.sendPhaseSetup(slot, setup, bridge)),
+    );
+  }
+
+  private sendPhaseSetup(
+    slot: WorkerSlot,
+    setup: WorkerPhaseSetup,
+    bridge: MainThreadBridge,
+  ): Promise<void> {
+    const message: WorkerPhaseSetupMessage = {
+      type: "phaseSetup",
+      phaseId: setup.phaseId,
+      snapshot: setup.snapshot,
+      snapshotFilterScope: setup.snapshotFilterScope,
+    };
+
+    return new Promise<void>((resolve, reject) => {
+      const onMessage = (outbound: WorkerOutboundMessage) => {
+        if (
+          outbound.type === "log" ||
+          outbound.type === "progress" ||
+          outbound.type === "metric"
+        ) {
+          bridge.dispatch(outbound);
+          return;
+        }
+
+        if (outbound.type === "phaseSetupAck" && outbound.phaseId === setup.phaseId) {
+          slot.worker.off("message", onMessage);
+          resolve();
+          return;
+        }
+
+        if (outbound.type === "taskError") {
+          slot.worker.off("message", onMessage);
+          reject(new Error(outbound.message));
+        }
+      };
+
+      slot.worker.on("message", onMessage);
+      slot.worker.postMessage(message satisfies WorkerInboundMessage);
+    });
+  }
+
   async runTasks<TInput, TOutput>(
     options: WorkerPoolRunOptions<TInput, TOutput>,
   ): Promise<WorkerPoolRunResult<TOutput>> {
     const results = new Map<string, TOutput>();
     const errors = new Map<string, Error>();
-    const concurrency = this.workers.length;
+    const pending = [...options.tasks];
+    let stopScheduling = false;
 
-    for (let batchStart = 0; batchStart < options.tasks.length; batchStart += concurrency) {
-      if (errors.size > 0 && !this.options.continueOnError) {
-        break;
-      }
-
-      const batch = options.tasks.slice(batchStart, batchStart + concurrency);
-      const batchOutcomes = await Promise.all(
-        batch.map(async (task, index) => {
-          try {
-            const result = await this.runTaskOnWorker<TInput, TOutput>(
-              this.workers[index]!,
-              options,
-              task,
-            );
-            return { taskId: task.taskId, result };
-          } catch (error) {
-            const failure = error instanceof Error ? error : new Error(String(error));
-            return { taskId: task.taskId, error: failure };
-          }
-        }),
-      );
-
-      for (const outcome of batchOutcomes) {
-        if ("error" in outcome && outcome.error) {
-          errors.set(outcome.taskId, outcome.error);
+    const workerLoop = async (slot: WorkerSlot): Promise<void> => {
+      while (!stopScheduling && pending.length > 0) {
+        const task = pending.shift()!;
+        try {
+          const result = await this.runTaskOnWorker<TInput, TOutput>(slot, options, task);
+          results.set(task.taskId, result);
+        } catch (error) {
+          const failure = error instanceof Error ? error : new Error(String(error));
+          errors.set(task.taskId, failure);
           if (!this.options.continueOnError) {
-            return { results, errors };
+            stopScheduling = true;
+            break;
           }
-          continue;
-        }
-
-        if ("result" in outcome) {
-          results.set(outcome.taskId, outcome.result);
         }
       }
-    }
+    };
 
+    await Promise.all(this.workers.map((slot) => workerLoop(slot)));
     return { results, errors };
   }
 
@@ -233,6 +294,10 @@ class ThreadWorkerPool implements WorkerPool {
           return;
         }
 
+        if (message.type !== "taskResult" && message.type !== "taskError") {
+          return;
+        }
+
         if (message.taskId !== task.taskId) {
           return;
         }
@@ -253,7 +318,7 @@ class ThreadWorkerPool implements WorkerPool {
 
       slot.onMessage = onMessage;
       slot.worker.on("message", onMessage);
-      slot.worker.postMessage(request);
+      slot.worker.postMessage(request satisfies WorkerInboundMessage);
     });
   }
 

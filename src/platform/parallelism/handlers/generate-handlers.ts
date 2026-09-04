@@ -1,6 +1,7 @@
 import type { ArchiCreateIntents } from "../../../archimate-model/archi-create-intents.js";
 import { processorRegistry } from "../../processors/processor-registry.js";
 import type { GenerateProcessorInput } from "../../processors/processor.js";
+import { runProcessorWithMetrics } from "../../profiling/flow-metrics.js";
 import { deserializeArchiSnapshot, deserializeDiscoverySnapshot } from "../snapshot-serialization.js";
 import type { GenerateProcessorTaskInput } from "../task-inputs.js";
 
@@ -19,7 +20,9 @@ export function runGenerateProcessorTask(input: GenerateProcessorTaskInput): Arc
   };
 
   processor.logStart();
-  const output = processor.process(generateInput) as ArchiCreateIntents;
+  const output = runProcessorWithMetrics(input.processor, () =>
+    processor.process(generateInput),
+  ) as ArchiCreateIntents;
   if (output instanceof Promise) {
     throw new Error(
       `Processor ${input.processor.groupId}/${input.processor.artifactId} returned a Promise`,
