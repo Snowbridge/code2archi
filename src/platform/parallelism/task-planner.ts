@@ -2,8 +2,14 @@ import path from "node:path";
 import { GitWorkingCopy } from "../../utils/git-working-copy.js";
 import type { ProcessorId } from "../processors/processor.js";
 import type { ParallelTask } from "./worker-pool.js";
-import type { ScanProcessorTaskInput, ScanScopeUnitDescriptor, ScanScopeUnitTaskInput } from "./task-inputs.js";
+import type {
+  ScanProcessorTaskInput,
+  ScanRepositoryBatchTaskInput,
+  ScanScopeUnitDescriptor,
+  ScanScopeUnitTaskInput,
+} from "./task-inputs.js";
 import { isSupportedScanScopeUnitProcessor } from "./handlers/scan-handlers.js";
+import type { SnapshotRepositoryFilterScope } from "./snapshot-serialization.js";
 import {
   serializeDiscoverySnapshot,
   type SerializableDiscoverySnapshot,
@@ -32,6 +38,27 @@ export function buildScanSourceTasks(
   }
 
   return tasks;
+}
+
+export function buildScanRepositoryBatchTasks(
+  processors: readonly { readonly id: ProcessorId }[],
+  snapshot: DiscoveryModelSnapshot,
+  progressStepId: string,
+  phaseScope: SnapshotRepositoryFilterScope,
+  continueOnError: boolean,
+): ParallelTask<ScanRepositoryBatchTaskInput>[] {
+  const processorIds = processors.map((processor) => processor.id);
+  const repositories = snapshot.listEntities("Repository");
+
+  return repositories.map((repository) => ({
+    taskId: `scan.source:${phaseScope}:${repository.id}`,
+    input: {
+      repositoryId: repository.id,
+      processors: processorIds,
+      progressStepId,
+      continueOnError,
+    },
+  }));
 }
 
 export function buildScanLinkTasks(

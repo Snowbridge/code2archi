@@ -6,7 +6,7 @@ import type { MainThreadBridge } from "../parallelism/main-thread-bridge.js";
 import { resetScanIoCache } from "../scan-io/index.js";
 import {
   buildScanLinkTasks,
-  buildScanSourceTasks,
+  buildScanRepositoryBatchTasks,
 } from "../parallelism/task-planner.js";
 import { partitionScanSourceProcessors } from "../parallelism/scan-source-phases.js";
 import { serializeDiscoverySnapshot } from "../parallelism/snapshot-serialization.js";
@@ -18,7 +18,13 @@ import { processorRegistry } from "./processor-registry.js";
 import type { ScanAppInput } from "./processor.js";
 import type { ProcessorId } from "./processor.js";
 import { getLogger } from "../logging/index.js";
-import { mergeParallelCreateIntentResults, runScanProcessorPool } from "./parallel-group-runner.js";
+import {
+  collectRepositoryBatchProcessorErrors,
+  mergeRepositoryBatchResults,
+  mergeParallelCreateIntentResults,
+  runScanProcessorPool,
+  runScanRepositoryBatchPool,
+} from "./parallel-group-runner.js";
 
 export interface ProcessorGroupParallelContext {
   readonly pool: WorkerPool;
@@ -127,16 +133,18 @@ async function runParallelScanSourcePhase(
     parallel.bridge,
   );
 
-  const tasks = buildScanSourceTasks(processors, snapshot, progressStepId);
+  const tasks = buildScanRepositoryBatchTasks(
+    processors,
+    snapshot,
+    progressStepId,
+    snapshotFilterScope,
+    parallel.continueOnError,
+  );
   if (tasks.length === 0) {
     return;
   }
 
-  const processorByTaskId = new Map<string, ProcessorId>(
-    tasks.map((task) => [task.taskId, task.input.processor]),
-  );
-
-  const { results } = await runScanProcessorPool(
+  const { results } = await runScanRepositoryBatchPool(
     parallel.pool,
     parallel.bridge,
     tasks,
@@ -144,7 +152,25 @@ async function runParallelScanSourcePhase(
     SCAN_SOURCE_GROUP_ID,
   );
 
-  mergeParallelCreateIntentResults(SCAN_SOURCE_GROUP_ID, store, processorByTaskId, results);
+  mergeRepositoryBatchResults(SCAN_SOURCE_GROUP_ID, store, results);
+  const processorErrors = collectRepositoryBatchProcessorErrors(results);
+  if (processorErrors.size > 0) {
+    const logger = getLogger("platform.parallelism");
+    for (const [taskId, error] of processorErrors) {
+      logger.info("processor failed in batch", {
+        pool: SCAN_SOURCE_GROUP_ID,
+        taskId,
+        message: error.message,
+      });
+    }
+    if (parallel.continueOnError) {
+      throw new AggregateError(
+        [...processorErrors.values()],
+        `${SCAN_SOURCE_GROUP_ID}: ${processorErrors.size} processor(s) failed in batch`,
+      );
+    }
+    throw [...processorErrors.values()][0];
+  }
 }
 
 async function runParallelScanSourceGroup(

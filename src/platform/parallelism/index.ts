@@ -8,6 +8,7 @@ export {
 } from "./snapshot-serialization.js";
 export {
   buildScanSourceTasks,
+  buildScanRepositoryBatchTasks,
   buildScanLinkTasks,
   buildScanScopeTasks,
   buildGenerateProcessorTasks,
@@ -15,5 +16,6 @@ export {
 export {
   WORKER_HANDLER_GENERATE_PROCESSOR,
   WORKER_HANDLER_SCAN_PROCESSOR,
+  WORKER_HANDLER_SCAN_REPOSITORY_BATCH,
   WORKER_HANDLER_SCAN_SCOPE_UNIT,
 } from "./worker-handler-id.js";

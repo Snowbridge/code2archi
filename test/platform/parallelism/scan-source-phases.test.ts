@@ -8,7 +8,7 @@ import {
   filterSerializableDiscoverySnapshotToRepository,
   serializeDiscoverySnapshot,
 } from "../../../src/platform/parallelism/snapshot-serialization.js";
-import { buildScanSourceTasks } from "../../../src/platform/parallelism/task-planner.js";
+import { buildScanRepositoryBatchTasks, buildScanSourceTasks } from "../../../src/platform/parallelism/task-planner.js";
 import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
 
 describe("scan source phases", () => {
@@ -172,5 +172,57 @@ describe("buildScanSourceTasks", () => {
         task.taskId === "scan.source.assembly.gradle/modules-and-dependencies:repo-b",
       ),
     );
+  });
+});
+
+describe("buildScanRepositoryBatchTasks", () => {
+  it("builds one task per repository with all processors in order", () => {
+    const snapshot = buildDiscoveryModelSnapshot({
+      scanId: "scan-1",
+      sourceRoot: "/src",
+      sourceDirs: ["/src"],
+      repositoryCommonRoot: "/src",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+      entityArrays: {
+        Repository: [
+          {
+            id: "repo-a",
+            name: "a",
+            namespace: "/a",
+            localPath: "/src/a",
+            url: "",
+            buildSystems: ["maven"],
+          },
+          {
+            id: "repo-b",
+            name: "b",
+            namespace: "/b",
+            localPath: "/src/b",
+            url: "",
+            buildSystems: ["maven"],
+          },
+        ],
+      },
+    });
+
+    const processors = [
+      { id: { groupId: "scan.source.assembly.maven", artifactId: "modules-and-dependencies" } },
+      { id: { groupId: "scan.source.assembly.gradle", artifactId: "modules-and-dependencies" } },
+    ];
+
+    const tasks = buildScanRepositoryBatchTasks(
+      processors,
+      snapshot,
+      "2",
+      "assembly",
+      false,
+    );
+
+    assert.equal(tasks.length, 2);
+    assert.deepEqual(tasks[0]?.input.processors, processors.map((processor) => processor.id));
+    assert.equal(tasks[0]?.taskId, "scan.source:assembly:repo-a");
+    assert.equal(tasks[1]?.taskId, "scan.source:assembly:repo-b");
+    assert.equal(tasks[0]?.input.repositoryId, "repo-a");
+    assert.equal(tasks[0]?.input.continueOnError, false);
   });
 });

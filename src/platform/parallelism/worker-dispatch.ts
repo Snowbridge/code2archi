@@ -2,11 +2,16 @@ import { performance } from "node:perf_hooks";
 import {
   WORKER_HANDLER_GENERATE_PROCESSOR,
   WORKER_HANDLER_SCAN_PROCESSOR,
+  WORKER_HANDLER_SCAN_REPOSITORY_BATCH,
   WORKER_HANDLER_SCAN_SCOPE_UNIT,
   type WorkerHandlerId,
 } from "./worker-handler-id.js";
 import { runGenerateProcessorTask } from "./handlers/generate-handlers.js";
-import { runScanProcessorTask, runScanScopeUnitTask } from "./handlers/scan-handlers.js";
+import {
+  runScanProcessorTask,
+  runScanRepositoryBatchTask,
+  runScanScopeUnitTask,
+} from "./handlers/scan-handlers.js";
 import { recordValue } from "../profiling/index.js";
 import { METRIC_WORKER_TASK_DURATION } from "../profiling/metric-types.js";
 import type { ProcessorId } from "../processors/processor.js";
@@ -41,6 +46,8 @@ function extractProcessorId(handlerId: WorkerHandlerId, input: unknown): Process
   switch (handlerId) {
     case WORKER_HANDLER_SCAN_PROCESSOR:
       return (input as ScanProcessorTaskInput).processor;
+    case WORKER_HANDLER_SCAN_REPOSITORY_BATCH:
+      return undefined;
     case WORKER_HANDLER_SCAN_SCOPE_UNIT:
       return (input as ScanScopeUnitTaskInput).processor;
     case WORKER_HANDLER_GENERATE_PROCESSOR:
@@ -54,6 +61,10 @@ function executeHandler(handlerId: WorkerHandlerId, input: unknown): unknown {
   switch (handlerId) {
     case WORKER_HANDLER_SCAN_PROCESSOR:
       return runScanProcessorTask(input as Parameters<typeof runScanProcessorTask>[0]);
+    case WORKER_HANDLER_SCAN_REPOSITORY_BATCH:
+      return runScanRepositoryBatchTask(
+        input as Parameters<typeof runScanRepositoryBatchTask>[0],
+      );
     case WORKER_HANDLER_SCAN_SCOPE_UNIT:
       return runScanScopeUnitTask(input as Parameters<typeof runScanScopeUnitTask>[0]);
     case WORKER_HANDLER_GENERATE_PROCESSOR:
