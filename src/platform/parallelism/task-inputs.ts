@@ -1,5 +1,8 @@
 import type { ProcessorId } from "../processors/processor.js";
-import type { SerializableDiscoverySnapshot } from "./snapshot-serialization.js";
+import type {
+  SerializableDiscoverySnapshot,
+  SnapshotRepositoryFilterScope,
+} from "./snapshot-serialization.js";
 
 export interface ScanScopeUnitDescriptor {
   readonly kind: "repoRoot" | "sourceDir";
@@ -10,6 +13,7 @@ export interface ScanProcessorTaskInput {
   readonly processor: ProcessorId;
   readonly snapshot: SerializableDiscoverySnapshot;
   readonly repositoryId?: string;
+  readonly snapshotFilterScope?: SnapshotRepositoryFilterScope;
   readonly progressStepId?: string;
 }
 

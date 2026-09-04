@@ -8,6 +8,9 @@ import {
   buildScanLinkTasks,
   buildScanSourceTasks,
 } from "../parallelism/task-planner.js";
+import { partitionScanSourceProcessors } from "../parallelism/scan-source-phases.js";
+import { serializeDiscoverySnapshot } from "../parallelism/snapshot-serialization.js";
+import type { SnapshotRepositoryFilterScope } from "../parallelism/snapshot-serialization.js";
 import type { WorkerPool } from "../parallelism/worker-pool.js";
 import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
@@ -95,33 +98,60 @@ function runSequentialCreateIntentGroup(
   }
 }
 
+async function runParallelScanSourcePhase(
+  processors: readonly ReturnType<
+    typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>
+  >[number][],
+  store: RunEntityStore,
+  parallel: ProcessorGroupParallelContext,
+  progressStepId: string,
+  snapshotFilterScope: SnapshotRepositoryFilterScope,
+): Promise<void> {
+  if (processors.length === 0) {
+    return;
+  }
+
+  const snapshot = store.snapshot();
+  const serialized = serializeDiscoverySnapshot(snapshot);
+  const tasks = buildScanSourceTasks(processors, snapshot, progressStepId, {
+    serialized,
+    snapshotFilterScope,
+  });
+  if (tasks.length === 0) {
+    return;
+  }
+
+  const processorByTaskId = new Map<string, ProcessorId>(
+    tasks.map((task) => [task.taskId, task.input.processor]),
+  );
+
+  const { results } = await runScanProcessorPool(
+    parallel.pool,
+    parallel.bridge,
+    tasks,
+    parallel.continueOnError,
+    SCAN_SOURCE_GROUP_ID,
+  );
+
+  mergeParallelCreateIntentResults(SCAN_SOURCE_GROUP_ID, store, processorByTaskId, results);
+}
+
 async function runParallelScanSourceGroup(
   processors: ReturnType<typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>>,
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
 ): Promise<void> {
-  for (const processor of processors) {
-    const snapshot = store.snapshot();
-    const tasks = buildScanSourceTasks([processor], snapshot, progressStepId);
-    if (tasks.length === 0) {
-      continue;
-    }
+  const { assembly, rest } = partitionScanSourceProcessors(processors);
 
-    const processorByTaskId = new Map<string, ProcessorId>(
-      tasks.map((task) => [task.taskId, task.input.processor]),
-    );
-
-    const { results } = await runScanProcessorPool(
-      parallel.pool,
-      parallel.bridge,
-      tasks,
-      parallel.continueOnError,
-      SCAN_SOURCE_GROUP_ID,
-    );
-
-    mergeParallelCreateIntentResults(SCAN_SOURCE_GROUP_ID, store, processorByTaskId, results);
-  }
+  await runParallelScanSourcePhase(
+    assembly,
+    store,
+    parallel,
+    progressStepId,
+    "assembly",
+  );
+  await runParallelScanSourcePhase(rest, store, parallel, progressStepId, "rest");
 }
 
 async function runParallelScanLinkGroup(

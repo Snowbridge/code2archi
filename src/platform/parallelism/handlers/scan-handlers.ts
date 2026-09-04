@@ -15,7 +15,11 @@ import { WORKER_HANDLER_SCAN_SCOPE_UNIT } from "../worker-handler-id.js";
 
 export function runScanProcessorTask(input: ScanProcessorTaskInput): CreateIntents {
   const snapshotData = input.repositoryId
-    ? filterSerializableDiscoverySnapshotToRepository(input.snapshot, input.repositoryId)
+    ? filterSerializableDiscoverySnapshotToRepository(
+        input.snapshot,
+        input.repositoryId,
+        input.snapshotFilterScope ?? "rest",
+      )
     : input.snapshot;
   const snapshot = deserializeDiscoverySnapshot(snapshotData);
   const progress = input.progressStepId

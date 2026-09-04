@@ -4,16 +4,24 @@ import type { ProcessorId } from "../processors/processor.js";
 import type { ParallelTask } from "./worker-pool.js";
 import type { ScanProcessorTaskInput, ScanScopeUnitDescriptor, ScanScopeUnitTaskInput } from "./task-inputs.js";
 import { isSupportedScanScopeUnitProcessor } from "./handlers/scan-handlers.js";
-import { serializeDiscoverySnapshot } from "./snapshot-serialization.js";
+import {
+  serializeDiscoverySnapshot,
+  type SerializableDiscoverySnapshot,
+  type SnapshotRepositoryFilterScope,
+} from "./snapshot-serialization.js";
 import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
-import type { SerializableDiscoverySnapshot } from "./snapshot-serialization.js";
 
 export function buildScanSourceTasks(
   processors: readonly { readonly id: ProcessorId }[],
   snapshot: DiscoveryModelSnapshot,
   progressStepId: string,
+  options?: {
+    readonly serialized?: SerializableDiscoverySnapshot;
+    readonly snapshotFilterScope?: SnapshotRepositoryFilterScope;
+  },
 ): ParallelTask<ScanProcessorTaskInput>[] {
-  const serialized = serializeDiscoverySnapshot(snapshot);
+  const serialized = options?.serialized ?? serializeDiscoverySnapshot(snapshot);
+  const snapshotFilterScope = options?.snapshotFilterScope;
   const repositories = snapshot.listEntities("Repository");
   const tasks: ParallelTask<ScanProcessorTaskInput>[] = [];
 
@@ -25,6 +33,7 @@ export function buildScanSourceTasks(
           processor: processor.id,
           snapshot: serialized,
           repositoryId: repository.id,
+          snapshotFilterScope,
           progressStepId,
         },
       });
