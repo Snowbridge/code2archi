@@ -24,13 +24,15 @@ export type ElementSlotId =
   | "app-module-realizes-rest-client"
   | "inferred-rest-contract"
   | "inferred-contract-assigned-to-rest-controller"
-  | "inferred-contract-assigned-to-rest-client";
+  | "inferred-contract-assigned-to-rest-client"
+  | "direct-rest-requests-serving";
 
 export interface StandardGenerateElementPropertiesInput {
   readonly logicalId: string;
   readonly generatorCoordinate: string;
   readonly slot: ElementSlotId;
   readonly confidence?: GenerateConfidence;
+  readonly confidenceScore?: number;
 }
 
 export function standardGenerateElementProperties(
@@ -38,11 +40,20 @@ export function standardGenerateElementProperties(
 ): readonly ArchiProperty[] {
   recordSlotGenerated(input.slot);
 
-  return [
+  const properties: ArchiProperty[] = [
     { key: "c2a:Id", value: input.logicalId },
     { key: "c2a:confidence", value: input.confidence ?? "confirmed" },
     { key: "c2a:schema", value: packageVersion },
     { key: "c2a:generator", value: input.generatorCoordinate },
     { key: "c2a:slot", value: input.slot },
   ];
+
+  if (input.confidenceScore !== undefined) {
+    properties.push({
+      key: "c2a:confidenceScore",
+      value: String(input.confidenceScore),
+    });
+  }
+
+  return properties;
 }

@@ -3,8 +3,10 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import {
   GROUP_ENTITY_ALLOWLIST,
+  GROUP_LINK_ALLOWLIST,
   RunEntityStore,
 } from "../../src/discovery-model/run-entity-store.js";
+import { DirectRestRequestsServingMatch } from "../../src/discovery-model/links/direct-rest-requests-serving-match.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -16,6 +18,11 @@ const SCAN_SCOPE_PROCESSOR = {
 const SCAN_SOURCE_PROCESSOR = {
   groupId: "scan.source",
   artifactId: "test-processor",
+};
+
+const SCAN_LINK_PROCESSOR = {
+  groupId: "scan.link.rest",
+  artifactId: "direct-rest-requests-serving",
 };
 
 describe("RunEntityStore", () => {
@@ -280,5 +287,46 @@ describe("RunEntityStore", () => {
       "MessageConsumer",
       "MessageProducer",
     ]);
+    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.link"], ["DirectRestRequestsServingMatch"]);
+  });
+
+  it("adds links allowed for scan.link with platform metadata", () => {
+    const store = new RunEntityStore({
+      sourceDirs: ["/tmp/src"],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    const link = new DirectRestRequestsServingMatch({
+      restControllerId: "ctrl-1",
+      restClientId: "client-1",
+      sourceApplicationModuleId: "mod-server",
+      targetApplicationModuleId: "mod-client",
+      matchMethod: "INTERFACE",
+      confidence: "confirmed",
+      confidenceScore: 1,
+    });
+
+    store.addCreateIntents("scan.link", SCAN_LINK_PROCESSOR, {
+      links: {
+        DirectRestRequestsServingMatch: [link],
+      },
+    });
+
+    const stored = store.getLinks("DirectRestRequestsServingMatch")[0];
+    assert.equal(stored?.matchMethod, "INTERFACE");
+    assert.equal(stored?.linkerExtractor, "scan.link.rest:direct-rest-requests-serving");
+    assert.equal(stored?.linkerSchema, packageVersion);
+
+    const snapshot = store.snapshot();
+    assert.equal(snapshot.listLinks("DirectRestRequestsServingMatch").length, 1);
+    assert.deepEqual(
+      snapshot.listLinksByRef(
+        "DirectRestRequestsServingMatch",
+        "sourceApplicationModuleId",
+        "mod-server",
+      ).map((record) => record.id),
+      [stored?.id],
+    );
   });
 });

@@ -10,12 +10,17 @@ import {
 } from "../scan/repository-discovery-root.js";
 import { buildDiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 import type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
-import type { CreateIntents } from "./entities/create-intents.js";
+import type { CreateIntents, LinkCreateIntentRecord } from "./entities/create-intents.js";
 import type { CreateIntentRecord } from "./entities/create-intents.js";
 import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
 import { Entity } from "./entities/entity.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
 import { ENTITY_TYPES } from "./entities/entity-types.js";
+import type { DiscoveryLinkCreateIntent } from "./links/link-base.js";
+import { Link } from "./links/link.js";
+import type { DiscoveryLinkRecord } from "./links/link-records.js";
+import type { LinkType } from "./links/link-types.js";
+import { LINK_TYPES } from "./links/link-types.js";
 
 export type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
 
@@ -42,11 +47,25 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
   ],
 };
 
+/** Mirror of documentation/specifications/discovery-model/entity-types.md § link types */
+export const GROUP_LINK_ALLOWLIST: Partial<
+  Record<BuiltInProcessorGroupId, readonly LinkType[]>
+> = {
+  "scan.link": ["DirectRestRequestsServingMatch"],
+};
+
 function isEntityTypeAllowedForGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   entityType: EntityType,
 ): boolean {
   return (GROUP_ENTITY_ALLOWLIST[builtInGroupId] ?? []).includes(entityType);
+}
+
+function isLinkTypeAllowedForGroup(
+  builtInGroupId: BuiltInProcessorGroupId,
+  linkType: LinkType,
+): boolean {
+  return (GROUP_LINK_ALLOWLIST[builtInGroupId] ?? []).includes(linkType);
 }
 
 function formatScannerExtractor(processorId: ProcessorId): string {
@@ -71,6 +90,24 @@ function enrichDiscoveryEntity(
   };
 }
 
+function enrichDiscoveryLink(
+  record: DiscoveryLinkCreateIntent,
+  processorId: ProcessorId,
+  linkedAt: Date = new Date(),
+): DiscoveryLinkRecord {
+  if (!record.id) {
+    throw new Error("Link create-intent is missing id");
+  }
+
+  return {
+    ...record,
+    id: record.id,
+    linkerExtractor: formatScannerExtractor(processorId),
+    linkerSchema: packageVersion,
+    linkedAt: formatIso8601WithOffset(linkedAt),
+  } as DiscoveryLinkRecord;
+}
+
 function toDiscoveryEntityCreateIntent(
   record: CreateIntentRecord,
 ): DiscoveryEntityCreateIntent {
@@ -81,8 +118,17 @@ function toDiscoveryEntityCreateIntent(
   return record;
 }
 
+function toDiscoveryLinkCreateIntent(record: LinkCreateIntentRecord): DiscoveryLinkCreateIntent {
+  if (record instanceof Link) {
+    return record.toCreateIntent();
+  }
+
+  return record;
+}
+
 export class RunEntityStore {
   private readonly entities = new Map<EntityType, Map<string, DiscoveryEntityRecord>>();
+  private readonly links = new Map<LinkType, Map<string, DiscoveryLinkRecord>>();
   private readonly globalIds = new Set<string>();
   private readonly sourceDirs: readonly string[];
   private repositoryCommonRoot = "";
@@ -167,10 +213,24 @@ export class RunEntityStore {
     }
 
     if (intents.links) {
-      for (const linkType of Object.keys(intents.links)) {
-        throw new Error(
-          `Link create-intents are not supported yet (linkType: ${linkType})`,
-        );
+      for (const [linkTypeKey, records] of Object.entries(intents.links)) {
+        if (!records || records.length === 0) {
+          continue;
+        }
+
+        const linkType = linkTypeKey as LinkType;
+        if (!isLinkTypeAllowedForGroup(builtInGroupId, linkType)) {
+          throw new Error(
+            `Link type ${linkType} is not allowed for processor group ${builtInGroupId}`,
+          );
+        }
+
+        for (const record of records) {
+          this.addLink(
+            linkType,
+            enrichDiscoveryLink(toDiscoveryLinkCreateIntent(record), processorId, extractedAt),
+          );
+        }
       }
     }
   }
@@ -183,6 +243,7 @@ export class RunEntityStore {
       repositoryCommonRoot: this.repositoryCommonRoot,
       runStartedAt: this.runStartedAt,
       entityMaps: this.entities,
+      linkMaps: this.links,
     });
   }
 
@@ -193,8 +254,24 @@ export class RunEntityStore {
     });
   }
 
+  listNonemptyLinkTypes(): LinkType[] {
+    return LINK_TYPES.filter((linkType) => {
+      const bucket = this.links.get(linkType);
+      return bucket !== undefined && bucket.size > 0;
+    });
+  }
+
   getEntities(entityType: EntityType): readonly DiscoveryEntityRecord[] {
     const bucket = this.entities.get(entityType);
+    if (!bucket || bucket.size === 0) {
+      return [];
+    }
+
+    return [...bucket.values()].sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  getLinks(linkType: LinkType): readonly DiscoveryLinkRecord[] {
+    const bucket = this.links.get(linkType);
     if (!bucket || bucket.size === 0) {
       return [];
     }
@@ -219,6 +296,29 @@ export class RunEntityStore {
 
     if (bucket.has(record.id)) {
       throw new Error(`Duplicate ${entityType} id: ${record.id}`);
+    }
+
+    this.globalIds.add(record.id);
+    bucket.set(record.id, record);
+  }
+
+  private addLink(linkType: LinkType, record: DiscoveryLinkRecord): void {
+    if (!record.id) {
+      throw new Error(`Link record of type ${linkType} is missing id`);
+    }
+
+    if (this.globalIds.has(record.id)) {
+      throw new Error(`Duplicate id: ${record.id} (linkType: ${linkType})`);
+    }
+
+    let bucket = this.links.get(linkType);
+    if (!bucket) {
+      bucket = new Map();
+      this.links.set(linkType, bucket);
+    }
+
+    if (bucket.has(record.id)) {
+      throw new Error(`Duplicate ${linkType} id: ${record.id}`);
     }
 
     this.globalIds.add(record.id);

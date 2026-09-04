@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
+import { DirectRestRequestsServingMatch } from "../../src/discovery-model/links/direct-rest-requests-serving-match.js";
 import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
 import { REPOSITORY_SCHEMA_ID, REST_CLIENT_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
 import { packageVersion } from "../../src/package-version.js";
@@ -219,5 +220,46 @@ describe("DiscoveryModelWriter", () => {
     const clients = JSON.parse(readFileSync(clientsPath, "utf8")) as Array<{ name: string }>;
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "OrderFeignClient");
+  });
+
+  it("writes direct-rest-requests-serving-matches.json when link records are present", () => {
+    const root = createTestTempDir("c2a-dm-direct-rest-link-");
+    const outputDir = path.join(root, "out");
+    mkdirSync(outputDir);
+
+    const store = new RunEntityStore({
+      sourceDirs: [path.join(root, "src")],
+      scanId: "scan-direct-rest",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    store.addCreateIntents(
+      "scan.link",
+      { groupId: "scan.link.rest", artifactId: "direct-rest-requests-serving" },
+      {
+        links: {
+          DirectRestRequestsServingMatch: [
+            new DirectRestRequestsServingMatch({
+              restControllerId: "ctrl-1",
+              restClientId: "client-1",
+              sourceApplicationModuleId: "mod-server",
+              targetApplicationModuleId: "mod-client",
+              matchMethod: "INTERFACE",
+              confidence: "confirmed",
+              confidenceScore: 1,
+            }),
+          ],
+        },
+      },
+    );
+
+    new DiscoveryModelWriter().write({
+      outputDir,
+      store,
+      scannedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    const linksPath = path.join(outputDir, "direct-rest-requests-serving-matches.json");
+    assert.ok(existsSync(linksPath));
   });
 });

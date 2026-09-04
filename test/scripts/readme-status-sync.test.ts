@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { collectImplementationStatus } from "../../scripts/readme-status/collect.js";
-import { SCAN_PROCESSOR_ENTITY_TYPES } from "../../scripts/readme-status/processor-scan-entities.js";
+import { SCAN_PROCESSOR_ENTITY_TYPES, SCAN_PROCESSOR_LINK_TYPES } from "../../scripts/readme-status/processor-scan-entities.js";
 import { renderReadmeStatusSections } from "../../scripts/readme-status/render.js";
 
 const APPLICATION_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -15,6 +15,13 @@ test("every registered scan processor has entity-type metadata or is generate-on
 
   for (const processor of status.processors) {
     if (!processor.groupId.startsWith("scan.")) {
+      continue;
+    }
+    if (processor.groupId.startsWith("scan.link")) {
+      assert.ok(
+        SCAN_PROCESSOR_LINK_TYPES[processor.coordinate],
+        `Missing SCAN_PROCESSOR_LINK_TYPES entry for ${processor.coordinate}`,
+      );
       continue;
     }
     assert.ok(

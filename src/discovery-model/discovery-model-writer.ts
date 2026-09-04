@@ -4,6 +4,7 @@ import { packageVersion } from "../package-version.js";
 import { formatIso8601WithOffset } from "../platform/timestamp.js";
 import { getLogger } from "../platform/logging/index.js";
 import type { EntityType } from "./entities/entity-types.js";
+import type { LinkType } from "./links/link-types.js";
 import type { RunEntityStore } from "./run-entity-store.js";
 
 export const REPOSITORY_SCHEMA_ID =
@@ -21,10 +22,14 @@ export const REST_CONTROLLER_SCHEMA_ID =
 export const REST_CLIENT_SCHEMA_ID =
   "https://code2archi.dev/specifications/discovery-model/schemas/RestClient.schema.json";
 
+export const DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/DirectRestRequestsServingMatch.schema.json";
+
 interface ManifestCollectionEntry {
   readonly path: string;
   readonly contentType: "entities" | "many-to-many";
   readonly entityType?: string;
+  readonly linkType?: string;
   readonly schema?: string;
   readonly fromEntityType?: string;
   readonly toEntityType?: string;
@@ -44,6 +49,15 @@ interface Manifest {
 interface EntityCollectionDef {
   readonly collectionPath: string;
   readonly schemaId?: string;
+}
+
+interface LinkCollectionDef {
+  readonly collectionPath: string;
+  readonly schemaId: string;
+  readonly fromEntityType: string;
+  readonly toEntityType: string;
+  readonly fromIdField: string;
+  readonly toIdField: string;
 }
 
 /** Mirror of documentation/specifications/discovery-model/entity-types.md */
@@ -74,8 +88,23 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
   MessageProducer: { collectionPath: "message-producers.json" },
 };
 
+const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
+  DirectRestRequestsServingMatch: {
+    collectionPath: "direct-rest-requests-serving-matches.json",
+    schemaId: DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID,
+    fromEntityType: "RestController",
+    toEntityType: "RestClient",
+    fromIdField: "restControllerId",
+    toIdField: "restClientId",
+  },
+};
+
 function getEntityCollectionDef(entityType: EntityType): EntityCollectionDef {
   return ENTITY_COLLECTION_REGISTRY[entityType];
+}
+
+function getLinkCollectionDef(linkType: LinkType): LinkCollectionDef {
+  return LINK_COLLECTION_REGISTRY[linkType];
 }
 
 export interface DiscoveryModelWriteInput {
@@ -109,6 +138,27 @@ export class DiscoveryModelWriter {
         contentType: "entities",
         entityType,
         schema: def.schemaId,
+      });
+    }
+
+    for (const linkType of input.store.listNonemptyLinkTypes()) {
+      const def = getLinkCollectionDef(linkType);
+      const links = input.store.getLinks(linkType);
+      writeFileSync(
+        path.join(input.outputDir, def.collectionPath),
+        `${JSON.stringify(links, null, 2)}\n`,
+        "utf8",
+      );
+
+      collections.push({
+        path: def.collectionPath,
+        contentType: "many-to-many",
+        linkType,
+        schema: def.schemaId,
+        fromEntityType: def.fromEntityType,
+        toEntityType: def.toEntityType,
+        fromIdField: def.fromIdField,
+        toIdField: def.toIdField,
       });
     }
 

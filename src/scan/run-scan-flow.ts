@@ -1,4 +1,5 @@
 import {
+  SCAN_LINK_GROUP_ID,
   SCAN_SCOPE_GROUP_ID,
   SCAN_SOURCE_GROUP_ID,
   type GlobalArgv,
@@ -49,6 +50,10 @@ export function runScanFlow(input: RunScanFlowInput): void {
     SCAN_SOURCE_GROUP_ID,
     input.processorFilters,
   ).length;
+  const linkProcessorCount = processorRegistry.listForBuiltInStep(
+    SCAN_LINK_GROUP_ID,
+    input.processorFilters,
+  ).length;
 
   const progress = createFlowProgress({
     verbose: input.verbose,
@@ -56,7 +61,8 @@ export function runScanFlow(input: RunScanFlowInput): void {
       scopeDiscoveryFlowStep(input.sourceDirs.length, scopeProcessorCount),
       { id: "1b", label: "Repository namespaces", initialTotal: 1 },
       processorGroupFlowStep("2", "Source discovery", sourceProcessorCount),
-      { id: "3", label: "Writing discovery-model", initialTotal: 1 },
+      processorGroupFlowStep("3", "Link discovery", linkProcessorCount),
+      { id: "4", label: "Writing discovery-model", initialTotal: 1 },
     ),
   });
 
@@ -99,17 +105,29 @@ export function runScanFlow(input: RunScanFlowInput): void {
     });
     logger.info("step completed", { step: 2 });
 
-    logger.info("step start", { step: 3, action: "writing discovery-model", outputDir: input.outputDir });
+    logger.info("step start", { step: 3, action: "link discovery", groupId: SCAN_LINK_GROUP_ID });
     activeStep = "3";
     measureFlowStep("3", () => {
+      runCreateIntentProcessorGroup(
+        SCAN_LINK_GROUP_ID,
+        input.processorFilters,
+        store,
+        progress.step("3"),
+      );
+    });
+    logger.info("step completed", { step: 3 });
+
+    logger.info("step start", { step: 4, action: "writing discovery-model", outputDir: input.outputDir });
+    activeStep = "4";
+    measureFlowStep("4", () => {
       new DiscoveryModelWriter().write({
         outputDir: input.outputDir,
         store,
         scannedAt: new Date(),
       });
-      progress.step("3").tick(1);
+      progress.step("4").tick(1);
     });
-    logger.info("step completed", { step: 3, outputDir: input.outputDir });
+    logger.info("step completed", { step: 4, outputDir: input.outputDir });
 
     logger.info("flow completed", { outputDir: input.outputDir, repositoryCount });
   } catch (error) {

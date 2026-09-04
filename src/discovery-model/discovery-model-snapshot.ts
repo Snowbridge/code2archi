@@ -1,6 +1,10 @@
 import { ENTITY_REF_INDEX_FIELDS } from "./entity-ref-indexes.js";
+import { LINK_REF_INDEX_FIELDS } from "./link-ref-indexes.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
 import { ENTITY_TYPES } from "./entities/entity-types.js";
+import type { DiscoveryLinkRecord } from "./links/link-records.js";
+import type { LinkType } from "./links/link-types.js";
+import { LINK_TYPES } from "./links/link-types.js";
 
 export interface DiscoveryModelSnapshot {
   readonly scanId: string;
@@ -16,6 +20,13 @@ export interface DiscoveryModelSnapshot {
     field: string,
     value: string,
   ): readonly DiscoveryEntityRecord[];
+  listLinks(linkType: LinkType): readonly DiscoveryLinkRecord[];
+  getLink(linkType: LinkType, id: string): DiscoveryLinkRecord | undefined;
+  listLinksByRef(
+    linkType: LinkType,
+    field: string,
+    value: string,
+  ): readonly DiscoveryLinkRecord[];
 }
 
 export interface BuildDiscoveryModelSnapshotInit {
@@ -31,6 +42,8 @@ export interface BuildDiscoveryModelSnapshotInit {
   readonly entityArrays?: Readonly<
     Partial<Record<EntityType, readonly DiscoveryEntityRecord[]>>
   >;
+  readonly linkMaps?: ReadonlyMap<LinkType, ReadonlyMap<string, DiscoveryLinkRecord>>;
+  readonly linkArrays?: Readonly<Partial<Record<LinkType, readonly DiscoveryLinkRecord[]>>>;
 }
 
 type EntityBucket = ReadonlyMap<string, DiscoveryEntityRecord>;
@@ -39,6 +52,13 @@ type GlobalIdIndex = ReadonlyMap<string, DiscoveryEntityRecord>;
 type RefIndex = ReadonlyMap<
   EntityType,
   ReadonlyMap<string, ReadonlyMap<string, readonly DiscoveryEntityRecord[]>>
+>;
+
+type LinkBucket = ReadonlyMap<string, DiscoveryLinkRecord>;
+type LinksByType = ReadonlyMap<LinkType, LinkBucket>;
+type LinkRefIndex = ReadonlyMap<
+  LinkType,
+  ReadonlyMap<string, ReadonlyMap<string, readonly DiscoveryLinkRecord[]>>
 >;
 
 function deepFreeze<T>(value: T): T {
@@ -90,7 +110,35 @@ function normalizeEntityMaps(
   return normalized;
 }
 
-function buildIndexes(entityMaps: Map<EntityType, Map<string, DiscoveryEntityRecord>>): {
+function normalizeLinkMaps(
+  init: BuildDiscoveryModelSnapshotInit,
+): Map<LinkType, Map<string, DiscoveryLinkRecord>> {
+  if (init.linkMaps) {
+    const normalized = new Map<LinkType, Map<string, DiscoveryLinkRecord>>();
+    for (const [linkType, bucket] of init.linkMaps) {
+      normalized.set(linkType, new Map(bucket));
+    }
+    return normalized;
+  }
+
+  const normalized = new Map<LinkType, Map<string, DiscoveryLinkRecord>>();
+  for (const [linkTypeKey, records] of Object.entries(init.linkArrays ?? {})) {
+    if (!records || records.length === 0) {
+      continue;
+    }
+
+    const linkType = linkTypeKey as LinkType;
+    const bucket = new Map<string, DiscoveryLinkRecord>();
+    for (const record of records) {
+      bucket.set(record.id, record);
+    }
+    normalized.set(linkType, bucket);
+  }
+
+  return normalized;
+}
+
+function buildEntityIndexes(entityMaps: Map<EntityType, Map<string, DiscoveryEntityRecord>>): {
   readonly entitiesByType: EntitiesByType;
   readonly globalIdIndex: GlobalIdIndex;
   readonly refIndex: RefIndex;
@@ -165,10 +213,80 @@ function buildIndexes(entityMaps: Map<EntityType, Map<string, DiscoveryEntityRec
   };
 }
 
+function buildLinkIndexes(linkMaps: Map<LinkType, Map<string, DiscoveryLinkRecord>>): {
+  readonly linksByType: LinksByType;
+  readonly linkRefIndex: LinkRefIndex;
+} {
+  const frozenLinksByType = new Map<LinkType, LinkBucket>();
+  const linkRefIndex = new Map<
+    LinkType,
+    ReadonlyMap<string, ReadonlyMap<string, readonly DiscoveryLinkRecord[]>>
+  >();
+
+  for (const linkType of LINK_TYPES) {
+    const bucket = linkMaps.get(linkType);
+    if (!bucket || bucket.size === 0) {
+      continue;
+    }
+
+    const sortedRecords = [...bucket.values()].sort((a, b) => a.id.localeCompare(b.id));
+    const frozenBucket = deepFreeze(
+      new Map(sortedRecords.map((record) => [record.id, deepFreeze({ ...record })])),
+    );
+    frozenLinksByType.set(linkType, frozenBucket);
+
+    const refFields = LINK_REF_INDEX_FIELDS[linkType];
+    if (!refFields) {
+      continue;
+    }
+
+    const fieldIndex = new Map<string, Map<string, DiscoveryLinkRecord[]>>();
+    for (const field of refFields) {
+      fieldIndex.set(field, new Map());
+    }
+
+    for (const record of sortedRecords) {
+      for (const field of refFields) {
+        const fieldValue = (record as unknown as Record<string, unknown>)[field];
+        if (fieldValue === undefined || fieldValue === null) {
+          continue;
+        }
+
+        const key = String(fieldValue);
+        const byValue = fieldIndex.get(field)!;
+        let matches = byValue.get(key);
+        if (!matches) {
+          matches = [];
+          byValue.set(key, matches);
+        }
+        matches.push(record);
+      }
+    }
+
+    const frozenFieldIndex = new Map<string, ReadonlyMap<string, readonly DiscoveryLinkRecord[]>>();
+    for (const [field, byValue] of fieldIndex) {
+      const frozenByValue = new Map<string, readonly DiscoveryLinkRecord[]>();
+      for (const [key, matches] of byValue) {
+        frozenByValue.set(key, deepFreeze([...matches]));
+      }
+      frozenFieldIndex.set(field, deepFreeze(frozenByValue));
+    }
+
+    linkRefIndex.set(linkType, deepFreeze(frozenFieldIndex));
+  }
+
+  return {
+    linksByType: deepFreeze(frozenLinksByType),
+    linkRefIndex: deepFreeze(linkRefIndex),
+  };
+}
+
 class IndexedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
   private readonly entitiesByType: EntitiesByType;
   private readonly globalIdIndex: GlobalIdIndex;
   private readonly refIndex: RefIndex;
+  private readonly linksByType: LinksByType;
+  private readonly linkRefIndex: LinkRefIndex;
 
   constructor(
     readonly scanId: string,
@@ -176,15 +294,21 @@ class IndexedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
     readonly sourceDirs: readonly string[],
     readonly repositoryCommonRoot: string,
     readonly runStartedAt: Date,
-    indexes: {
+    entityIndexes: {
       readonly entitiesByType: EntitiesByType;
       readonly globalIdIndex: GlobalIdIndex;
       readonly refIndex: RefIndex;
     },
+    linkIndexes: {
+      readonly linksByType: LinksByType;
+      readonly linkRefIndex: LinkRefIndex;
+    },
   ) {
-    this.entitiesByType = indexes.entitiesByType;
-    this.globalIdIndex = indexes.globalIdIndex;
-    this.refIndex = indexes.refIndex;
+    this.entitiesByType = entityIndexes.entitiesByType;
+    this.globalIdIndex = entityIndexes.globalIdIndex;
+    this.refIndex = entityIndexes.refIndex;
+    this.linksByType = linkIndexes.linksByType;
+    this.linkRefIndex = linkIndexes.linkRefIndex;
   }
 
   listEntities(entityType: EntityType): readonly DiscoveryEntityRecord[] {
@@ -216,6 +340,32 @@ class IndexedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
 
     return this.refIndex.get(entityType)?.get(field)?.get(value) ?? [];
   }
+
+  listLinks(linkType: LinkType): readonly DiscoveryLinkRecord[] {
+    const bucket = this.linksByType.get(linkType);
+    if (!bucket) {
+      return [];
+    }
+
+    return [...bucket.values()];
+  }
+
+  getLink(linkType: LinkType, id: string): DiscoveryLinkRecord | undefined {
+    return this.linksByType.get(linkType)?.get(id);
+  }
+
+  listLinksByRef(
+    linkType: LinkType,
+    field: string,
+    value: string,
+  ): readonly DiscoveryLinkRecord[] {
+    const indexedFields = LINK_REF_INDEX_FIELDS[linkType];
+    if (!indexedFields || !indexedFields.includes(field)) {
+      return [];
+    }
+
+    return this.linkRefIndex.get(linkType)?.get(field)?.get(value) ?? [];
+  }
 }
 
 export function buildDiscoveryModelSnapshot(
@@ -226,7 +376,9 @@ export function buildDiscoveryModelSnapshot(
   }
 
   const entityMaps = normalizeEntityMaps(init);
-  const indexes = buildIndexes(entityMaps);
+  const linkMaps = normalizeLinkMaps(init);
+  const entityIndexes = buildEntityIndexes(entityMaps);
+  const linkIndexes = buildLinkIndexes(linkMaps);
 
   return deepFreeze(
     new IndexedDiscoveryModelSnapshot(
@@ -235,7 +387,8 @@ export function buildDiscoveryModelSnapshot(
       init.sourceDirs ?? [],
       init.repositoryCommonRoot ?? "",
       init.runStartedAt,
-      indexes,
+      entityIndexes,
+      linkIndexes,
     ),
   );
 }

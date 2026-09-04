@@ -1,6 +1,7 @@
 export const BUILTIN_PROCESSOR_GROUPS = [
   "scan.scope",
   "scan.source",
+  "scan.link",
   "generate.elements",
   "generate.views",
 ] as const;
@@ -10,6 +11,7 @@ export type BuiltInProcessorGroupId = (typeof BUILTIN_PROCESSOR_GROUPS)[number];
 export const SCAN_PROCESSOR_GROUPS = [
   "scan.scope",
   "scan.source",
+  "scan.link",
 ] as const satisfies readonly BuiltInProcessorGroupId[];
 
 export type ScanProcessorGroupId = (typeof SCAN_PROCESSOR_GROUPS)[number];
@@ -17,6 +19,8 @@ export type ScanProcessorGroupId = (typeof SCAN_PROCESSOR_GROUPS)[number];
 export const SCAN_SCOPE_GROUP_ID: ScanProcessorGroupId = "scan.scope";
 
 export const SCAN_SOURCE_GROUP_ID: ScanProcessorGroupId = "scan.source";
+
+export const SCAN_LINK_GROUP_ID: ScanProcessorGroupId = "scan.link";
 
 export const GENERATE_PROCESSOR_GROUPS = [
   "generate.elements",

@@ -1,4 +1,5 @@
 import type { EntityType } from "../../src/discovery-model/entities/entity-types.js";
+import type { LinkType } from "../../src/discovery-model/links/link-types.js";
 
 /** Scan processors and discovery entity types they create (for gap detection). */
 export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly EntityType[]>> = {
@@ -24,4 +25,9 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
   "scan.source.java.rest/client-programmatic": ["RestClient"],
   "scan.source.kotlin.rest/client-declarative": ["RestClient"],
   "scan.source.kotlin.rest/client-programmatic": ["RestClient"],
+};
+
+/** Scan processors in scan.link that create link collections (for gap detection). */
+export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {
+  "scan.link.rest/direct-rest-requests-serving": ["DirectRestRequestsServingMatch"],
 };

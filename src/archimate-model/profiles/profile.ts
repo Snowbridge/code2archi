@@ -64,6 +64,29 @@ abstract class AssignmentRelationshipProfile extends ArchiProfile {
   }
 }
 
+abstract class ServingRelationshipProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ServingRelationship", name);
+  }
+}
+
+function defineServingRelationshipProfile(profileName: string) {
+  class NamedProfile extends ServingRelationshipProfile {
+    static readonly CONCEPT_TYPE = "ServingRelationship" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
 function defineArtifactProfile(profileName: string) {
   class NamedProfile extends ArtifactProfile {
     static readonly CONCEPT_TYPE = "Artifact" as const;
@@ -165,3 +188,5 @@ export const InferredApiContractProfile = defineApplicationInterfaceProfile("Inf
 export const RunsOnProfile = defineAssignmentRelationshipProfile("Runs on");
 export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with");
 export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");
+export const ProcessesRestRequestsProfile =
+  defineServingRelationshipProfile("Processes REST requests");

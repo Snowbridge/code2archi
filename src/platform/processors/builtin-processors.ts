@@ -14,6 +14,8 @@ import { ControllersProcessor } from "../../processors/generate/elements/applica
 import { ClientsAndDeclaredContractsProcessor } from "../../processors/generate/elements/application/rest/clients-and-declared-contracts-processor.js";
 import { ControllersDeclaredApiContractsProcessor } from "../../processors/generate/elements/application/rest/controllers-declared-api-contracts-processor.js";
 import { ControllersInferredApiContractsProcessor } from "../../processors/generate/elements/application/rest/controllers-inferred-api-contracts-processor.js";
+import { DirectRestRequestsServingProcessor } from "../../processors/generate/elements/application/rest/direct-rest-requests-serving-processor.js";
+import { DirectRestRequestsServingProcessor as ScanDirectRestRequestsServingProcessor } from "../../processors/scan/link/rest/direct-rest-requests-serving-processor.js";
 import { ClientsInferredApiContractsProcessor } from "../../processors/generate/elements/application/rest/clients-inferred-api-contracts-processor.js";
 import { SyssoftForBuildSystemsAndRuntimesProcessor } from "../../processors/generate/elements/technology/syssoft-for-build-systems-and-runtimes-processor.js";
 import { SyssoftForNoBuildOrRuntimeToolsProcessor } from "../../processors/generate/elements/technology/syssoft-for-no-build-or-runtime-tools-processor.js";
@@ -44,3 +46,5 @@ processorRegistry.register(new ControllersDeclaredApiContractsProcessor());
 processorRegistry.register(new ClientsAndDeclaredContractsProcessor());
 processorRegistry.register(new ClientsInferredApiContractsProcessor());
 processorRegistry.register(new ControllersInferredApiContractsProcessor());
+processorRegistry.register(new ScanDirectRestRequestsServingProcessor());
+processorRegistry.register(new DirectRestRequestsServingProcessor());
