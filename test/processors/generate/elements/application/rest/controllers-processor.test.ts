@@ -174,7 +174,7 @@ describe("ControllersProcessor", () => {
     );
   });
 
-  it("skips controller and Realization when app-module-component is missing", () => {
+  it("creates rest-controller without Realization when app-module-component is missing", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -213,7 +213,8 @@ describe("ControllersProcessor", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(output.elements?.length ?? 0, 0);
+    assert.equal(output.elements?.length, 1);
+    assert.equal(output.elements?.[0]?.id, controller.id);
     assert.equal(output.relations?.length ?? 0, 0);
   });
 

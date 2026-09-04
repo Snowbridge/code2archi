@@ -291,7 +291,7 @@ describe("ClientsAndDeclaredContractsProcessor", () => {
     assert.equal(service?.documentation, undefined);
   });
 
-  it("skips when app-module-component is missing from archi snapshot", () => {
+  it("creates rest-client without Realization when app-module-component is missing", () => {
     const { repository, module } = baseRepositoryAndModule();
     const client = restClientRecord({
       applicationModuleId: module.id,
@@ -314,8 +314,22 @@ describe("ClientsAndDeclaredContractsProcessor", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(output.elements?.length ?? 0, 0);
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(output.elements?.length, 2);
+    assert.equal(output.elements?.some((element) => element.id === client.id), true);
+    assert.equal(
+      output.relations?.some(
+        (relation) =>
+          relation.relationType === "RealizationRelationship" && relation.targetId === client.id,
+      ),
+      false,
+    );
+    assert.equal(
+      output.relations?.some(
+        (relation) =>
+          relation.relationType === "AssignmentRelationship" && relation.targetId === client.id,
+      ),
+      true,
+    );
   });
 
   it("coexists with controllers-declared-api-contracts for shared FQCN", () => {

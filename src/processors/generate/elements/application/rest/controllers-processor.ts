@@ -86,9 +86,6 @@ export class ControllersProcessor extends AbstractProcessor<
       }
 
       const appComponentId = applicationComponentIdForModule(module.id);
-      if (input.archi.getElement(appComponentId) === undefined) {
-        continue;
-      }
 
       const repository = repositoriesById.get(String(module.repositoryId));
       const namespaceSegments = parseNamespaceSegments(String(repository?.namespace ?? ""));
@@ -129,23 +126,24 @@ export class ControllersProcessor extends AbstractProcessor<
       }
 
       const relationId = restControllerRealizationRelationshipId(appComponentId, controller.id);
-      if (input.archi.getRelationship(relationId)) {
-        continue;
+      if (
+        input.archi.getElement(appComponentId) !== undefined &&
+        !input.archi.getRelationship(relationId)
+      ) {
+        let realizationBuilder = RealizationRelationship.withId(relationId)
+          .source(appComponentId)
+          .target(controller.id);
+
+        for (const property of standardGenerateElementProperties({
+          logicalId: restControllerRealizationLogicalId(module.id, controller.id),
+          generatorCoordinate: GENERATOR_COORDINATE,
+          slot: "app-module-realizes-rest-controller",
+        })) {
+          realizationBuilder = realizationBuilder.property(property.key, property.value);
+        }
+
+        relations.push(realizationBuilder.build().toCreateIntent());
       }
-
-      let realizationBuilder = RealizationRelationship.withId(relationId)
-        .source(appComponentId)
-        .target(controller.id);
-
-      for (const property of standardGenerateElementProperties({
-        logicalId: restControllerRealizationLogicalId(module.id, controller.id),
-        generatorCoordinate: GENERATOR_COORDINATE,
-        slot: "app-module-realizes-rest-controller",
-      })) {
-        realizationBuilder = realizationBuilder.property(property.key, property.value);
-      }
-
-      relations.push(realizationBuilder.build().toCreateIntent());
     }
 
     const existingFolderIds = new Set(input.archi.listFolders().map((folder) => folder.id));

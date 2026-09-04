@@ -87,10 +87,6 @@ export class ControllersDeclaredApiContractsProcessor extends AbstractProcessor<
         continue;
       }
 
-      if (input.archi.getElement(controller.id) === undefined) {
-        continue;
-      }
-
       const module = modulesById.get(controller.applicationModuleId);
       if (module === undefined) {
         continue;

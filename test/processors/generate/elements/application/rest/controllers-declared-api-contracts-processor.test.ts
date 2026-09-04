@@ -266,7 +266,7 @@ describe("ControllersDeclaredApiContractsProcessor", () => {
     assert.equal(output.relations?.length ?? 0, 0);
   });
 
-  it("skips when rest-controller is missing from archi snapshot", () => {
+  it("emits declared assignment when rest-controller is missing from archi snapshot", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -305,8 +305,9 @@ describe("ControllersDeclaredApiContractsProcessor", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(output.elements?.length ?? 0, 0);
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(output.elements?.length, 1);
+    assert.equal(output.relations?.length, 1);
+    assert.equal(output.relations?.[0]?.targetId, controller.id);
   });
 
   it("leaves names undecorated when decorate is false", () => {

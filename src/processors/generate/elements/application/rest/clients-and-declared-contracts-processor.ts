@@ -103,9 +103,6 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
       }
 
       const appComponentId = applicationComponentIdForModule(module.id);
-      if (input.archi.getElement(appComponentId) === undefined) {
-        continue;
-      }
 
       const repository = repositoriesById.get(String(module.repositoryId));
       const namespaceSegments = parseNamespaceSegments(String(repository?.namespace ?? ""));
@@ -151,7 +148,10 @@ export class ClientsAndDeclaredContractsProcessor extends AbstractProcessor<
       }
 
       const realizationId = restClientRealizationRelationshipId(appComponentId, client.id);
-      if (!input.archi.getRelationship(realizationId)) {
+      if (
+        input.archi.getElement(appComponentId) !== undefined &&
+        !input.archi.getRelationship(realizationId)
+      ) {
         let realizationBuilder = RealizationRelationship.withId(realizationId)
           .source(appComponentId)
           .target(client.id);

@@ -477,6 +477,88 @@ describe("ClientsInferredApiContractsProcessor", () => {
 
     assert.equal(output.elements?.[0]?.name, "PaymentFeignClient");
   });
+
+  it("validateForWrite succeeds for multimodule parent with inferred assignment before rest-client element", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["gradle"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "gradle",
+      groupId: "com.example",
+      artifactId: "parent",
+      version: "1",
+      name: "parent",
+      repoPath: ".",
+      buildScript: "build.gradle.kts",
+      isMultimodule: true,
+    });
+    const client = restClientRecord({
+      applicationModuleId: module.id,
+      name: "DictionaryClient",
+      fqcn: "com.example.DictionaryClient",
+      dtoFqcn: ["com.example.FooDto"],
+      endpoints: ["POST /v1/internal/get_by_uuids"],
+      tcpStackType: "BLOCKING",
+      discoveryStyle: "DECLARATIVE",
+      clientFramework: "feign",
+      extendedInterfaceFqcn: [],
+      sourceFile: "src/main/kotlin/com/example/DictionaryClient.kt",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    const discovery = discoverySnapshot([repository], [module], [client]);
+
+    const inferredOutput = new ClientsInferredApiContractsProcessor().process({
+      discovery,
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements.application.rest", artifactId: "clients-inferred-api-contracts" },
+      inferredOutput,
+    );
+
+    const clientsOutput = new ClientsAndDeclaredContractsProcessor().process({
+      discovery,
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements.application.rest", artifactId: "clients-and-declared-contracts" },
+      clientsOutput,
+    );
+
+    assert.doesNotThrow(() => store.validateForWrite());
+    assert.equal(store.snapshot().getElement(client.id)?.conceptType, "ApplicationService");
+    assert.equal(
+      store
+        .snapshot()
+        .listRelations()
+        .some(
+          (relation) =>
+            relation.relationType === "RealizationRelationship" && relation.targetId === client.id,
+        ),
+      false,
+    );
+    assert.equal(
+      store
+        .snapshot()
+        .listRelations()
+        .some(
+          (relation) =>
+            relation.relationType === "AssignmentRelationship" &&
+            relation.targetId === client.id &&
+            relation.id === inferredContractAssignmentToClientId(inferredRestContractId(client.fqcn), client.id),
+        ),
+      true,
+    );
+  });
 });
 
 describe("buildInferredContractDocumentation (shared)", () => {
