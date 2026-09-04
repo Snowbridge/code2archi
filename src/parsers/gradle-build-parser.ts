@@ -50,12 +50,12 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
     ? parseRootProjectName(settingsContent, path.basename(repoRoot))
     : path.basename(repoRoot);
 
-  const rootIncludes = [
+  const rootIncludesRaw = [
     ...(settingsContent ? parseIncludes(settingsContent) : []),
     ...(rootBuildFile ? parseIncludes(readProcessedUtf8File(path.join(repoRoot, rootBuildFile))) : []),
   ];
 
-  const uniqueIncludes = [...new Set(rootIncludes)];
+  const uniqueIncludes = resolveGradleModuleIncludes(repoRoot, rootIncludesRaw);
   const results: GradleModuleParseResult[] = [];
   const visited = new Set<string>();
 
@@ -84,7 +84,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
     const includesInFile = parseIncludes(content);
     const includes =
       modulePath === "." ? [...new Set([...includesInFile, ...uniqueIncludes])] : includesInFile;
-    const childModulePaths = includes.map((includePath) => normalizeIncludePath(includePath));
+    const childModulePaths = resolveGradleModuleIncludes(repoRoot, includes);
 
     results.push({
       coordinates,
@@ -93,7 +93,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
       parentCoordinates,
       childModulePaths,
       dependencies: parseApplicationDependencies(content),
-      isMultimodule: includes.length > 0,
+      isMultimodule: childModulePaths.length > 0,
       ...buildVersions,
     });
 
@@ -108,8 +108,7 @@ export function parseGradleRepository(repoRoot: string): GradleModuleParseResult
   visitModule(".", rootBuildFileName);
 
   if (uniqueIncludes.length > 0) {
-    for (const includePath of uniqueIncludes) {
-      const childModulePath = normalizeIncludePath(includePath);
+    for (const childModulePath of uniqueIncludes) {
       if (results.some((result) => result.repoPath === childModulePath)) {
         continue;
       }
@@ -223,4 +222,44 @@ function normalizeIncludeToken(value: string): string {
 
 function normalizeIncludePath(value: string): string {
   return value.replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+function isGradleModuleIncludeToken(token: string): boolean {
+  const normalized = normalizeIncludePath(normalizeIncludeToken(token));
+  if (!normalized) {
+    return false;
+  }
+  if (/[*?[\]{}]/.test(normalized)) {
+    return false;
+  }
+  const baseName = path.posix.basename(normalized);
+  if (/\.[a-z0-9]{2,5}$/i.test(baseName)) {
+    return false;
+  }
+  return true;
+}
+
+function resolveGradleModuleIncludes(
+  repoRoot: string,
+  includeTokens: readonly string[],
+): string[] {
+  const resolved: string[] = [];
+  const seen = new Set<string>();
+
+  for (const token of includeTokens) {
+    if (!isGradleModuleIncludeToken(token)) {
+      continue;
+    }
+    const childModulePath = normalizeIncludePath(normalizeIncludeToken(token));
+    if (seen.has(childModulePath)) {
+      continue;
+    }
+    if (findFirstExisting(path.join(repoRoot, childModulePath), BUILD_FILES) === undefined) {
+      continue;
+    }
+    seen.add(childModulePath);
+    resolved.push(childModulePath);
+  }
+
+  return resolved;
 }

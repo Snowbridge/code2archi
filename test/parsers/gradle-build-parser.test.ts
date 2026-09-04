@@ -83,4 +83,25 @@ version = '1.0.0'`,
 
     assert.equal(rootModule?.coordinates.artifactId, path.basename(root));
   });
+
+  it("does not mark single-module project as multimodule when processResources uses include globs", () => {
+    const root = createTestTempDir("c2a-gradle-process-resources-");
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'online.oboz.seal.auth'
+version = '0.0.1'
+
+processResources {
+    from(sourceSets["main"].resources.srcDirs) {
+        include("**/bootstrap.yml","**/application.yml","**/banner.txt")
+    }
+}`,
+    );
+
+    const modules = parseGradleRepository(root);
+
+    assert.equal(modules.length, 1);
+    assert.equal(modules[0]?.isMultimodule, false);
+    assert.deepEqual(modules[0]?.childModulePaths, []);
+  });
 });
