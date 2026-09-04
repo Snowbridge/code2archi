@@ -11,6 +11,7 @@ import type { GlobalArgv } from "../../src/cli/processor-groups.js";
 import { initLogging, resetLoggingForTests } from "../../src/platform/logging/index.js";
 import "../../src/platform/processors/builtin-processors.js";
 import { createTestTempDir } from "../test-temp-dir.js";
+import { testParallelismOptions } from "../parallelism-test-defaults.js";
 
 const defaultValidateArgs = { force: false, noDecorate: false };
 
@@ -88,6 +89,8 @@ describe("runGenerateFlow", () => {
       runGenerateFlow({
         ...generateArgs,
         verbose: false,
+        profile: false,
+        parallelism: testParallelismOptions,
         processorFilters: {
           with: [],
           without: [],
@@ -125,6 +128,8 @@ describe("runGenerateFlow", () => {
       runGenerateFlow({
         ...generateArgs,
         verbose: false,
+        profile: false,
+        parallelism: testParallelismOptions,
         processorFilters: {
           with: [],
           without: [],
@@ -179,6 +184,8 @@ describe("runGenerateFlow", () => {
       runGenerateFlow({
         ...generateArgs,
         verbose: false,
+        profile: false,
+        parallelism: testParallelismOptions,
         processorFilters: {
           with: [],
           without: [],
@@ -228,6 +235,8 @@ describe("runGenerateFlow", () => {
       runGenerateFlow({
         ...generateArgs,
         verbose: false,
+        profile: false,
+        parallelism: testParallelismOptions,
         processorFilters: {
           with: [],
           without: [],

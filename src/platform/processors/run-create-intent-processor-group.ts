@@ -3,11 +3,25 @@ import { SCAN_SOURCE_GROUP_ID } from "../../cli/processor-groups.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot, RunEntityStore } from "../../discovery-model/run-entity-store.js";
+import type { MainThreadBridge } from "../parallelism/main-thread-bridge.js";
+import {
+  buildScanLinkTasks,
+  buildScanSourceTasks,
+} from "../parallelism/task-planner.js";
+import type { WorkerPool } from "../parallelism/worker-pool.js";
 import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanAppInput } from "./processor.js";
+import type { ProcessorId } from "./processor.js";
 import { getLogger } from "../logging/index.js";
+import { mergeParallelCreateIntentResults, runScanProcessorPool } from "./parallel-group-runner.js";
+
+export interface ProcessorGroupParallelContext {
+  readonly pool: WorkerPool;
+  readonly bridge: MainThreadBridge;
+  readonly continueOnError: boolean;
+}
 
 function countCreateIntents(output: CreateIntents): number {
   let count = 0;
@@ -28,19 +42,16 @@ function countCreateIntents(output: CreateIntents): number {
   return count;
 }
 
-export function runCreateIntentProcessorGroup(
+function runSequentialCreateIntentGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   filters: ProcessorFilters,
   store: RunEntityStore,
   progress?: StepProgressHandle,
 ): void {
-  const logger = getLogger(`scan.${builtInGroupId}`);
-  logger.info("group start", { groupId: builtInGroupId });
-
-  const processors = processorRegistry.listForBuiltInStep<
-    ScanAppInput,
-    CreateIntents
-  >(builtInGroupId, filters);
+  const processors = processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>(
+    builtInGroupId,
+    filters,
+  );
 
   const passProgress = builtInGroupId === SCAN_SOURCE_GROUP_ID && progress !== undefined;
 
@@ -81,6 +92,100 @@ export function runCreateIntentProcessorGroup(
     if (builtInGroupId !== SCAN_SOURCE_GROUP_ID) {
       progress?.tick(1);
     }
+  }
+}
+
+function runParallelScanSourceGroup(
+  processors: ReturnType<typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>>,
+  store: RunEntityStore,
+  parallel: ProcessorGroupParallelContext,
+  progressStepId: string,
+): void {
+  for (const processor of processors) {
+    const snapshot = store.snapshot();
+    const tasks = buildScanSourceTasks([processor], snapshot, progressStepId);
+    if (tasks.length === 0) {
+      continue;
+    }
+
+    const processorByTaskId = new Map<string, ProcessorId>(
+      tasks.map((task) => [task.taskId, task.input.processor]),
+    );
+
+    const { results } = runScanProcessorPool(
+      parallel.pool,
+      parallel.bridge,
+      tasks,
+      parallel.continueOnError,
+      SCAN_SOURCE_GROUP_ID,
+    );
+
+    mergeParallelCreateIntentResults(SCAN_SOURCE_GROUP_ID, store, processorByTaskId, results);
+  }
+}
+
+function runParallelScanLinkGroup(
+  processors: ReturnType<typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>>,
+  snapshot: DiscoveryModelSnapshot,
+  store: RunEntityStore,
+  parallel: ProcessorGroupParallelContext,
+  progress?: StepProgressHandle,
+): void {
+  const tasks = buildScanLinkTasks(processors, snapshot);
+  const processorByTaskId = new Map<string, ProcessorId>(
+    tasks.map((task) => [task.taskId, task.input.processor]),
+  );
+
+  const { results } = runScanProcessorPool(
+    parallel.pool,
+    parallel.bridge,
+    tasks,
+    parallel.continueOnError,
+    "scan.link",
+  );
+
+  mergeParallelCreateIntentResults("scan.link", store, processorByTaskId, results);
+
+  for (const processor of processors) {
+    progress?.tick(1);
+  }
+}
+
+export function runCreateIntentProcessorGroup(
+  builtInGroupId: BuiltInProcessorGroupId,
+  filters: ProcessorFilters,
+  store: RunEntityStore,
+  progress?: StepProgressHandle,
+  parallel?: ProcessorGroupParallelContext,
+  progressStepId?: string,
+): void {
+  const logger = getLogger(`scan.${builtInGroupId}`);
+  logger.info("group start", { groupId: builtInGroupId });
+
+  const processors = processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>(
+    builtInGroupId,
+    filters,
+  );
+
+  if (processors.length === 0) {
+    logger.info("group completed", { groupId: builtInGroupId });
+    return;
+  }
+
+  if (!parallel) {
+    runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress);
+    logger.info("group completed", { groupId: builtInGroupId });
+    return;
+  }
+
+  const snapshot = store.snapshot();
+
+  if (builtInGroupId === SCAN_SOURCE_GROUP_ID) {
+    runParallelScanSourceGroup(processors, store, parallel, progressStepId ?? "2");
+  } else if (builtInGroupId === "scan.link") {
+    runParallelScanLinkGroup(processors, snapshot, store, parallel, progress);
+  } else {
+    runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress);
   }
 
   logger.info("group completed", { groupId: builtInGroupId });

@@ -13,14 +13,23 @@ import { runCreateIntentProcessorGroup } from "../platform/processors/run-create
 import { runScanScopeGroup } from "../platform/processors/run-scan-scope-group.js";
 import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
 import { RunEntityStore } from "../discovery-model/run-entity-store.js";
-import { createFlowProgress, defineFlowSteps, scopeDiscoveryFlowStep, processorGroupFlowStep } from "../platform/cli-progress/index.js";
+import {
+  createFlowProgress,
+  createFlowParallelContext,
+  defineFlowSteps,
+  scopeDiscoveryFlowStep,
+  processorGroupFlowStep,
+} from "../platform/cli-progress/index.js";
 import { getLogger } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
+import type { ParallelismOptions } from "../platform/parallelism/parallelism-options.js";
 import type { ScanArgs } from "./validate-scan-args.js";
 
 export interface RunScanFlowInput extends ScanArgs {
   readonly processorFilters: ProcessorFilters;
   readonly verbose: boolean;
+  readonly profile: boolean;
+  readonly parallelism: ParallelismOptions;
 }
 
 export function createRunScanFlowInput(
@@ -31,6 +40,12 @@ export function createRunScanFlowInput(
     ...scanArgs,
     processorFilters: resolveProcessorFilters(argv),
     verbose: argv.verbose,
+    profile: argv.profile,
+    parallelism: {
+      threads: argv.threads,
+      sync: argv.sync,
+      continueOnError: argv.continueOnError,
+    },
   };
 }
 
@@ -40,6 +55,9 @@ export function runScanFlow(input: RunScanFlowInput): void {
     sourceDirCount: input.sourceDirs.length,
     outputDir: input.outputDir,
     scanId: input.scanId,
+    threads: input.parallelism.threads,
+    sync: input.parallelism.sync,
+    continueOnError: input.parallelism.continueOnError,
   });
 
   const scopeProcessorCount = processorRegistry.listForBuiltInStep(
@@ -60,11 +78,18 @@ export function runScanFlow(input: RunScanFlowInput): void {
     steps: defineFlowSteps(
       scopeDiscoveryFlowStep(input.sourceDirs.length, scopeProcessorCount),
       { id: "1b", label: "Repository namespaces", initialTotal: 1 },
-      processorGroupFlowStep("2", "Source discovery", sourceProcessorCount),
+      processorGroupFlowStep("2", "Source discovery", sourceProcessorCount, 0),
       processorGroupFlowStep("3", "Link discovery", linkProcessorCount),
       { id: "4", label: "Writing discovery-model", initialTotal: 1 },
     ),
   });
+
+  const { context: parallelContext, shutdown: shutdownPool } = createFlowParallelContext(
+    input.parallelism,
+    progress,
+    ["1", "2", "3"],
+    input.profile,
+  );
 
   let activeStep = "1";
 
@@ -78,7 +103,13 @@ export function runScanFlow(input: RunScanFlowInput): void {
     logger.info("step start", { step: 1, action: "repository discovery", groupId: SCAN_SCOPE_GROUP_ID });
     activeStep = "1";
     measureFlowStep("1", () => {
-      runScanScopeGroup(input.sourceDirs, input.processorFilters, store, progress.step("1"));
+      runScanScopeGroup(
+        input.sourceDirs,
+        input.processorFilters,
+        store,
+        progress.step("1"),
+        parallelContext,
+      );
     });
     const repositoryCount = store.getEntities("Repository").length;
     logger.info("step completed", { step: 1, count: repositoryCount });
@@ -101,6 +132,8 @@ export function runScanFlow(input: RunScanFlowInput): void {
         input.processorFilters,
         store,
         progress.step("2"),
+        parallelContext,
+        "2",
       );
     });
     logger.info("step completed", { step: 2 });
@@ -113,6 +146,8 @@ export function runScanFlow(input: RunScanFlowInput): void {
         input.processorFilters,
         store,
         progress.step("3"),
+        parallelContext,
+        "3",
       );
     });
     logger.info("step completed", { step: 3 });
@@ -134,6 +169,7 @@ export function runScanFlow(input: RunScanFlowInput): void {
     progress.fail(activeStep);
     throw error;
   } finally {
+    shutdownPool();
     progress.stop();
   }
 }

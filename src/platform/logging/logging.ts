@@ -203,6 +203,21 @@ export function getLogger(name: string): Logger {
   };
 }
 
+export function writeBridgedWorkerLog(options: {
+  readonly threadId: string;
+  readonly loggerName: string;
+  readonly level: "info" | "warn" | "debug";
+  readonly message: string;
+  readonly context?: Record<string, unknown>;
+}): void {
+  if (!isLoggingInitialized()) {
+    return;
+  }
+
+  const bridgedName = `${options.threadId}][${options.loggerName}`;
+  writeLog(options.level, bridgedName, options.message, options.context);
+}
+
 export async function shutdownLoggingAsync(): Promise<void> {
   if (!isLoggingInitialized()) {
     return;

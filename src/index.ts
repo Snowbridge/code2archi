@@ -37,7 +37,10 @@ yargs(hideBin(process.argv))
       logLevel: globalArgv.logLevel,
       verbose: globalArgv.verbose,
     });
-    initProfiling({ enabled: globalArgv.profile });
+    initProfiling({
+      enabled: globalArgv.profile,
+      continueOnError: globalArgv.continueOnError,
+    });
   })
   .command(scanCommand)
   .command(generateCommand)

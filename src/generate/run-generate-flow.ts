@@ -13,14 +13,22 @@ import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
 import { ArchiModelWriter } from "../archimate-model/archi-model-writer.js";
 import { ArchiModelDomWriter } from "../archimate-model/archi-model-dom-writer.js";
 import { DiscoveryModelReader } from "../discovery-model/discovery-model-reader.js";
-import { createFlowProgress, defineFlowSteps, processorGroupFlowStep } from "../platform/cli-progress/index.js";
+import {
+  createFlowProgress,
+  createFlowParallelContext,
+  defineFlowSteps,
+  processorGroupFlowStep,
+} from "../platform/cli-progress/index.js";
 import { getLogger, isDebugEnabled } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
+import type { ParallelismOptions } from "../platform/parallelism/parallelism-options.js";
 import type { GenerateArgs } from "./validate-generate-args.js";
 
 export interface RunGenerateFlowInput extends GenerateArgs {
   readonly processorFilters: ProcessorFilters;
   readonly verbose: boolean;
+  readonly profile: boolean;
+  readonly parallelism: ParallelismOptions;
 }
 
 export function createRunGenerateFlowInput(
@@ -31,6 +39,12 @@ export function createRunGenerateFlowInput(
     ...generateArgs,
     processorFilters: resolveProcessorFilters(argv),
     verbose: argv.verbose,
+    profile: argv.profile,
+    parallelism: {
+      threads: argv.threads,
+      sync: argv.sync,
+      continueOnError: argv.continueOnError,
+    },
   };
 }
 
@@ -39,6 +53,9 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
   logger.info("flow start", {
     outputFile: input.outputFile,
     discoveryModelDir: input.discoveryModelDir,
+    threads: input.parallelism.threads,
+    sync: input.parallelism.sync,
+    continueOnError: input.parallelism.continueOnError,
   });
 
   const elementsProcessorCount = processorRegistry.listForBuiltInStep(
@@ -58,6 +75,13 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
       { id: "3", label: "Writing archimate-model", initialTotal: 1 },
     ),
   });
+
+  const { shutdown: shutdownPool } = createFlowParallelContext(
+    input.parallelism,
+    progress,
+    [],
+    input.profile,
+  );
 
   let activeStep = "1";
 
@@ -118,6 +142,7 @@ export function runGenerateFlow(input: RunGenerateFlowInput): void {
     progress.fail(activeStep);
     throw error;
   } finally {
+    shutdownPool();
     progress.stop();
   }
 }

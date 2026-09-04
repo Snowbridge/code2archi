@@ -14,6 +14,7 @@ import { runScanFlow } from "../../src/scan/run-scan-flow.js";
 import { finalizeProfiling, initProfiling } from "../../src/platform/profiling/index.js";
 import { resetProfilingState } from "../../src/platform/profiling/profiling-state.js";
 import { createTestTempDir } from "../test-temp-dir.js";
+import { testParallelismOptions } from "../parallelism-test-defaults.js";
 
 function createGitRepo(dir: string): void {
   mkdirSync(path.join(dir, ".git"), { recursive: true });
@@ -34,6 +35,8 @@ describe("runScanFlow", () => {
       scanId: "test-scan-id",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -93,6 +96,8 @@ describe("runScanFlow", () => {
       scanId: "test-scan-namespace",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
         with: [],
         without: ["scan.scope.unversioned-folders"],
@@ -139,6 +144,8 @@ describe("runScanFlow", () => {
       scanId: "test-scan-maven",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -225,6 +232,8 @@ public class FlowController {
       scanId: "test-scan-rest-controllers",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -288,6 +297,8 @@ class FlowController {
       scanId: "test-scan-kotlin-rest-controllers",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -344,6 +355,8 @@ class FlowController {
       scanId: "test-scan-functional-router",
       runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
       verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
         with: ["scan.scope.unversioned-folders"],
         without: [],
@@ -377,6 +390,8 @@ class FlowController {
         scanId: "test-scan-profile",
         runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
         verbose: false,
+      profile: false,
+      parallelism: testParallelismOptions,
       processorFilters: {
           with: ["scan.scope.unversioned-folders"],
           without: [],

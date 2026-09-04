@@ -1,4 +1,5 @@
 export { createFlowProgress } from "./create-flow-progress.js";
+export { createFlowParallelContext } from "./flow-parallel-context.js";
 export {
   defineFlowSteps,
   processorGroupFlowStep,

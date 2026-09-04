@@ -1,5 +1,8 @@
 export type MetricType = "counter" | "average" | "max" | "min";
 
+export const METRIC_WORKER_TASK_SUCCESS = "run.worker.task.success";
+export const METRIC_WORKER_TASK_ERROR = "run.worker.task.error";
+
 export const METRIC_RUN_DURATION_TOTAL = "run.duration.total";
 export const METRIC_RUN_STEP_DURATION = "run.step.duration";
 export const METRIC_PROCESSOR_DURATION_AVG = "run.processor.duration.avg";

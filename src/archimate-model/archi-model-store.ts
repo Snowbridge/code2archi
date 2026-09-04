@@ -249,6 +249,37 @@ class FrozenArchiModelSnapshot implements ArchiModelSnapshot {
   }
 }
 
+export function createArchiModelSnapshot(init: {
+  readonly folders: readonly ArchiFolder[];
+  readonly elements: readonly ArchiElementCreateIntent[];
+  readonly profiles: readonly ArchiProfileCreateIntent[];
+  readonly relations: readonly ArchiRelationshipCreateIntent[];
+  readonly predefinedFolderIds: Readonly<Record<PredefinedFolderKey, string>>;
+}): ArchiModelSnapshot {
+  const folders = new Map(
+    init.folders.map((folder) => [folder.id, deepFreeze({ ...folder })] as const),
+  );
+  const elements = new Map(
+    init.elements.map((element) => [element.id, deepFreeze({ ...element })] as const),
+  );
+  const profiles = new Map(
+    init.profiles.map((profile) => [profile.id, deepFreeze({ ...profile })] as const),
+  );
+  const relations = new Map(
+    init.relations.map((relation) => [relation.id, deepFreeze({ ...relation })] as const),
+  );
+
+  return deepFreeze(
+    new FrozenArchiModelSnapshot(
+      deepFreeze(folders),
+      deepFreeze(elements),
+      deepFreeze(profiles),
+      deepFreeze(relations),
+      deepFreeze({ ...init.predefinedFolderIds }),
+    ),
+  );
+}
+
 export class ArchiModelStore {
   private readonly folders = new Map<string, ArchiFolder>();
   private readonly elements = new Map<string, ArchiElementCreateIntent>();

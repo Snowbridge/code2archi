@@ -4,11 +4,16 @@ export function processorGroupFlowStep(
   id: string,
   label: string,
   processorCount: number,
+  initialTotalOverride?: number,
 ): FlowStepDefinition | undefined {
   if (processorCount <= 0) {
     return undefined;
   }
-  return { id, label, initialTotal: processorCount };
+  return {
+    id,
+    label,
+    initialTotal: initialTotalOverride ?? processorCount,
+  };
 }
 
 export function scopeDiscoveryFlowStep(

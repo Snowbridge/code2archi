@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { isWorkerRuntimeActive, workerRecordValue } from "../parallelism/worker-runtime.js";
 import { getLogger } from "../logging/index.js";
 import type { MetricType } from "./metric-types.js";
 import { METRIC_RUN_DURATION_TOTAL } from "./metric-types.js";
@@ -14,12 +15,15 @@ import { writeMetricsReport } from "./report-writer.js";
 
 let runStartedAt: number | undefined;
 
-export function initProfiling(options: { enabled: boolean }): void {
+export function initProfiling(options: {
+  enabled: boolean;
+  continueOnError?: boolean;
+}): void {
   runStartedAt = performance.now();
 
   if (options.enabled) {
     const profiler = new Profiler();
-    registerPredefinedMetrics(profiler);
+    registerPredefinedMetrics(profiler, { continueOnError: options.continueOnError });
     setActiveProfiler(profiler, true);
     return;
   }
@@ -36,6 +40,10 @@ export function recordValue(
   value: number,
   dimensions?: readonly string[],
 ): void {
+  if (isWorkerRuntimeActive()) {
+    workerRecordValue(metricId, value, dimensions);
+    return;
+  }
   getActiveProfiler().recordValue(metricId, value, dimensions);
 }
 
