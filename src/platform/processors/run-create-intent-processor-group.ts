@@ -70,11 +70,17 @@ export function runCreateIntentProcessorGroup(
     const count = countCreateIntents(output);
     if (!output.entities && !output.links) {
       processor.logCompleted(0);
+      if (builtInGroupId !== SCAN_SOURCE_GROUP_ID) {
+        progress?.tick(1);
+      }
       continue;
     }
 
     store.addCreateIntents(builtInGroupId, processor.id, output);
     processor.logCompleted(count);
+    if (builtInGroupId !== SCAN_SOURCE_GROUP_ID) {
+      progress?.tick(1);
+    }
   }
 
   logger.info("group completed", { groupId: builtInGroupId });

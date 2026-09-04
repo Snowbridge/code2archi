@@ -66,14 +66,6 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
     for (const match of winners) {
       const sourceId = directRestServingSourceId(match.sourceApplicationModuleId);
       const targetId = directRestServingTargetId(match.targetApplicationModuleId);
-
-      if (
-        input.archi.getElement(sourceId) === undefined ||
-        input.archi.getElement(targetId) === undefined
-      ) {
-        continue;
-      }
-
       const relationId = directRestServingRelationshipId(sourceId, targetId);
       if (input.archi.getRelationship(relationId) !== undefined) {
         continue;

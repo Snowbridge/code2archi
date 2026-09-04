@@ -150,7 +150,7 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
     assert.equal(output.profiles?.[0]?.name, ProcessesRestRequestsProfile.create().name);
   });
 
-  it("skips Serving when app-module-component is missing", () => {
+  it("creates Serving even when app-module-component is not yet in archi snapshot", () => {
     const serverModule = moduleRecord({
       repositoryId: "repo-1",
       name: "server",
@@ -204,6 +204,13 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(output.relations?.length, 1);
+    assert.equal(
+      output.relations?.[0]?.id,
+      directRestServingRelationshipId(
+        applicationComponentIdForModule(serverModule.id),
+        applicationComponentIdForModule(clientModule.id),
+      ),
+    );
   });
 });
