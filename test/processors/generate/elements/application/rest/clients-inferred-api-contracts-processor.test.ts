@@ -261,6 +261,60 @@ describe("ClientsInferredApiContractsProcessor", () => {
     assert.equal(output.relations?.length ?? 0, 0);
   });
 
+  it("skips when dtoFqcn is empty and endpoints are infrastructure-only", () => {
+    const { repository, module } = baseRepositoryAndModule();
+    const client = restClientRecord({
+      applicationModuleId: module.id,
+      name: "ActuatorClient",
+      fqcn: "com.example.ActuatorClient",
+      dtoFqcn: [],
+      endpoints: ["GET /", "GET /actuator/health"],
+      tcpStackType: "BLOCKING",
+      discoveryStyle: "PROGRAMMATIC",
+      clientFramework: "webclient",
+      extendedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/ActuatorClient.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestClient(store, client);
+
+    const output = new ClientsInferredApiContractsProcessor().process({
+      discovery: discoverySnapshot([repository], [module], [client]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.length ?? 0, 0);
+    assert.equal(output.relations?.length ?? 0, 0);
+  });
+
+  it("filters infrastructure endpoints from inferred contract documentation", () => {
+    const { repository, module } = baseRepositoryAndModule();
+    const client = restClientRecord({
+      applicationModuleId: module.id,
+      name: "MixedClient",
+      fqcn: "com.example.MixedClient",
+      dtoFqcn: [],
+      endpoints: ["GET /", "GET /payments", "GET /actuator/health"],
+      tcpStackType: "BLOCKING",
+      discoveryStyle: "DECLARATIVE",
+      clientFramework: "feign",
+      extendedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/MixedClient.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestClient(store, client);
+
+    const output = new ClientsInferredApiContractsProcessor().process({
+      discovery: discoverySnapshot([repository], [module], [client]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    const contract = output.elements?.[0];
+    assert.equal(contract?.documentation, "Endpoints:\n- GET /payments");
+  });
+
   it("emits contract and assignment when rest-client is missing from archi snapshot", () => {
     const { repository, module } = baseRepositoryAndModule();
     const client = restClientRecord({
@@ -428,6 +482,10 @@ describe("ClientsInferredApiContractsProcessor", () => {
 describe("buildInferredContractDocumentation (shared)", () => {
   it("reuses eligibility helper for client endpoints", () => {
     assert.equal(isEligibleForInferredRestContract(["GET /lots"], []), true);
+    assert.equal(
+      isEligibleForInferredRestContract(["GET /actuator/health"], []),
+      false,
+    );
     assert.equal(
       buildInferredContractDocumentation(["GET /lots"], []),
       "Endpoints:\n- GET /lots",

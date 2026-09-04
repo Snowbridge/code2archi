@@ -1,21 +1,16 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
+import {
+  filterMeaningfulEndpoints,
+  hasMeaningfulEndpoints,
+} from "./rest-infrastructure-endpoints.js";
 
 const INFERRED_REST_CONTRACT_ID_PREFIX = "inferredapicontract:";
-const ROOT_HEALTH_ENDPOINT = "GET /";
 
 export function isEligibleForInferredRestContract(
   endpoints: readonly string[],
   dtoFqcn: readonly string[],
 ): boolean {
-  if (endpoints.length === 0 && dtoFqcn.length === 0) {
-    return false;
-  }
-
-  return !(
-    dtoFqcn.length === 0 &&
-    endpoints.length === 1 &&
-    endpoints[0] === ROOT_HEALTH_ENDPOINT
-  );
+  return dtoFqcn.length > 0 || hasMeaningfulEndpoints(endpoints);
 }
 
 export function inferredRestContractId(fqcn: string): string {
@@ -60,10 +55,10 @@ export function buildInferredContractDocumentation(
 ): string {
   const sections: string[] = [];
 
-  if (endpoints.length > 0) {
-    const sortedEndpoints = [...endpoints].sort((left, right) => left.localeCompare(right));
+  const meaningfulEndpoints = filterMeaningfulEndpoints(endpoints);
+  if (meaningfulEndpoints.length > 0) {
     sections.push(
-      ["Endpoints:", ...sortedEndpoints.map((endpoint) => `- ${endpoint}`)].join("\n"),
+      ["Endpoints:", ...meaningfulEndpoints.map((endpoint) => `- ${endpoint}`)].join("\n"),
     );
   }
 

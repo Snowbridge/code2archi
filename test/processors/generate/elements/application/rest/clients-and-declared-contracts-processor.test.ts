@@ -263,6 +263,34 @@ describe("ClientsAndDeclaredContractsProcessor", () => {
     );
   });
 
+  it("omits documentation when only infrastructure endpoints are present", () => {
+    const { repository, module } = baseRepositoryAndModule();
+    const client = restClientRecord({
+      applicationModuleId: module.id,
+      name: "ActuatorClient",
+      fqcn: "com.example.ActuatorClient",
+      dtoFqcn: [],
+      endpoints: ["GET /actuator/health", "GET /management/info"],
+      tcpStackType: "BLOCKING",
+      discoveryStyle: "PROGRAMMATIC",
+      clientFramework: "webclient",
+      extendedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/ActuatorClient.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedAppModuleComponent(store, module);
+
+    const processor = new ClientsAndDeclaredContractsProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [client]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    const service = output.elements?.find((element) => element.id === client.id);
+    assert.equal(service?.documentation, undefined);
+  });
+
   it("skips when app-module-component is missing from archi snapshot", () => {
     const { repository, module } = baseRepositoryAndModule();
     const client = restClientRecord({

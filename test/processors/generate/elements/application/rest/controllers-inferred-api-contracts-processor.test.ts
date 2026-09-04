@@ -115,6 +115,16 @@ describe("buildInferredContractDocumentation", () => {
       "DTOs:\n- com.example.FooDto",
     );
   });
+
+  it("filters infrastructure endpoints from documentation", () => {
+    assert.equal(
+      buildInferredContractDocumentation(
+        ["GET /", "GET /actuator/health", "GET /lots"],
+        [],
+      ),
+      "Endpoints:\n- GET /lots",
+    );
+  });
 });
 
 describe("isEligibleForInferredRestContract", () => {
@@ -124,6 +134,13 @@ describe("isEligibleForInferredRestContract", () => {
 
   it("rejects root health endpoint without DTOs", () => {
     assert.equal(isEligibleForInferredRestContract(["GET /"], []), false);
+  });
+
+  it("rejects infrastructure-only endpoints without DTOs", () => {
+    assert.equal(
+      isEligibleForInferredRestContract(["GET /actuator/health", "GET /management/info"], []),
+      false,
+    );
   });
 
   it("accepts meaningful endpoints without DTOs", () => {
@@ -316,7 +333,7 @@ describe("ControllersInferredApiContractsProcessor", () => {
     assert.equal(output.relations?.length ?? 0, 0);
   });
 
-  it("skips when dtoFqcn is empty and endpoints is only GET /", () => {
+  it("skips when dtoFqcn is empty and endpoints are infrastructure-only", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -358,6 +375,95 @@ describe("ControllersInferredApiContractsProcessor", () => {
 
     assert.equal(output.elements?.length ?? 0, 0);
     assert.equal(output.relations?.length ?? 0, 0);
+  });
+
+  it("skips when implementedInterfaceFqcn is not empty", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const controller = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "LotsController",
+      fqcn: "com.example.LotsController",
+      dtoFqcn: ["com.example.FooDto"],
+      endpoints: ["GET /lots"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [API_FQCN],
+      sourceFile: "src/main/java/com/example/LotsController.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestController(store, controller);
+
+    const processor = new ControllersInferredApiContractsProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [controller]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.length ?? 0, 0);
+    assert.equal(output.relations?.length ?? 0, 0);
+  });
+
+  it("creates contract when only DTOs and infrastructure endpoints are present", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const controller = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "HealthController",
+      fqcn: "com.example.HealthController",
+      dtoFqcn: ["com.example.FooDto"],
+      endpoints: ["GET /", "GET /actuator/health"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/HealthController.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedRestController(store, controller);
+
+    const processor = new ControllersInferredApiContractsProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [controller]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements?.length, 1);
+    assert.equal(output.relations?.length, 1);
+    assert.equal(output.elements?.[0]?.documentation, "DTOs:\n- com.example.FooDto");
   });
 
   it("emits contract and assignment when rest-controller is missing from archi snapshot", () => {
@@ -531,7 +637,7 @@ describe("ControllersInferredApiContractsProcessor", () => {
     assert.equal(store.snapshot().getElement(contractId)?.conceptType, "ApplicationInterface");
   });
 
-  it("coexists with controllers-declared-api-contracts for the same controller", () => {
+  it("skips inferred contract when controller has implementedInterfaceFqcn", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -579,24 +685,15 @@ describe("ControllersInferredApiContractsProcessor", () => {
     });
 
     const declaredContractId = declaredRestContractId(API_FQCN);
-    const inferredContractId = inferredRestContractId(controller.fqcn);
 
     assert.equal(declaredOutput.elements?.length, 1);
-    assert.equal(inferredOutput.elements?.length, 1);
-    assert.notEqual(declaredContractId, inferredContractId);
+    assert.equal(inferredOutput.elements?.length ?? 0, 0);
     assert.deepEqual(declaredOutput.elements?.[0]?.profileIds, [ApiContractProfile.create().id]);
-    assert.deepEqual(inferredOutput.elements?.[0]?.profileIds, [
-      InferredApiContractProfile.create().id,
-    ]);
     assert.equal(declaredOutput.relations?.length, 1);
-    assert.equal(inferredOutput.relations?.length, 1);
+    assert.equal(inferredOutput.relations?.length ?? 0, 0);
     assert.equal(
       declaredOutput.relations?.[0]?.id,
       declaredContractAssignmentId(declaredContractId, controller.id),
-    );
-    assert.equal(
-      inferredOutput.relations?.[0]?.id,
-      inferredContractAssignmentId(inferredContractId, controller.id),
     );
   });
 });

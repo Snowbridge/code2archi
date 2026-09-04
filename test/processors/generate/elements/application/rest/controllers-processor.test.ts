@@ -161,6 +161,7 @@ describe("ControllersProcessor", () => {
       declarativeService?.properties?.find((property) => property.key === "c2a:Id")?.value,
       restControllerServiceLogicalId(declarativeController.id),
     );
+    assert.equal(declarativeService?.documentation, "Endpoints:\n- GET /limits");
 
     const realization = output.relations?.find(
       (relation) => relation.targetId === declarativeController.id,
@@ -329,5 +330,93 @@ describe("ControllersProcessor", () => {
       properties.find((property) => property.key === "c2a-debug:RestController:name")?.value,
       "LimitController",
     );
+  });
+
+  it("omits documentation when only infrastructure endpoints are present", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const controller = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "ActuatorController",
+      fqcn: "com.example.ActuatorController",
+      dtoFqcn: [],
+      endpoints: ["GET /actuator/health", "GET /management/info"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/ActuatorController.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedAppModuleComponent(store, module);
+
+    const processor = new ControllersProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [controller]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    const service = output.elements?.find((element) => element.id === controller.id);
+    assert.equal(service?.documentation, undefined);
+  });
+
+  it("filters infrastructure endpoints from documentation", () => {
+    const repository = repositoryRecord({
+      url: "",
+      localPath: "/workspace/demo",
+      name: "demo",
+      namespace: "",
+      buildSystems: ["maven"],
+    });
+    const module = moduleRecord({
+      repositoryId: repository.id,
+      buildSystem: "maven",
+      groupId: "com.example",
+      artifactId: "svc",
+      version: "1",
+      name: "svc",
+      repoPath: ".",
+      buildScript: "pom.xml",
+      isMultimodule: false,
+    });
+    const controller = restControllerRecord({
+      applicationModuleId: module.id,
+      name: "MixedController",
+      fqcn: "com.example.MixedController",
+      dtoFqcn: [],
+      endpoints: ["GET /", "GET /lots", "GET /actuator/health"],
+      tcpStackType: "BLOCKING",
+      programmingModel: "DECLARATIVE",
+      implementedInterfaceFqcn: [],
+      sourceFile: "src/main/java/com/example/MixedController.java",
+    });
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+    seedAppModuleComponent(store, module);
+
+    const processor = new ControllersProcessor();
+    const output = processor.process({
+      discovery: discoverySnapshot([repository], [module], [controller]),
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    const service = output.elements?.find((element) => element.id === controller.id);
+    assert.equal(service?.documentation, "Endpoints:\n- GET /lots");
   });
 });

@@ -1,5 +1,6 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
 import type { RestClientRecord } from "../discovery-model/entities/rest-client.js";
+import { filterMeaningfulEndpoints } from "./rest-infrastructure-endpoints.js";
 
 export function restClientServiceLogicalId(restClientId: string): string {
   return `restclient:${restClientId}`;
@@ -26,10 +27,10 @@ export function extendedInterfaceFqcnList(client: RestClientRecord): readonly st
 }
 
 export function buildRestClientEndpointsDocumentation(endpoints: readonly string[]): string | undefined {
-  if (endpoints.length === 0) {
+  const meaningfulEndpoints = filterMeaningfulEndpoints(endpoints);
+  if (meaningfulEndpoints.length === 0) {
     return undefined;
   }
 
-  const sortedEndpoints = [...endpoints].sort((left, right) => left.localeCompare(right));
-  return ["Endpoints:", ...sortedEndpoints.map((endpoint) => `- ${endpoint}`)].join("\n");
+  return ["Endpoints:", ...meaningfulEndpoints.map((endpoint) => `- ${endpoint}`)].join("\n");
 }

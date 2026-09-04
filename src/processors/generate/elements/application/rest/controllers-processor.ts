@@ -17,6 +17,7 @@ import {
 } from "../../../../../generate/archi-folder-path.js";
 import { withEntityDebugProperties } from "../../../../../generate/generate-debug.js";
 import {
+  buildRestControllerEndpointsDocumentation,
   restControllerRealizationLogicalId,
   restControllerRealizationRelationshipId,
   restControllerServiceLogicalId,
@@ -104,6 +105,11 @@ export class ControllersProcessor extends AbstractProcessor<
           .name(String(controller.name))
           .inFolder(targetFolder.folderId)
           .profiles(restControllerProfile.id);
+
+        const documentation = buildRestControllerEndpointsDocumentation(controller.endpoints);
+        if (documentation !== undefined) {
+          elementBuilder = elementBuilder.documentation(documentation);
+        }
 
         for (const property of standardGenerateElementProperties({
           logicalId: restControllerServiceLogicalId(controller.id),

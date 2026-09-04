@@ -1,6 +1,6 @@
 {
   "name": "code2archi",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Code to Archimate Modeler CLI",
   "type": "module",
   "engines": {

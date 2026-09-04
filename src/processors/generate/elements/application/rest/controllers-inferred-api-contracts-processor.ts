@@ -84,6 +84,10 @@ export class ControllersInferredApiContractsProcessor extends AbstractProcessor<
     const createdContractIds = new Set<string>();
 
     for (const controller of controllers) {
+      if (controller.implementedInterfaceFqcn.length > 0) {
+        continue;
+      }
+
       if (!isEligibleForInferredRestContract(controller.endpoints, controller.dtoFqcn)) {
         continue;
       }
