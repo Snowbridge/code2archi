@@ -462,6 +462,94 @@ public class OrderClient {
     assert.equal(clients[0]?.clientFramework, "spring-rest-client");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
   });
+
+  it("creates RestClient from Apache HttpClient with UriComponentsBuilder and path constants", () => {
+    const root = createTestTempDir("c2a-java-apache-uri-constants-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example", "restclient");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(javaDir, "AgentBillingServiceRestClientImpl.java"),
+      `package com.example.restclient;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class AgentBillingServiceRestClientImpl {
+    private static final String AGENT_BILLING_CREATE_CHARGE = "/charge";
+    private static final String AGENT_BILLING_GET_ACT = "/act/{year}/{month}/{agentId}";
+
+    private String baseUrl;
+
+    public AgentBillingServiceRestClientImpl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public String createCharge() {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl).path(AGENT_BILLING_CREATE_CHARGE);
+        String url = builder.build().toUriString();
+
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost(url);
+            HttpResponse response = httpClient.execute(httpPost);
+            return String.valueOf(response.getStatusLine().getStatusCode());
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public String getAct(Integer year, Integer month, String agentId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("year", year);
+        params.put("month", month);
+        params.put("agentId", agentId);
+        return getActDTO(AGENT_BILLING_GET_ACT, params);
+    }
+
+    private String getActDTO(String agentBillingGetAct, Map<String, Object> params) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl).path(agentBillingGetAct);
+        String url = builder.buildAndExpand(params).toUriString();
+
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpGet httpGet = new HttpGet(url);
+            HttpResponse response = httpClient.execute(httpGet);
+            return String.valueOf(response.getStatusLine().getStatusCode());
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-apache-uri-constants");
+    const processor = new JavaRestClientProgrammaticProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.RestClient ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "AgentBillingServiceRestClientImpl");
+    assert.equal(clients[0]?.clientFramework, "apache-http");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /act/:year/:month/:agentId", "POST /charge"]);
+  });
 });
 
 function createMavenStore(root: string, scanId: string): { store: RunEntityStore } {

@@ -132,6 +132,45 @@ export function extractIdentifierName(expression: GenericCstNode | undefined): s
   return getTokenImage(identifier);
 }
 
+export function extractReferenceName(expression: GenericCstNode | undefined): string | undefined {
+  if (!expression) {
+    return undefined;
+  }
+
+  const identifierName = extractIdentifierName(expression);
+  if (identifierName) {
+    return identifierName;
+  }
+
+  let lastName: string | undefined;
+  for (const part of walkDescendants(expression, "fqnOrRefTypePartCommon")) {
+    const image = getTokenImage(part);
+    if (image) {
+      lastName = image;
+    }
+  }
+
+  if (lastName) {
+    return lastName;
+  }
+
+  for (const childList of Object.values(expression.children ?? {})) {
+    for (const child of childList) {
+      const genericChild = asGenericCstNode(child);
+      if (!genericChild) {
+        continue;
+      }
+
+      const name = extractReferenceName(genericChild);
+      if (name) {
+        return name;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export function collectPrimaryInvocations(
   node: GenericCstNode | undefined,
   visitor: (methodName: string, args: GenericCstNode[]) => void,

@@ -30,7 +30,7 @@ export const REST_PROCESSOR_HIGHLIGHTS: Readonly<Record<string, readonly string[
   "scan.extract.java.rest/client-programmatic": [
     "Spring WebClient",
     "Spring RestTemplate / RestClient",
-    "Apache HttpClient",
+    "Apache HttpClient (incl. `UriComponentsBuilder` + path constants)",
     "OkHttp",
     "`java.net.http.HttpClient`",
   ],

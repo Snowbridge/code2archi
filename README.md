@@ -148,7 +148,7 @@ Built-in processors discover:
   - Retrofit
   - Spring WebClient
   - Spring RestTemplate / RestClient
-  - Apache HttpClient
+  - Apache HttpClient (incl. `UriComponentsBuilder` + path constants)
   - OkHttp
   - `java.net.http.HttpClient`
   - Spring WebClient wrappers

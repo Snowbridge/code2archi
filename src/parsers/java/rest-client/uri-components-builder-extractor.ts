@@ -1,6 +1,7 @@
 import type { GenericCstNode } from "../java-cst-utils.js";
 import { childNodes, firstChild, walkDescendants } from "../java-cst-utils.js";
 import {
+  extractReferenceName,
   extractStringLiteral,
   getInvocationArgumentExpressions,
   getSuffixName,
@@ -13,7 +14,31 @@ function isAbsoluteUrl(value: string): boolean {
   return /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 }
 
-export function extractUriComponentsBuilderPath(expression: GenericCstNode | undefined): string | undefined {
+function resolvePathSegment(
+  argument: GenericCstNode | undefined,
+  constants: ReadonlyMap<string, string>,
+): string | undefined {
+  if (!argument) {
+    return undefined;
+  }
+
+  const literal = extractStringLiteral(argument);
+  if (literal !== undefined) {
+    return literal;
+  }
+
+  const identifier = extractReferenceName(argument);
+  if (identifier && constants.has(identifier)) {
+    return constants.get(identifier);
+  }
+
+  return undefined;
+}
+
+export function extractUriComponentsBuilderPath(
+  expression: GenericCstNode | undefined,
+  constants: ReadonlyMap<string, string> = new Map(),
+): string | undefined {
   if (!expression) {
     return undefined;
   }
@@ -46,7 +71,7 @@ export function extractUriComponentsBuilderPath(expression: GenericCstNode | und
         continue;
       }
 
-      const segment = extractStringLiteral(args[0]);
+      const segment = resolvePathSegment(args[0], constants);
       if (!segment) {
         continue;
       }
@@ -58,16 +83,31 @@ export function extractUriComponentsBuilderPath(expression: GenericCstNode | und
   return path;
 }
 
-export function extractRestTemplatePathLiteral(argument: GenericCstNode | undefined): string | undefined {
-  const builderPath = extractUriComponentsBuilderPath(argument);
+export function resolvePathArgument(
+  expression: GenericCstNode | undefined,
+  constants: ReadonlyMap<string, string> = new Map(),
+): string | undefined {
+  const builderPath = extractUriComponentsBuilderPath(expression, constants);
   if (builderPath) {
     return builderPath;
   }
 
-  const literal = extractStringLiteral(argument);
+  const identifier = extractReferenceName(expression);
+  if (identifier && constants.has(identifier)) {
+    return constants.get(identifier);
+  }
+
+  const literal = extractStringLiteral(expression);
   if (!literal || isAbsoluteUrl(literal)) {
     return undefined;
   }
 
   return literal;
+}
+
+export function extractRestTemplatePathLiteral(
+  argument: GenericCstNode | undefined,
+  constants: ReadonlyMap<string, string> = new Map(),
+): string | undefined {
+  return resolvePathArgument(argument, constants);
 }

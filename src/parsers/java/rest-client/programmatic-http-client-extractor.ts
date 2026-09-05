@@ -7,7 +7,7 @@ import type { GenericCstNode } from "../java-cst-utils.js";
 import {
   APACHE_HTTP_CLIENT_FRAMEWORK,
   detectApacheClientFramework,
-  extractApacheHttpEndpoints,
+  extractApacheHttpEndpointsForType,
 } from "./apache-http-client-extractor.js";
 import {
   detectJdkHttpClientFramework,
@@ -139,13 +139,14 @@ function parseHttpMethodFromName(methodName: string): string | undefined {
 function extractEndpointsFromBody(
   body: GenericCstNode | undefined,
   clientFramework: string,
+  type?: JavaTypeDeclaration,
 ): string[] {
   if (!body) {
     return [];
   }
 
-  if (clientFramework === APACHE_HTTP_CLIENT_FRAMEWORK) {
-    return extractApacheHttpEndpoints(body);
+  if (clientFramework === APACHE_HTTP_CLIENT_FRAMEWORK && type) {
+    return extractApacheHttpEndpointsForType(type);
   }
 
   const endpoints = new Set<string>();
@@ -264,12 +265,24 @@ function extractClassClient(
   const endpoints = new Set<string>();
   const handlerMethods: JavaMethodDeclaration[] = [];
 
-  for (const method of type.methods) {
-    const methodEndpoints = extractEndpointsFromBody(method.body, clientFramework);
-    if (methodEndpoints.length > 0) {
-      handlerMethods.push(method);
-      for (const endpoint of methodEndpoints) {
-        endpoints.add(endpoint);
+  if (clientFramework === APACHE_HTTP_CLIENT_FRAMEWORK) {
+    for (const endpoint of extractApacheHttpEndpointsForType(type)) {
+      endpoints.add(endpoint);
+    }
+
+    for (const method of type.methods) {
+      if (method.body) {
+        handlerMethods.push(method);
+      }
+    }
+  } else {
+    for (const method of type.methods) {
+      const methodEndpoints = extractEndpointsFromBody(method.body, clientFramework, type);
+      if (methodEndpoints.length > 0) {
+        handlerMethods.push(method);
+        for (const endpoint of methodEndpoints) {
+          endpoints.add(endpoint);
+        }
       }
     }
   }
