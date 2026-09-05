@@ -27,17 +27,27 @@ function normalizeSourceDir(moduleRoot: string, sourceDir: string): string | und
   return existsSync(absolute) ? absolute : undefined;
 }
 
-function extractQuotedPaths(content: string, includeKotlin: boolean): string[] {
+interface ExtractQuotedPathsOptions {
+  readonly includeJava: boolean;
+  readonly includeKotlin: boolean;
+}
+
+function extractQuotedPaths(content: string, options: ExtractQuotedPathsOptions): string[] {
   const paths: string[] = [];
   const patterns = [
-    /srcDirs\s*\(\s*([^)]+)\)/g,
-    /srcDir\s+(['"][^'"]+['"])/g,
-    /srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
-    /java\.srcDirs\s*\(\s*([^)]+)\)/g,
-    /java\.srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
+    /(?<![.\w])srcDirs\s*\(\s*([^)]+)\)/g,
+    /(?<![.\w])srcDir\s+(['"][^'"]+['"])/g,
+    /(?<![.\w])srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
   ];
 
-  if (includeKotlin) {
+  if (options.includeJava) {
+    patterns.push(
+      /java\.srcDirs\s*\(\s*([^)]+)\)/g,
+      /java\.srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
+    );
+  }
+
+  if (options.includeKotlin) {
     patterns.push(
       /kotlin\.srcDirs\s*\(\s*([^)]+)\)/g,
       /kotlin\.srcDir\s*\(\s*(['"][^'"]+['"])\s*\)/g,
@@ -61,6 +71,14 @@ function extractQuotedPaths(content: string, includeKotlin: boolean): string[] {
   return paths;
 }
 
+function mergeWithFallbackSourceRoot(roots: readonly string[], fallback: string): string[] {
+  const merged = new Set(roots);
+  if (existsSync(fallback)) {
+    merged.add(fallback);
+  }
+  return [...merged];
+}
+
 export function parseGradleProductionJavaSourceRoots(
   repoRoot: string,
   moduleRepoPath: string,
@@ -75,16 +93,11 @@ export function parseGradleProductionJavaSourceRoots(
   }
 
   const content = readScanUtf8File(buildFilePath);
-  const extracted = extractQuotedPaths(content, false)
+  const extracted = extractQuotedPaths(content, { includeJava: true, includeKotlin: false })
     .map((sourceDir) => normalizeSourceDir(moduleRoot, sourceDir))
     .filter((sourceDir): sourceDir is string => sourceDir !== undefined);
 
-  const unique = [...new Set(extracted)];
-  if (unique.length > 0) {
-    return unique;
-  }
-
-  return existsSync(fallback) ? [fallback] : [];
+  return mergeWithFallbackSourceRoot(extracted, fallback);
 }
 
 export function resolveMavenProductionJavaSourceRoot(
@@ -115,16 +128,11 @@ export function parseGradleProductionKotlinSourceRoots(
   }
 
   const content = readScanUtf8File(buildFilePath);
-  const extracted = extractQuotedPaths(content, true)
+  const extracted = extractQuotedPaths(content, { includeJava: false, includeKotlin: true })
     .map((sourceDir) => normalizeSourceDir(moduleRoot, sourceDir))
     .filter((sourceDir): sourceDir is string => sourceDir !== undefined);
 
-  const unique = [...new Set(extracted)];
-  if (unique.length > 0) {
-    return unique;
-  }
-
-  return existsSync(fallback) ? [fallback] : [];
+  return mergeWithFallbackSourceRoot(extracted, fallback);
 }
 
 export function resolveMavenProductionKotlinSourceRoot(

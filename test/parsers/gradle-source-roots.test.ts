@@ -63,6 +63,22 @@ describe("gradle-source-roots", () => {
     assert.deepEqual(roots, [sourceRoot]);
   });
 
+  it("keeps src/main/kotlin when build.gradle.kts adds java.srcDir for jooq output", () => {
+    const root = createTestTempDir("c2a-gradle-kotlin-jooq-");
+    const kotlinRoot = path.join(root, "src", "main", "kotlin");
+    const jooqRoot = path.join(root, "build", "generated-src", "jooq", "main");
+    mkdirSync(kotlinRoot, { recursive: true });
+    mkdirSync(jooqRoot, { recursive: true });
+    writeFileSync(
+      path.join(root, "build.gradle.kts"),
+      `sourceSets["main"].java.srcDir("build/generated-src/jooq/main")`,
+    );
+
+    const roots = parseGradleProductionKotlinSourceRoots(root, ".", "build.gradle.kts");
+
+    assert.deepEqual(roots, [kotlinRoot]);
+  });
+
   it("resolves maven production kotlin source root", () => {
     const root = createTestTempDir("c2a-maven-kotlin-roots-");
     const sourceRoot = path.join(root, "src", "main", "kotlin");
