@@ -33,6 +33,6 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */
 export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {
-  "scan.transform.rest/direct-rest-requests-serving": ["DirectRestRequestsServingMatch"],
+  "scan.transform.rest/clients-to-controllers-links": ["RestClientToControllerLink"],
   "scan.transform.nodejs.rest/direct-rest-requests-serving": ["NodejsDirectRestRequestsServingMatch"],
 };

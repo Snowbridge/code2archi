@@ -1,5 +1,5 @@
 export const LINK_TYPES = [
-  "DirectRestRequestsServingMatch",
+  "RestClientToControllerLink",
   "NodejsDirectRestRequestsServingMatch",
 ] as const;
 

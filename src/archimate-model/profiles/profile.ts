@@ -183,6 +183,7 @@ export const GradleModuleProfile = defineApplicationComponentProfile("Gradle mod
 export const LibraryModuleProfile = defineApplicationComponentProfile("Library module");
 export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
 export const RestClientProfile = defineApplicationServiceProfile("REST Client");
+export const RestApiContractProfile = defineApplicationInterfaceProfile("REST API Contract");
 export const RunsOnProfile = defineAssignmentRelationshipProfile("Runs on");
 export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with");
 export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");

@@ -6,7 +6,7 @@ import {
   GROUP_LINK_ALLOWLIST,
   RunEntityStore,
 } from "../../src/discovery-model/run-entity-store.js";
-import { DirectRestRequestsServingMatch } from "../../src/discovery-model/links/direct-rest-requests-serving-match.js";
+import { RestClientToControllerLink } from "../../src/discovery-model/links/rest-client-to-controller-link.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -22,7 +22,7 @@ const SCAN_SOURCE_PROCESSOR = {
 
 const SCAN_LINK_PROCESSOR = {
   groupId: "scan.transform.rest",
-  artifactId: "direct-rest-requests-serving",
+  artifactId: "clients-to-controllers-links",
 };
 
 describe("RunEntityStore", () => {
@@ -290,7 +290,7 @@ describe("RunEntityStore", () => {
       "MessageProducer",
     ]);
     assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], [
-      "DirectRestRequestsServingMatch",
+      "RestClientToControllerLink",
       "NodejsDirectRestRequestsServingMatch",
     ]);
   });
@@ -302,7 +302,7 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    const link = new DirectRestRequestsServingMatch({
+    const link = new RestClientToControllerLink({
       restControllerId: "ctrl-1",
       restClientId: "client-1",
       sourceApplicationModuleId: "mod-server",
@@ -314,20 +314,20 @@ describe("RunEntityStore", () => {
 
     store.addCreateIntents("scan.transform", SCAN_LINK_PROCESSOR, {
       links: {
-        DirectRestRequestsServingMatch: [link],
+        RestClientToControllerLink: [link],
       },
     });
 
-    const stored = store.getLinks("DirectRestRequestsServingMatch")[0];
+    const stored = store.getLinks("RestClientToControllerLink")[0];
     assert.equal(stored?.matchMethod, "INTERFACE");
-    assert.equal(stored?.transformProcessor, "scan.transform.rest:direct-rest-requests-serving");
+    assert.equal(stored?.transformProcessor, "scan.transform.rest:clients-to-controllers-links");
     assert.equal(stored?.transformSchema, packageVersion);
 
     const snapshot = store.snapshot();
-    assert.equal(snapshot.listLinks("DirectRestRequestsServingMatch").length, 1);
+    assert.equal(snapshot.listLinks("RestClientToControllerLink").length, 1);
     assert.deepEqual(
       snapshot.listLinksByRef(
-        "DirectRestRequestsServingMatch",
+        "RestClientToControllerLink",
         "sourceApplicationModuleId",
         "mod-server",
       ).map((record) => record.id),

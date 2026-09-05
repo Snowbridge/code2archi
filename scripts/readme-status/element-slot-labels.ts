@@ -9,4 +9,6 @@ export const ELEMENT_SLOT_EN_LABELS: Readonly<Record<string, string>> = {
   "rest-controller": "REST controller application services",
   "rest-client": "REST client application services",
   "direct-rest-requests-serving": "Direct REST serving between application module components",
+  "rest-api-contract": "REST API contract application interfaces",
+  "rest-api-contract-assignment": "REST API contract assignments to controllers and clients",
 };

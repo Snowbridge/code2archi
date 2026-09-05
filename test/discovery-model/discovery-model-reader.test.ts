@@ -55,7 +55,7 @@ describe("DiscoveryModelReader", () => {
     assert.equal(snapshot.listEntities("Repository").length, 1);
     assert.equal(snapshot.getEntity("Repository", "repo-id")?.localPath, "/repo");
     assert.equal(snapshot.getById("repo-id")?.localPath, "/repo");
-    assert.deepEqual(snapshot.listLinks("DirectRestRequestsServingMatch"), []);
+    assert.deepEqual(snapshot.listLinks("RestClientToControllerLink"), []);
   });
 
   it("indexes entities loaded from disk for ref lookups", () => {

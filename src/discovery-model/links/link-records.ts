@@ -1,14 +1,14 @@
-import type { DirectRestRequestsServingMatchRecord } from "./direct-rest-requests-serving-match.js";
 import type { NodejsDirectRestRequestsServingMatchRecord } from "./nodejs-direct-rest-requests-serving-match.js";
+import type { RestClientToControllerLinkRecord } from "./rest-client-to-controller-link.js";
 import type { LinkType } from "./link-types.js";
 import { LINK_TYPES } from "./link-types.js";
 
 export type DiscoveryLinkRecord =
-  | DirectRestRequestsServingMatchRecord
+  | RestClientToControllerLinkRecord
   | NodejsDirectRestRequestsServingMatchRecord;
 
 export type DiscoveryLinkRecordByType = {
-  readonly DirectRestRequestsServingMatch: DirectRestRequestsServingMatchRecord;
+  readonly RestClientToControllerLink: RestClientToControllerLinkRecord;
   readonly NodejsDirectRestRequestsServingMatch: NodejsDirectRestRequestsServingMatchRecord;
 };
 

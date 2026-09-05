@@ -22,8 +22,8 @@ export const REST_CONTROLLER_SCHEMA_ID =
 export const REST_CLIENT_SCHEMA_ID =
   "https://code2archi.dev/specifications/discovery-model/schemas/RestClient.schema.json";
 
-export const DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/DirectRestRequestsServingMatch.schema.json";
+export const REST_CLIENT_TO_CONTROLLER_LINK_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/RestClientToControllerLink.schema.json";
 
 export const NODEJS_REST_CONTROLLER_SCHEMA_ID =
   "https://code2archi.dev/specifications/discovery-model/schemas/NodejsRestController.schema.json";
@@ -106,9 +106,9 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
 };
 
 const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
-  DirectRestRequestsServingMatch: {
-    collectionPath: "direct-rest-requests-serving-matches.json",
-    schemaId: DIRECT_REST_REQUESTS_SERVING_MATCH_SCHEMA_ID,
+  RestClientToControllerLink: {
+    collectionPath: "rest-client-to-controller-links.json",
+    schemaId: REST_CLIENT_TO_CONTROLLER_LINK_SCHEMA_ID,
     fromEntityType: "RestController",
     toEntityType: "RestClient",
     fromIdField: "restControllerId",

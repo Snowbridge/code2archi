@@ -19,7 +19,9 @@ export type ElementSlotId =
   | "app-module-realizes-rest-controller"
   | "rest-client"
   | "app-module-realizes-rest-client"
-  | "direct-rest-requests-serving";
+  | "direct-rest-requests-serving"
+  | "rest-api-contract"
+  | "rest-api-contract-assignment";
 
 export interface StandardGenerateElementPropertiesInput {
   readonly logicalId: string;

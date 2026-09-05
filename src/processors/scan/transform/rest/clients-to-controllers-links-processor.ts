@@ -7,15 +7,15 @@ import {
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../platform/processors/processor.js";
-import { collectDirectRestServingMatches } from "./direct-rest-serving-match.js";
+import { collectRestClientToControllerLinks } from "./rest-client-controller-link-match.js";
 
-export class DirectRestRequestsServingProcessor extends AbstractProcessor<
+export class ClientsToControllersLinksProcessor extends AbstractProcessor<
   ScanAppInput,
   ScanAppOutput
 > {
   readonly id: ProcessorId = {
     groupId: "scan.transform.rest",
-    artifactId: "direct-rest-requests-serving",
+    artifactId: "clients-to-controllers-links",
   };
 
   readonly version = "0.1.0";
@@ -23,7 +23,7 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Matches RestControllers to RestClients heuristically and emits DirectRestRequestsServingMatch links.";
+    "Matches RestControllers to RestClients heuristically and emits RestClientToControllerLink links.";
 
   protected doProcess(input: ScanAppInput): CreateIntents {
     const controllers = [...input.listEntities("RestController")]
@@ -34,7 +34,7 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
       .map((record) => record as unknown as RestClientRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
-    const matches = collectDirectRestServingMatches(controllers, clients);
+    const matches = collectRestClientToControllerLinks(controllers, clients);
 
     if (matches.length === 0) {
       return {};
@@ -42,7 +42,7 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
 
     return {
       links: {
-        DirectRestRequestsServingMatch: matches,
+        RestClientToControllerLink: matches,
       },
     };
   }

@@ -56,6 +56,6 @@ describe("selectBestDirectRestServingMatches", () => {
     ]);
 
     assert.equal(winners.length, 1);
-    assert.equal(winners[0]?.matchMethod, "DTO");
+    assert.equal(winners[0]?.matchMethod, "ENDPOINT");
   });
 });

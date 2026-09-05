@@ -3,9 +3,9 @@ import { describe, it } from "node:test";
 import type { RestClientRecord } from "../../../../../src/discovery-model/entities/rest-client.js";
 import type { RestControllerRecord } from "../../../../../src/discovery-model/entities/rest-controller.js";
 import {
-  collectDirectRestServingMatches,
-  matchDirectRestServingCandidates,
-} from "../../../../../src/processors/scan/transform/rest/direct-rest-serving-match.js";
+  collectRestClientToControllerLinks,
+  matchRestClientControllerLinkCandidates,
+} from "../../../../../src/processors/scan/transform/rest/rest-client-controller-link-match.js";
 
 function controller(
   overrides: Partial<RestControllerRecord> & Pick<RestControllerRecord, "id" | "applicationModuleId">,
@@ -46,9 +46,9 @@ function client(
   };
 }
 
-describe("direct-rest-serving-match", () => {
+describe("rest-client-controller-link-match", () => {
   it("skips matches within the same application module", () => {
-    const matches = matchDirectRestServingCandidates(
+    const matches = matchRestClientControllerLinkCandidates(
       controller({
         id: "ctrl-1",
         applicationModuleId: "mod-a",
@@ -65,7 +65,7 @@ describe("direct-rest-serving-match", () => {
   });
 
   it("creates confirmed INTERFACE match with score 1", () => {
-    const matches = matchDirectRestServingCandidates(
+    const matches = matchRestClientControllerLinkCandidates(
       controller({
         id: "ctrl-1",
         applicationModuleId: "mod-server",
@@ -85,8 +85,8 @@ describe("direct-rest-serving-match", () => {
     assert.deepEqual(matches[0]?.matchedValues, ["com.example.Api"]);
   });
 
-  it("creates inferred DTO match with capped score below 1", () => {
-    const matches = matchDirectRestServingCandidates(
+  it("creates inferred DTO match with capped score below ENDPOINT", () => {
+    const matches = matchRestClientControllerLinkCandidates(
       controller({
         id: "ctrl-1",
         applicationModuleId: "mod-server",
@@ -102,12 +102,12 @@ describe("direct-rest-serving-match", () => {
     const dtoMatch = matches.find((match) => match.matchMethod === "DTO");
     assert.ok(dtoMatch);
     assert.equal(dtoMatch.basis, "inference");
-    assert.ok(dtoMatch.confidence > 0.55);
-    assert.ok(dtoMatch.confidence <= 0.85);
+    assert.ok(dtoMatch.confidence > 0.25);
+    assert.ok(dtoMatch.confidence <= 0.5);
     assert.ok(dtoMatch.confidence < 1);
   });
 
-  it("creates inferred ENDPOINT match below DTO score for same overlap ratio", () => {
+  it("creates inferred ENDPOINT match above DTO score for same overlap ratio", () => {
     const controllerRecord = controller({
       id: "ctrl-1",
       applicationModuleId: "mod-server",
@@ -121,18 +121,19 @@ describe("direct-rest-serving-match", () => {
       endpoints: ["GET /api/foo"],
     });
 
-    const matches = matchDirectRestServingCandidates(controllerRecord, clientRecord);
+    const matches = matchRestClientControllerLinkCandidates(controllerRecord, clientRecord);
     const dtoMatch = matches.find((match) => match.matchMethod === "DTO");
     const endpointMatch = matches.find((match) => match.matchMethod === "ENDPOINT");
 
     assert.ok(dtoMatch);
     assert.ok(endpointMatch);
-    assert.ok(endpointMatch.confidence < dtoMatch.confidence);
-    assert.ok(endpointMatch.confidence <= 0.5);
+    assert.ok(endpointMatch.confidence > dtoMatch.confidence);
+    assert.ok(endpointMatch.confidence >= 0.55);
+    assert.ok(endpointMatch.confidence <= 0.85);
   });
 
   it("ignores infrastructure endpoints when matching ENDPOINT strategy", () => {
-    const matches = matchDirectRestServingCandidates(
+    const matches = matchRestClientControllerLinkCandidates(
       controller({
         id: "ctrl-1",
         applicationModuleId: "mod-server",
@@ -149,7 +150,7 @@ describe("direct-rest-serving-match", () => {
   });
 
   it("collects independent matches for all controller x client pairs", () => {
-    const links = collectDirectRestServingMatches(
+    const links = collectRestClientToControllerLinks(
       [
         controller({
           id: "ctrl-1",

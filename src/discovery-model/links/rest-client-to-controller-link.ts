@@ -1,47 +1,47 @@
 import type { DiscoveryLinkBase } from "./link-base.js";
 import { Link } from "./link.js";
 
-export type DirectRestRequestsServingMatchMethod = "INTERFACE" | "DTO" | "ENDPOINT";
+export type RestClientToControllerLinkMethod = "INTERFACE" | "DTO" | "ENDPOINT";
 
-export type DirectRestRequestsServingMatchBasis = "extract" | "inference";
+export type RestClientToControllerLinkBasis = "extract" | "inference";
 
-export interface DirectRestRequestsServingMatchCreateIntent {
+export interface RestClientToControllerLinkCreateIntent {
   readonly id: string;
   readonly restControllerId: string;
   readonly restClientId: string;
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
-  readonly matchMethod: DirectRestRequestsServingMatchMethod;
-  readonly basis: DirectRestRequestsServingMatchBasis;
+  readonly matchMethod: RestClientToControllerLinkMethod;
+  readonly basis: RestClientToControllerLinkBasis;
   readonly confidence: number;
   readonly matchedValues?: readonly string[];
 }
 
-export interface DirectRestRequestsServingMatchNaturalKeys {
+export interface RestClientToControllerLinkNaturalKeys {
   readonly restControllerId: string;
   readonly restClientId: string;
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
-  readonly matchMethod: DirectRestRequestsServingMatchMethod;
-  readonly basis: DirectRestRequestsServingMatchBasis;
+  readonly matchMethod: RestClientToControllerLinkMethod;
+  readonly basis: RestClientToControllerLinkBasis;
   readonly confidence: number;
   readonly matchedValues?: readonly string[];
 }
 
-export class DirectRestRequestsServingMatch extends Link {
-  private static readonly LINK_TYPE = "DirectRestRequestsServingMatch" as const;
+export class RestClientToControllerLink extends Link {
+  private static readonly LINK_TYPE = "RestClientToControllerLink" as const;
 
   readonly restControllerId: string;
   readonly restClientId: string;
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
-  readonly matchMethod: DirectRestRequestsServingMatchMethod;
-  readonly basis: DirectRestRequestsServingMatchBasis;
+  readonly matchMethod: RestClientToControllerLinkMethod;
+  readonly basis: RestClientToControllerLinkBasis;
   readonly confidence: number;
   readonly matchedValues?: readonly string[];
 
-  constructor(naturalKeys: DirectRestRequestsServingMatchNaturalKeys) {
-    super(DirectRestRequestsServingMatch.LINK_TYPE, [
+  constructor(naturalKeys: RestClientToControllerLinkNaturalKeys) {
+    super(RestClientToControllerLink.LINK_TYPE, [
       naturalKeys.restControllerId,
       naturalKeys.restClientId,
       naturalKeys.matchMethod,
@@ -58,7 +58,7 @@ export class DirectRestRequestsServingMatch extends Link {
     }
   }
 
-  toCreateIntent(): DirectRestRequestsServingMatchCreateIntent {
+  toCreateIntent(): RestClientToControllerLinkCreateIntent {
     return {
       id: this.id,
       restControllerId: this.restControllerId,
@@ -73,6 +73,6 @@ export class DirectRestRequestsServingMatch extends Link {
   }
 }
 
-export interface DirectRestRequestsServingMatchRecord
+export interface RestClientToControllerLinkRecord
   extends DiscoveryLinkBase,
-    DirectRestRequestsServingMatchCreateIntent {}
+    RestClientToControllerLinkCreateIntent {}

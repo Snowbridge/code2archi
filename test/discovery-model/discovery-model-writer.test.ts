@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
-import { DirectRestRequestsServingMatch } from "../../src/discovery-model/links/direct-rest-requests-serving-match.js";
+import { RestClientToControllerLink } from "../../src/discovery-model/links/rest-client-to-controller-link.js";
 import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
 import { REPOSITORY_SCHEMA_ID, REST_CLIENT_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
 import { packageVersion } from "../../src/package-version.js";
@@ -222,7 +222,7 @@ describe("DiscoveryModelWriter", () => {
     assert.equal(clients[0]?.name, "OrderFeignClient");
   });
 
-  it("writes direct-rest-requests-serving-matches.json when link records are present", () => {
+  it("writes rest-client-to-controller-links.json when link records are present", () => {
     const root = createTestTempDir("c2a-dm-direct-rest-link-");
     const outputDir = path.join(root, "out");
     mkdirSync(outputDir);
@@ -235,11 +235,11 @@ describe("DiscoveryModelWriter", () => {
 
     store.addCreateIntents(
       "scan.transform",
-      { groupId: "scan.transform.rest", artifactId: "direct-rest-requests-serving" },
+      { groupId: "scan.transform.rest", artifactId: "clients-to-controllers-links" },
       {
         links: {
-          DirectRestRequestsServingMatch: [
-            new DirectRestRequestsServingMatch({
+          RestClientToControllerLink: [
+            new RestClientToControllerLink({
               restControllerId: "ctrl-1",
               restClientId: "client-1",
               sourceApplicationModuleId: "mod-server",
@@ -259,7 +259,7 @@ describe("DiscoveryModelWriter", () => {
       scannedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    const linksPath = path.join(outputDir, "direct-rest-requests-serving-matches.json");
+    const linksPath = path.join(outputDir, "rest-client-to-controller-links.json");
     assert.ok(existsSync(linksPath));
   });
 });

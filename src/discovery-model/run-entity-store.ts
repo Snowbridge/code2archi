@@ -53,7 +53,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
 > = {
-  "scan.transform": ["DirectRestRequestsServingMatch", "NodejsDirectRestRequestsServingMatch"],
+  "scan.transform": ["RestClientToControllerLink", "NodejsDirectRestRequestsServingMatch"],
 };
 
 function isEntityTypeAllowedForGroup(

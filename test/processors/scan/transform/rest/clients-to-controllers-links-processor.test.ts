@@ -4,15 +4,15 @@ import { buildDiscoveryModelSnapshot } from "../../../../../src/discovery-model/
 import { ApplicationModule } from "../../../../../src/discovery-model/entities/application-module.js";
 import { RestClient } from "../../../../../src/discovery-model/entities/rest-client.js";
 import { RestController } from "../../../../../src/discovery-model/entities/rest-controller.js";
-import { DirectRestRequestsServingProcessor } from "../../../../../src/processors/scan/transform/rest/direct-rest-requests-serving-processor.js";
+import { ClientsToControllersLinksProcessor } from "../../../../../src/processors/scan/transform/rest/clients-to-controllers-links-processor.js";
 
-describe("DirectRestRequestsServingProcessor (scan)", () => {
+describe("ClientsToControllersLinksProcessor (scan)", () => {
   it("exposes scan.transform.rest coordinates", () => {
-    const processor = new DirectRestRequestsServingProcessor();
+    const processor = new ClientsToControllersLinksProcessor();
 
     assert.deepEqual(processor.id, {
       groupId: "scan.transform.rest",
-      artifactId: "direct-rest-requests-serving",
+      artifactId: "clients-to-controllers-links",
     });
   });
 
@@ -72,8 +72,8 @@ describe("DirectRestRequestsServingProcessor (scan)", () => {
       },
     });
 
-    const output = new DirectRestRequestsServingProcessor().process(snapshot);
-    const links = output.links?.DirectRestRequestsServingMatch ?? [];
+    const output = new ClientsToControllersLinksProcessor().process(snapshot);
+    const links = output.links?.RestClientToControllerLink ?? [];
 
     assert.equal(links.length, 3);
     assert.deepEqual(

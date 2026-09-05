@@ -5,16 +5,16 @@ import {
 import type { RestClientRecord } from "../../../../discovery-model/entities/rest-client.js";
 import type { RestControllerRecord } from "../../../../discovery-model/entities/rest-controller.js";
 import {
-  DirectRestRequestsServingMatch,
-  type DirectRestRequestsServingMatchMethod,
-} from "../../../../discovery-model/links/direct-rest-requests-serving-match.js";
+  RestClientToControllerLink,
+  type RestClientToControllerLinkMethod,
+} from "../../../../discovery-model/links/rest-client-to-controller-link.js";
 
-export interface DirectRestServingMatchCandidate {
+export interface RestClientControllerLinkCandidate {
   readonly restControllerId: string;
   readonly restClientId: string;
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
-  readonly matchMethod: DirectRestRequestsServingMatchMethod;
+  readonly matchMethod: RestClientToControllerLinkMethod;
   readonly basis: "extract" | "inference";
   readonly confidence: number;
   readonly matchedValues: readonly string[];
@@ -51,7 +51,7 @@ function jaccardIndex(left: readonly string[], right: readonly string[]): number
 function matchInterface(
   controller: RestControllerRecord,
   client: RestClientRecord,
-): DirectRestServingMatchCandidate | undefined {
+): RestClientControllerLinkCandidate | undefined {
   if (controller.implementedInterfaceFqcn.length === 0) {
     return undefined;
   }
@@ -79,7 +79,7 @@ function matchInterface(
 function matchDto(
   controller: RestControllerRecord,
   client: RestClientRecord,
-): DirectRestServingMatchCandidate | undefined {
+): RestClientControllerLinkCandidate | undefined {
   if (controller.dtoFqcn.length === 0) {
     return undefined;
   }
@@ -90,7 +90,7 @@ function matchDto(
   }
 
   const jaccard = jaccardIndex(controller.dtoFqcn, client.dtoFqcn);
-  const confidence = Math.min(0.85, 0.55 + 0.3 * jaccard);
+  const confidence = Math.min(0.5, 0.25 + 0.25 * jaccard);
 
   return {
     restControllerId: controller.id,
@@ -107,7 +107,7 @@ function matchDto(
 function matchEndpoint(
   controller: RestControllerRecord,
   client: RestClientRecord,
-): DirectRestServingMatchCandidate | undefined {
+): RestClientControllerLinkCandidate | undefined {
   if (!hasMeaningfulEndpoints(controller.endpoints)) {
     return undefined;
   }
@@ -120,7 +120,7 @@ function matchEndpoint(
   }
 
   const jaccard = jaccardIndex(controllerEndpoints, clientEndpoints);
-  const confidence = Math.min(0.5, 0.25 + 0.25 * jaccard);
+  const confidence = Math.min(0.85, 0.55 + 0.3 * jaccard);
 
   return {
     restControllerId: controller.id,
@@ -134,23 +134,18 @@ function matchEndpoint(
   };
 }
 
-export function matchDirectRestServingCandidates(
+export function matchRestClientControllerLinkCandidates(
   controller: RestControllerRecord,
   client: RestClientRecord,
-): DirectRestServingMatchCandidate[] {
+): RestClientControllerLinkCandidate[] {
   if (controller.applicationModuleId === client.applicationModuleId) {
     return [];
   }
 
-  const candidates: DirectRestServingMatchCandidate[] = [];
+  const candidates: RestClientControllerLinkCandidate[] = [];
   const interfaceMatch = matchInterface(controller, client);
   if (interfaceMatch !== undefined) {
     candidates.push(interfaceMatch);
-  }
-
-  const dtoMatch = matchDto(controller, client);
-  if (dtoMatch !== undefined) {
-    candidates.push(dtoMatch);
   }
 
   const endpointMatch = matchEndpoint(controller, client);
@@ -158,11 +153,18 @@ export function matchDirectRestServingCandidates(
     candidates.push(endpointMatch);
   }
 
+  const dtoMatch = matchDto(controller, client);
+  if (dtoMatch !== undefined) {
+    candidates.push(dtoMatch);
+  }
+
   return candidates;
 }
 
-export function candidateToLink(candidate: DirectRestServingMatchCandidate): DirectRestRequestsServingMatch {
-  return new DirectRestRequestsServingMatch({
+export function candidateToLink(
+  candidate: RestClientControllerLinkCandidate,
+): RestClientToControllerLink {
+  return new RestClientToControllerLink({
     restControllerId: candidate.restControllerId,
     restClientId: candidate.restClientId,
     sourceApplicationModuleId: candidate.sourceApplicationModuleId,
@@ -174,15 +176,15 @@ export function candidateToLink(candidate: DirectRestServingMatchCandidate): Dir
   });
 }
 
-export function collectDirectRestServingMatches(
+export function collectRestClientToControllerLinks(
   controllers: readonly RestControllerRecord[],
   clients: readonly RestClientRecord[],
-): DirectRestRequestsServingMatch[] {
-  const matches: DirectRestRequestsServingMatch[] = [];
+): RestClientToControllerLink[] {
+  const matches: RestClientToControllerLink[] = [];
 
   for (const controller of controllers) {
     for (const client of clients) {
-      for (const candidate of matchDirectRestServingCandidates(controller, client)) {
+      for (const candidate of matchRestClientControllerLinkCandidates(controller, client)) {
         matches.push(candidateToLink(candidate));
       }
     }

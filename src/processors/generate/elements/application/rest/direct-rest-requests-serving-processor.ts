@@ -12,7 +12,7 @@ import {
   type DirectRestServingMatchLike,
 } from "../../../../../generate/direct-rest-serving.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
-import type { DirectRestRequestsServingMatchRecord } from "../../../../../discovery-model/links/direct-rest-requests-serving-match.js";
+import type { RestClientToControllerLinkRecord } from "../../../../../discovery-model/links/rest-client-to-controller-link.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,
@@ -37,7 +37,7 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps DirectRestRequestsServingMatch links to ServingRelationships between application module components.";
+    "Maps RestClientToControllerLink links to ServingRelationships between application module components.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const profiles = REQUIRED_PROFILES.filter(
@@ -46,8 +46,8 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
     );
 
     const matches = input.discovery
-      .listLinks("DirectRestRequestsServingMatch")
-      .map((record) => record as unknown as DirectRestRequestsServingMatchRecord)
+      .listLinks("RestClientToControllerLink")
+      .map((record) => record as unknown as RestClientToControllerLinkRecord)
       .map(
         (record): DirectRestServingMatchLike => ({
           id: record.id,
