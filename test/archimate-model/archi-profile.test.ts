@@ -4,6 +4,7 @@ import { ArchiFolderIds } from "../../src/archimate-model/folders/archi-folder.j
 import {
   BuildScriptProfile,
   BuiltWithProfile,
+  BuildTimeDependencyProfile,
   CompiledWithProfile,
   GitRepoProfile,
   GradleModuleArtifactProfile,
@@ -57,5 +58,6 @@ describe("ArchiProfile", () => {
     assert.equal(RunsOnProfile.create().conceptType, "AssignmentRelationship");
     assert.equal(BuiltWithProfile.create().conceptType, "AssignmentRelationship");
     assert.equal(CompiledWithProfile.create().conceptType, "AssignmentRelationship");
+    assert.equal(BuildTimeDependencyProfile.create().conceptType, "AggregationRelationship");
   });
 });

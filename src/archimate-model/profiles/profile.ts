@@ -70,6 +70,12 @@ abstract class ServingRelationshipProfile extends ArchiProfile {
   }
 }
 
+abstract class AggregationRelationshipProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("AggregationRelationship", name);
+  }
+}
+
 function defineServingRelationshipProfile(profileName: string) {
   class NamedProfile extends ServingRelationshipProfile {
     static readonly CONCEPT_TYPE = "ServingRelationship" as const;
@@ -172,6 +178,23 @@ function defineAssignmentRelationshipProfile(profileName: string) {
   return NamedProfile;
 }
 
+function defineAggregationRelationshipProfile(profileName: string) {
+  class NamedProfile extends AggregationRelationshipProfile {
+    static readonly CONCEPT_TYPE = "AggregationRelationship" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
 export const GitRepoProfile = defineArtifactProfile("Source code repo");
 export const BuildScriptProfile = defineArtifactProfile("Build script");
 export const MavenModuleArtifactProfile = defineArtifactProfile("Maven module");
@@ -189,3 +212,5 @@ export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with"
 export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");
 export const ProcessesRestRequestsProfile =
   defineServingRelationshipProfile("Processes REST requests");
+export const BuildTimeDependencyProfile =
+  defineAggregationRelationshipProfile("Build-time dependency");

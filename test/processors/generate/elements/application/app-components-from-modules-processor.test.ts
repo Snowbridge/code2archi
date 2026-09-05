@@ -5,6 +5,7 @@ import { ArchiModelStore } from "../../../../../src/archimate-model/archi-model-
 import { ArchiFolderIds } from "../../../../../src/archimate-model/folders/archi-folder.js";
 import { Artifact } from "../../../../../src/archimate-model/elements/archi-element.js";
 import {
+  BuildTimeDependencyProfile,
   GradleModuleArtifactProfile,
   LibraryModuleProfile,
   MavenModuleArtifactProfile,
@@ -248,6 +249,7 @@ describe("AppComponentsFromModulesProcessor", () => {
     );
     assert.equal(aggregation?.sourceId, applicationComponentIdForModule(consumer.id));
     assert.equal(aggregation?.targetId, applicationComponentIdForModule(library.id));
+    assert.deepEqual(aggregation?.profileIds, [BuildTimeDependencyProfile.create().id]);
     assert.equal(
       aggregation?.properties?.find((property) => property.key === "c2a:libraryVersion")?.value,
       "2.0.0",
@@ -334,6 +336,7 @@ describe("AppComponentsFromModulesProcessor", () => {
     assert.ok(aggregation);
     assert.equal(aggregation?.sourceId, applicationComponentIdForModule(consumer.id));
     assert.equal(aggregation?.targetId, applicationComponentIdForModule(library.id));
+    assert.deepEqual(aggregation?.profileIds, [BuildTimeDependencyProfile.create().id]);
     assert.equal(
       aggregation?.properties?.find((property) => property.key === "c2a:libraryVersion")?.value,
       "2.0.0",

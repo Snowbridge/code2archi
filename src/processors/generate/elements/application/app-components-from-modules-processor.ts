@@ -6,6 +6,7 @@ import {
 import type { ArchiFolderCreateIntent } from "../../../../archimate-model/folders/archi-folder.js";
 import type { ArchiProfile } from "../../../../archimate-model/profiles/profile.js";
 import {
+  BuildTimeDependencyProfile,
   GradleModuleProfile,
   LibraryModuleProfile,
   MavenModuleProfile,
@@ -54,6 +55,7 @@ const REQUIRED_PROFILES: readonly ArchiProfile[] = [
   MavenModuleProfile.create(),
   GradleModuleProfile.create(),
   NpmModuleProfile.create(),
+  BuildTimeDependencyProfile.create(),
 ];
 
 export class AppComponentsFromModulesProcessor extends AbstractProcessor<
@@ -204,9 +206,11 @@ export class AppComponentsFromModulesProcessor extends AbstractProcessor<
         continue;
       }
 
+      const buildTimeDependencyProfile = BuildTimeDependencyProfile.create();
       let aggregationBuilder = AggregationRelationship.withId(relationId)
         .source(consumerApplicationComponentId)
         .target(libraryApplicationComponentId)
+        .profiles(buildTimeDependencyProfile.id)
         .property("c2a:libraryVersion", String(dependency.version));
 
       for (const property of standardGenerateElementProperties({
