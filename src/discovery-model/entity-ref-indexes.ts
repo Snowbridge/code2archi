@@ -6,6 +6,4 @@ export const ENTITY_REF_INDEX_FIELDS: Partial<Record<EntityType, readonly string
   ApplicationModuleDependency: ["parentId"],
   RestController: ["applicationModuleId"],
   RestClient: ["applicationModuleId"],
-  NodejsRestController: ["applicationModuleId"],
-  NodejsRestClient: ["applicationModuleId"],
 };

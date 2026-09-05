@@ -2,7 +2,6 @@ import { NodejsRestClientProgrammaticProcessor } from "../../processors/scan/ext
 import { NodejsRestControllerDeclarativeProcessor } from "../../processors/scan/extract/nodejs/rest/controller-declarative-processor.js";
 import { NodejsRestControllerFunctionalRouterProcessor } from "../../processors/scan/extract/nodejs/rest/controller-functional-router-processor.js";
 import { NodejsRestControllerNextjsAppRouterProcessor } from "../../processors/scan/extract/nodejs/rest/controller-nextjs-app-router-processor.js";
-import { NodejsDirectRestRequestsServingProcessor as ScanNodejsDirectRestRequestsServingProcessor } from "../../processors/scan/transform/nodejs/direct-rest-requests-serving-processor.js";
 import { JavaRestControllerAnnotationBasedProcessor } from "../../processors/scan/extract/java/rest/controller-annotation-based-processor.js";
 import { JavaRestControllerFunctionalRouterBasedProcessor } from "../../processors/scan/extract/java/rest/controller-functional-router-based-processor.js";
 import { KotlinRestControllerAnnotationBasedProcessor } from "../../processors/scan/extract/kotlin/rest/controller-annotation-based-processor.js";
@@ -51,6 +50,5 @@ processorRegistry.register(new AppComponentsFromModulesProcessor());
 processorRegistry.register(new ControllersProcessor());
 processorRegistry.register(new ClientsProcessor());
 processorRegistry.register(new ScanClientsToControllersLinksProcessor());
-processorRegistry.register(new ScanNodejsDirectRestRequestsServingProcessor());
 processorRegistry.register(new DirectRestRequestsServingProcessor());
 processorRegistry.register(new ApiContractsAndAssignmentsProcessor());

@@ -1,4 +1,4 @@
-import { NodejsRestController } from "../../../../../discovery-model/entities/nodejs-rest-controller.js";
+import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -31,7 +31,7 @@ export class NodejsRestControllerFunctionalRouterProcessor extends AbstractProce
     "Discovers Node.js functional REST routers (Express, Fastify, Hono, Koa).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const controllers: NodejsRestController[] = [];
+    const controllers: RestController[] = [];
 
     forEachNpmRepository(input, (repository) => {
       const contexts = buildNpmModuleContexts(input, repository, [
@@ -66,7 +66,7 @@ export class NodejsRestControllerFunctionalRouterProcessor extends AbstractProce
 
     return {
       entities: {
-        NodejsRestController: controllers.map((controller) => controller.toCreateIntent()),
+        RestController: controllers.map((controller) => controller.toCreateIntent()),
       },
     };
   }

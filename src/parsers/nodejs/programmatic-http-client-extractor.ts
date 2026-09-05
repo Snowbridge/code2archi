@@ -1,5 +1,4 @@
 import type { SyntaxNode } from "tree-sitter";
-import type { NodejsClientFramework } from "../../discovery-model/entities/nodejs-rest-client.js";
 import { formatEndpoint } from "../java/rest/rest-path-normalizer.js";
 import {
   childByField,
@@ -16,6 +15,15 @@ import {
   resolvePathWithConstants,
 } from "./rest-path-resolver.js";
 import type { NodejsCompilationUnit } from "./typescript-compilation-unit.js";
+
+export type NodejsClientFramework =
+  | "axios"
+  | "fetch"
+  | "undici"
+  | "got"
+  | "node-http"
+  | "superagent"
+  | "nestjs-axios";
 
 export interface ParsedProgrammaticHttpClient {
   readonly exportName: string;

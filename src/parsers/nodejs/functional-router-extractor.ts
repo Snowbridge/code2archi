@@ -1,5 +1,4 @@
 import type { SyntaxNode } from "tree-sitter";
-import type { NodejsServerFramework } from "../../discovery-model/entities/nodejs-rest-controller.js";
 import { formatEndpoint } from "../java/rest/rest-path-normalizer.js";
 import { joinPaths } from "../java/rest/rest-path-normalizer.js";
 import {
@@ -21,6 +20,8 @@ import {
   resolvePathWithConstants,
 } from "./rest-path-resolver.js";
 import type { NodejsCompilationUnit } from "./typescript-compilation-unit.js";
+
+export type NodejsServerFramework = "express" | "fastify" | "hono" | "koa";
 
 export interface ParsedFunctionalRouter {
   readonly exportName: string;

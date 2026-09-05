@@ -9,7 +9,7 @@ import { NodejsRestClientProgrammaticProcessor } from "../../../../../../src/pro
 import { NodejsRestControllerDeclarativeProcessor } from "../../../../../../src/processors/scan/extract/nodejs/rest/controller-declarative-processor.js";
 import { NodejsRestControllerFunctionalRouterProcessor } from "../../../../../../src/processors/scan/extract/nodejs/rest/controller-functional-router-processor.js";
 import { NodejsRestControllerNextjsAppRouterProcessor } from "../../../../../../src/processors/scan/extract/nodejs/rest/controller-nextjs-app-router-processor.js";
-import { NodejsDirectRestRequestsServingProcessor } from "../../../../../../src/processors/scan/transform/nodejs/direct-rest-requests-serving-processor.js";
+import { ClientsToControllersLinksProcessor } from "../../../../../../src/processors/scan/transform/rest/clients-to-controllers-links-processor.js";
 import { createTestTempDir } from "../../../../../test-temp-dir.js";
 
 function writePackageJson(root: string, dependencies: Record<string, string>): void {
@@ -87,12 +87,12 @@ export function registerUserRoutes(app: express.Application) {
 
     const store = createNpmStore(root, "scan-nodejs-express");
     const output = new NodejsRestControllerFunctionalRouterProcessor().process(store.snapshot());
-    const controllers = output.entities?.NodejsRestController ?? [];
+    const controllers = output.entities?.RestController ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "registerUserRoutes");
-    assert.equal(controllers[0]?.serverFramework, "express");
     assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
+    assert.match(controllers[0]?.fqcn ?? "", /routes\.ts#registerUserRoutes$/);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "POST /users"]);
     assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
   });
@@ -123,12 +123,12 @@ export class UsersController {
 
     const store = createNpmStore(root, "scan-nodejs-nest");
     const output = new NodejsRestControllerDeclarativeProcessor().process(store.snapshot());
-    const controllers = output.entities?.NodejsRestController ?? [];
+    const controllers = output.entities?.RestController ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "UsersController");
-    assert.equal(controllers[0]?.serverFramework, "nestjs");
     assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.match(controllers[0]?.fqcn ?? "", /users\.controller\.ts#UsersController$/);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "POST /users/:id"]);
   });
 
@@ -151,11 +151,11 @@ export function POST() {
 
     const store = createNpmStore(root, "scan-nodejs-next");
     const output = new NodejsRestControllerNextjsAppRouterProcessor().process(store.snapshot());
-    const controllers = output.entities?.NodejsRestController ?? [];
+    const controllers = output.entities?.RestController ?? [];
 
     assert.equal(controllers.length, 1);
-    assert.equal(controllers[0]?.serverFramework, "nextjs-app-router");
     assert.equal(controllers[0]?.programmingModel, "CONVENTION_BASED");
+    assert.match(controllers[0]?.fqcn ?? "", /route\.ts$/);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /api/users/:id", "POST /api/users/:id"]);
   });
 
@@ -177,15 +177,16 @@ export async function fetchUsers() {
 
     const store = createNpmStore(root, "scan-nodejs-axios");
     const output = new NodejsRestClientProgrammaticProcessor().process(store.snapshot());
-    const clients = output.entities?.NodejsRestClient ?? [];
+    const clients = output.entities?.RestClient ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "fetchUsers");
     assert.equal(clients[0]?.clientFramework, "axios");
+    assert.match(clients[0]?.fqcn ?? "", /user-client\.ts#fetchUsers$/);
     assert.deepEqual(clients[0]?.endpoints, ["GET /users", "POST /users"]);
   });
 
-  it("links Nodejs controllers and clients by endpoint intersection across modules", () => {
+  it("links RestControllers and RestClients by endpoint intersection across modules", () => {
     const root = createTestTempDir("c2a-nodejs-link-");
     writePackageJson(root, { express: "^4.18.0", axios: "^1.6.0", workspaces: ["packages/*"] });
 
@@ -279,8 +280,8 @@ export async function loadOrders() {
       new NodejsRestClientProgrammaticProcessor().process(store.snapshot()),
     );
 
-    const linkOutput = new NodejsDirectRestRequestsServingProcessor().process(store.snapshot());
-    const links = linkOutput.links?.NodejsDirectRestRequestsServingMatch ?? [];
+    const linkOutput = new ClientsToControllersLinksProcessor().process(store.snapshot());
+    const links = linkOutput.links?.RestClientToControllerLink ?? [];
 
     assert.equal(links.length, 1);
     assert.equal(links[0]?.matchMethod, "ENDPOINT");

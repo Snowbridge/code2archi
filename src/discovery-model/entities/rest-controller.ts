@@ -4,7 +4,7 @@ import type { TcpStackType } from "../../parsers/java/rest/rest-tcp-stack-type.j
 
 export type { TcpStackType };
 
-export type ProgrammingModel = "DECLARATIVE" | "FUNCTIONAL";
+export type ProgrammingModel = "DECLARATIVE" | "FUNCTIONAL" | "CONVENTION_BASED";
 
 export interface RestControllerCreateIntent {
   readonly id: string;

@@ -25,14 +25,13 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
   "scan.extract.java.rest/client-programmatic": ["RestClient"],
   "scan.extract.kotlin.rest/client-declarative": ["RestClient"],
   "scan.extract.kotlin.rest/client-programmatic": ["RestClient"],
-  "scan.extract.nodejs.rest/controller-functional-router": ["NodejsRestController"],
-  "scan.extract.nodejs.rest/controller-declarative": ["NodejsRestController"],
-  "scan.extract.nodejs.rest/controller-nextjs-app-router": ["NodejsRestController"],
-  "scan.extract.nodejs.rest/client-programmatic": ["NodejsRestClient"],
+  "scan.extract.nodejs.rest/controller-functional-router": ["RestController"],
+  "scan.extract.nodejs.rest/controller-declarative": ["RestController"],
+  "scan.extract.nodejs.rest/controller-nextjs-app-router": ["RestController"],
+  "scan.extract.nodejs.rest/client-programmatic": ["RestClient"],
 };
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */
 export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {
   "scan.transform.rest/clients-to-controllers-links": ["RestClientToControllerLink"],
-  "scan.transform.nodejs.rest/direct-rest-requests-serving": ["NodejsDirectRestRequestsServingMatch"],
 };
