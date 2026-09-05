@@ -1,6 +1,4 @@
 import path from "node:path";
-import { RestClient } from "../../../../../discovery-model/entities/rest-client.js";
-import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import type { ParsedFunctionalRouter } from "../../../../../parsers/nodejs/functional-router-extractor.js";
@@ -8,26 +6,30 @@ import type { ParsedNestJsController } from "../../../../../parsers/nodejs/nestj
 import type { ParsedNextJsRouteFile } from "../../../../../parsers/nodejs/nextjs-app-router-extractor.js";
 import type { ParsedProgrammaticHttpClient } from "../../../../../parsers/nodejs/programmatic-http-client-extractor.js";
 import { buildQualifiedSymbol, toRepositoryRelativePath } from "../../../../../parsers/nodejs/nodejs-source-roots.js";
+import {
+  toHttpClientApi,
+  toHttpServerApiFromSimplePayloadTypes,
+} from "../../http-api-entity-mapper.js";
 
 export function toFunctionalRouterControllerEntity(
   parsed: ParsedFunctionalRouter,
   module: ApplicationModuleRecord,
   repository: RepositoryRecord,
   absolutePath: string,
-): RestController {
+) {
   const sourceFile = toRepositoryRelativePath(repository, absolutePath);
-  const fqcn = buildQualifiedSymbol(sourceFile, parsed.exportName);
+  const symbolKey = buildQualifiedSymbol(sourceFile, parsed.exportName);
 
-  return new RestController({
+  return toHttpServerApiFromSimplePayloadTypes({
     applicationModuleId: module.id,
     name: parsed.exportName,
-    fqcn,
-    dtoFqcn: parsed.dtoTypes,
+    symbolKey,
     endpoints: parsed.endpoints,
-    tcpStackType: parsed.tcpStackType,
-    programmingModel: "FUNCTIONAL",
-    implementedInterfaceFqcn: [],
+    concurrencyModel: parsed.tcpStackType,
+    bindingStyle: "ROUTER",
+    contractTypeNames: [],
     sourceFile,
+    payloadTypeNames: parsed.dtoTypes,
   });
 }
 
@@ -36,21 +38,21 @@ export function toNestJsControllerEntity(
   module: ApplicationModuleRecord,
   repository: RepositoryRecord,
   absolutePath: string,
-): RestController {
+) {
   const sourceFile = toRepositoryRelativePath(repository, absolutePath);
-  const fqcn = buildQualifiedSymbol(sourceFile, parsed.className);
+  const symbolKey = buildQualifiedSymbol(sourceFile, parsed.className);
 
-  return new RestController({
+  return toHttpServerApiFromSimplePayloadTypes({
     applicationModuleId: module.id,
     name: parsed.className,
-    fqcn,
-    dtoFqcn: parsed.dtoTypes,
+    symbolKey,
     endpoints: parsed.endpoints,
-    tcpStackType: parsed.tcpStackType,
-    programmingModel: "DECLARATIVE",
-    implementedInterfaceFqcn: parsed.implementsTypeNames,
+    concurrencyModel: parsed.tcpStackType,
+    bindingStyle: "ANNOTATION",
+    contractTypeNames: parsed.implementsTypeNames,
     sourceFile,
-    ...(parsed.extendsTypeName ? { baseClassFqcn: parsed.extendsTypeName } : {}),
+    payloadTypeNames: parsed.dtoTypes,
+    ...(parsed.extendsTypeName ? { baseTypeName: parsed.extendsTypeName } : {}),
   });
 }
 
@@ -59,21 +61,21 @@ export function toNextJsRouteControllerEntity(
   module: ApplicationModuleRecord,
   repository: RepositoryRecord,
   absolutePath: string,
-): RestController {
+) {
   const sourceFile = toRepositoryRelativePath(repository, absolutePath);
   const name = path.basename(path.dirname(absolutePath)) || "route";
-  const fqcn = sourceFile;
+  const symbolKey = sourceFile;
 
-  return new RestController({
+  return toHttpServerApiFromSimplePayloadTypes({
     applicationModuleId: module.id,
     name,
-    fqcn,
-    dtoFqcn: parsed.dtoTypes,
+    symbolKey,
     endpoints: parsed.endpoints,
-    tcpStackType: parsed.tcpStackType,
-    programmingModel: "CONVENTION_BASED",
-    implementedInterfaceFqcn: [],
+    concurrencyModel: parsed.tcpStackType,
+    bindingStyle: "FILE_CONVENTION",
+    contractTypeNames: [],
     sourceFile,
+    payloadTypeNames: parsed.dtoTypes,
   });
 }
 
@@ -82,20 +84,20 @@ export function toProgrammaticClientEntity(
   module: ApplicationModuleRecord,
   repository: RepositoryRecord,
   absolutePath: string,
-): RestClient {
+) {
   const sourceFile = toRepositoryRelativePath(repository, absolutePath);
-  const fqcn = buildQualifiedSymbol(sourceFile, parsed.exportName);
+  const symbolKey = buildQualifiedSymbol(sourceFile, parsed.exportName);
 
-  return new RestClient({
+  return toHttpClientApi({
     applicationModuleId: module.id,
     name: parsed.exportName,
-    fqcn,
-    dtoFqcn: [],
+    symbolKey,
     endpoints: parsed.endpoints,
-    tcpStackType: "NON_BLOCKING",
-    discoveryStyle: "PROGRAMMATIC",
-    clientFramework: parsed.clientFramework,
-    extendedInterfaceFqcn: [],
+    payloadTypeNames: [],
+    concurrencyModel: "NON_BLOCKING",
+    bindingStyle: "INLINE_HTTP",
+    inheritedContractTypeNames: [],
+    clientLibrary: parsed.clientFramework,
     sourceFile,
     ...(parsed.baseUrl ? { baseUrl: parsed.baseUrl } : {}),
   });

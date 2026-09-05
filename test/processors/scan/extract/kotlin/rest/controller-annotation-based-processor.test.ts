@@ -73,15 +73,15 @@ describe("KotlinRestControllerAnnotationBasedProcessor", () => {
 
     const processor = new KotlinRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "EntityController");
     assert.equal(controllers[0]?.applicationModuleId, module.id);
     assert.equal(controllers[0]?.sourceFile, "src/main/kotlin/com/example/EntityController.kt");
     assert.deepEqual(controllers[0]?.endpoints, ["PUT /api/entity/:id"]);
-    assert.equal(controllers[0]?.tcpStackType, "BLOCKING");
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.concurrencyModel, "BLOCKING");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
   });
 
   it("accepts modules with kotlinJvmTarget when java version is unknown", () => {
@@ -137,7 +137,7 @@ describe("KotlinRestControllerAnnotationBasedProcessor", () => {
     const processor = new KotlinRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
 
-    assert.equal(output.entities?.RestController?.length ?? 0, 1);
+    assert.equal(output.entities?.HttpServerApi?.length ?? 0, 1);
   });
 
   it("skips modules without java or kotlin jvm target", () => {
@@ -182,7 +182,7 @@ describe("KotlinRestControllerAnnotationBasedProcessor", () => {
     const processor = new KotlinRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
 
-    assert.equal(output.entities?.RestController?.length ?? 0, 0);
+    assert.equal(output.entities?.HttpServerApi?.length ?? 0, 0);
   });
 
   it("marks suspend handlers as NON_BLOCKING", () => {
@@ -206,10 +206,10 @@ describe("KotlinRestControllerAnnotationBasedProcessor", () => {
 
     const { store } = createKotlinMavenStore(root, "scan-kotlin-suspend");
     const output = new KotlinRestControllerAnnotationBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
-    assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
+    assert.equal(controllers[0]?.concurrencyModel, "NON_BLOCKING");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /entities"]);
   });
 
@@ -231,12 +231,12 @@ describe("KotlinRestControllerAnnotationBasedProcessor", () => {
 
     const { store } = createKotlinMavenStore(root, "scan-kotlin-quarkus-jaxrs");
     const output = new KotlinRestControllerAnnotationBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "ItemResource");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /v1/items/:id"]);
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
   });
 });
 

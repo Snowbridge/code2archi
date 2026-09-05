@@ -6,7 +6,7 @@ import {
   GROUP_LINK_ALLOWLIST,
   RunEntityStore,
 } from "../../src/discovery-model/run-entity-store.js";
-import { RestClientToControllerLink } from "../../src/discovery-model/links/rest-client-to-controller-link.js";
+import { HttpClientToServerApiLink } from "../../src/discovery-model/links/http-client-to-server-api-link.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -282,12 +282,12 @@ describe("RunEntityStore", () => {
       "RuntimeEnvironment",
       "ApplicationModule",
       "ApplicationModuleDependency",
-      "RestController",
-      "RestClient",
+      "HttpServerApi",
+      "HttpClientApi",
       "MessageConsumer",
       "MessageProducer",
     ]);
-    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], ["RestClientToControllerLink"]);
+    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], ["HttpClientToServerApiLink"]);
   });
 
   it("adds links allowed for scan.transform with platform metadata", () => {
@@ -297,32 +297,32 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    const link = new RestClientToControllerLink({
-      restControllerId: "ctrl-1",
-      restClientId: "client-1",
+    const link = new HttpClientToServerApiLink({
+      httpServerApiId: "ctrl-1",
+      httpClientApiId: "client-1",
       sourceApplicationModuleId: "mod-server",
       targetApplicationModuleId: "mod-client",
-      matchMethod: "INTERFACE",
+      matchMethod: "CONTRACT_TYPE",
       basis: "extract",
       confidence: 1,
     });
 
     store.addCreateIntents("scan.transform", SCAN_LINK_PROCESSOR, {
       links: {
-        RestClientToControllerLink: [link],
+        HttpClientToServerApiLink: [link],
       },
     });
 
-    const stored = store.getLinks("RestClientToControllerLink")[0];
-    assert.equal(stored?.matchMethod, "INTERFACE");
+    const stored = store.getLinks("HttpClientToServerApiLink")[0];
+    assert.equal(stored?.matchMethod, "CONTRACT_TYPE");
     assert.equal(stored?.transformProcessor, "scan.transform.rest:clients-to-controllers-links");
     assert.equal(stored?.transformSchema, packageVersion);
 
     const snapshot = store.snapshot();
-    assert.equal(snapshot.listLinks("RestClientToControllerLink").length, 1);
+    assert.equal(snapshot.listLinks("HttpClientToServerApiLink").length, 1);
     assert.deepEqual(
       snapshot.listLinksByRef(
-        "RestClientToControllerLink",
+        "HttpClientToServerApiLink",
         "sourceApplicationModuleId",
         "mod-server",
       ).map((record) => record.id),

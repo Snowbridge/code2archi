@@ -1,4 +1,4 @@
-import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
+import { HttpServerApi } from "../../../../../discovery-model/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -30,7 +30,7 @@ export class NodejsRestControllerDeclarativeProcessor extends AbstractProcessor<
   readonly description = "Discovers NestJS declarative REST controllers.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const controllers: RestController[] = [];
+    const controllers: HttpServerApi[] = [];
 
     forEachNpmRepository(input, (repository) => {
       const contexts = buildNpmModuleContexts(input, repository, ["@nestjs/common"]);
@@ -59,7 +59,7 @@ export class NodejsRestControllerDeclarativeProcessor extends AbstractProcessor<
 
     return {
       entities: {
-        RestController: controllers.map((controller) => controller.toCreateIntent()),
+        HttpServerApi: controllers.map((controller) => controller.toCreateIntent()),
       },
     };
   }

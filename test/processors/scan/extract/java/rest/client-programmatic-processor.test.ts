@@ -77,14 +77,14 @@ public class OrderRestClient {
 
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "OrderRestClient");
-    assert.equal(clients[0]?.discoveryStyle, "PROGRAMMATIC");
-    assert.equal(clients[0]?.clientFramework, "rest-template");
+    assert.equal(clients[0]?.bindingStyle, "INLINE_HTTP");
+    assert.equal(clients[0]?.clientLibrary, "rest-template");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
-    assert.deepEqual(clients[0]?.extendedInterfaceFqcn, []);
+    assert.deepEqual(clients[0]?.inheritedContractTypes, []);
   });
 
   it("skips abstract RestClient base classes", () => {
@@ -155,7 +155,7 @@ public abstract class AbstractScoringServiceRestClient {
 
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    assert.equal(output.entities?.RestClient?.length ?? 0, 0);
+    assert.equal(output.entities?.HttpClientApi?.length ?? 0, 0);
   });
 
   it("creates RestClient from Apache HttpClient 4.x CloseableHttpClient", () => {
@@ -198,11 +198,11 @@ public class OrderClient {
     const { store } = createMavenStore(root, "scan-apache-http-4");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "OrderClient");
-    assert.equal(clients[0]?.clientFramework, "apache-http");
+    assert.equal(clients[0]?.clientLibrary, "apache-http");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders", "POST /api/orders"]);
   });
 
@@ -241,11 +241,11 @@ public class MetricsClient {
     const { store } = createMavenStore(root, "scan-apache-http-5");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "MetricsClient");
-    assert.equal(clients[0]?.clientFramework, "apache-http");
+    assert.equal(clients[0]?.clientLibrary, "apache-http");
     assert.deepEqual(clients[0]?.endpoints, ["GET /actuator/metrics"]);
   });
 
@@ -287,11 +287,11 @@ public class JdkOrderClient {
     const { store } = createMavenStore(root, "scan-jdk-http");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "JdkOrderClient");
-    assert.equal(clients[0]?.clientFramework, "java-http");
+    assert.equal(clients[0]?.clientLibrary, "java-http");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
   });
 
@@ -332,10 +332,10 @@ public class OrderClient {
     const { store } = createMavenStore(root, "scan-uri-components");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.clientFramework, "rest-template");
+    assert.equal(clients[0]?.clientLibrary, "rest-template");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
   });
 
@@ -373,11 +373,11 @@ public class OkOrderClient {
     const { store } = createMavenStore(root, "scan-java-okhttp");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "OkOrderClient");
-    assert.equal(clients[0]?.clientFramework, "okhttp");
+    assert.equal(clients[0]?.clientLibrary, "okhttp");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
   });
 
@@ -414,11 +414,11 @@ public class ApiWebclient {
     const { store } = createMavenStore(root, "scan-java-webclient");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "ApiWebclient");
-    assert.equal(clients[0]?.clientFramework, "webclient");
+    assert.equal(clients[0]?.clientLibrary, "webclient");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/items"]);
   });
 
@@ -455,11 +455,11 @@ public class OrderClient {
     const { store } = createMavenStore(root, "scan-spring-rest-client");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "OrderClient");
-    assert.equal(clients[0]?.clientFramework, "spring-rest-client");
+    assert.equal(clients[0]?.clientLibrary, "spring-rest-client");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
   });
 
@@ -543,11 +543,11 @@ public class AgentBillingServiceRestClientImpl {
     const { store } = createMavenStore(root, "scan-apache-uri-constants");
     const processor = new JavaRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "AgentBillingServiceRestClientImpl");
-    assert.equal(clients[0]?.clientFramework, "apache-http");
+    assert.equal(clients[0]?.clientLibrary, "apache-http");
     assert.deepEqual(clients[0]?.endpoints, ["GET /act/:year/:month/:agentId", "POST /charge"]);
   });
 });

@@ -147,14 +147,14 @@ Built-in processors discover:
   - Micronaut `@Client`
   - Retrofit
   - Spring WebClient
-  - Spring RestTemplate / RestClient
+  - Spring RestTemplate / HttpClientApi
   - Apache HttpClient (incl. `UriComponentsBuilder` + path constants)
   - OkHttp
   - `java.net.http.HttpClient`
   - Spring WebClient wrappers
   - Ktor `HttpClient`
 
-Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, rest-controllers.json, rest-clients.json, …) validated against JSON Schema in the specifications repo.
+Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, …) validated against JSON Schema in the specifications repo.
 
 ### `generate` — ArchiMate model
 

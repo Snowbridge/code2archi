@@ -24,7 +24,7 @@ import {
 } from "../../../../../generate/rest-controller-services.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { RestControllerRecord } from "../../../../../discovery-model/entities/rest-controller.js";
+import type { HttpServerApiRecord } from "../../../../../discovery-model/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,
@@ -49,7 +49,7 @@ export class ControllersProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps RestController entities to ApplicationServices with Realization from ApplicationComponents.";
+    "Maps HttpServerApi entities to ApplicationServices with Realization from ApplicationComponents.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -72,8 +72,8 @@ export class ControllersProcessor extends AbstractProcessor<
         .map((record) => [record.id, record as unknown as ApplicationModuleRecord]),
     );
 
-    const controllers = [...input.discovery.listEntities("RestController")]
-      .map((record) => record as unknown as RestControllerRecord)
+    const controllers = [...input.discovery.listEntities("HttpServerApi")]
+      .map((record) => record as unknown as HttpServerApiRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
@@ -118,7 +118,7 @@ export class ControllersProcessor extends AbstractProcessor<
 
         const elementIntent = withEntityDebugProperties(elementBuilder.build().toCreateIntent(), [
           {
-            entityType: "RestController",
+            entityType: "HttpServerApi",
             record: controller as unknown as DiscoveryEntityRecord,
           },
         ]);

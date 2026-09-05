@@ -1,13 +1,13 @@
 import type { CreateIntents } from "../../../../discovery-model/entities/create-intents.js";
-import type { RestClientRecord } from "../../../../discovery-model/entities/rest-client.js";
-import type { RestControllerRecord } from "../../../../discovery-model/entities/rest-controller.js";
+import type { HttpClientApiRecord } from "../../../../discovery-model/entities/http-client-api.js";
+import type { HttpServerApiRecord } from "../../../../discovery-model/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,
   type ScanAppInput,
   type ScanAppOutput,
 } from "../../../../platform/processors/processor.js";
-import { collectRestClientToControllerLinks } from "./rest-client-controller-link-match.js";
+import { collectHttpClientToServerApiLinks } from "./http-client-server-api-link-match.js";
 
 export class ClientsToControllersLinksProcessor extends AbstractProcessor<
   ScanAppInput,
@@ -23,18 +23,18 @@ export class ClientsToControllersLinksProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Matches RestControllers to RestClients heuristically and emits RestClientToControllerLink links.";
+    "Matches HttpServerApi to HttpClientApi heuristically and emits HttpClientToServerApiLink links.";
 
   protected doProcess(input: ScanAppInput): CreateIntents {
-    const controllers = [...input.listEntities("RestController")]
-      .map((record) => record as unknown as RestControllerRecord)
+    const servers = [...input.listEntities("HttpServerApi")]
+      .map((record) => record as unknown as HttpServerApiRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
-    const clients = [...input.listEntities("RestClient")]
-      .map((record) => record as unknown as RestClientRecord)
+    const clients = [...input.listEntities("HttpClientApi")]
+      .map((record) => record as unknown as HttpClientApiRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
-    const matches = collectRestClientToControllerLinks(controllers, clients);
+    const matches = collectHttpClientToServerApiLinks(servers, clients);
 
     if (matches.length === 0) {
       return {};
@@ -42,7 +42,7 @@ export class ClientsToControllersLinksProcessor extends AbstractProcessor<
 
     return {
       links: {
-        RestClientToControllerLink: matches,
+        HttpClientToServerApiLink: matches,
       },
     };
   }

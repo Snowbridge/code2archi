@@ -8,7 +8,7 @@ import {
 } from "../../../../../../src/archimate-model/profiles/profile.js";
 import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
 import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { RestClientToControllerLink } from "../../../../../../src/discovery-model/links/rest-client-to-controller-link.js";
+import { HttpClientToServerApiLink } from "../../../../../../src/discovery-model/links/http-client-to-server-api-link.js";
 import { applicationComponentIdForModule } from "../../../../../../src/generate/application-module-components.js";
 import {
   directRestServingLogicalId,
@@ -78,22 +78,22 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       repoPath: "client",
     });
 
-    const interfaceLink = new RestClientToControllerLink({
-      restControllerId: "ctrl-1",
-      restClientId: "client-1",
+    const interfaceLink = new HttpClientToServerApiLink({
+      httpServerApiId: "ctrl-1",
+      httpClientApiId: "client-1",
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
-      matchMethod: "INTERFACE",
+      matchMethod: "CONTRACT_TYPE",
       basis: "extract",
       confidence: 1,
       matchedValues: ["com.example.Api"],
     }).toCreateIntent();
-    const dtoLink = new RestClientToControllerLink({
-      restControllerId: "ctrl-1",
-      restClientId: "client-1",
+    const dtoLink = new HttpClientToServerApiLink({
+      httpServerApiId: "ctrl-1",
+      httpClientApiId: "client-1",
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
-      matchMethod: "DTO",
+      matchMethod: "PAYLOAD_TYPE",
       basis: "inference",
       confidence: 0.7,
       matchedValues: ["com.example.FooDto"],
@@ -107,7 +107,7 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
         ApplicationModule: [serverModule, clientModule],
       },
       linkArrays: {
-        RestClientToControllerLink: [
+        HttpClientToServerApiLink: [
           { ...interfaceLink, transformProcessor: "scan.transform.rest:clients-to-controllers-links", transformSchema: "0.0.0", linkedAt: "2026-01-01T00:00:00+00:00" },
           { ...dtoLink, transformProcessor: "scan.transform.rest:clients-to-controllers-links", transformSchema: "0.0.0", linkedAt: "2026-01-01T00:00:00+00:00" },
         ],
@@ -169,12 +169,12 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       buildToolVersion: "3.9.0",
       repoPath: "client",
     });
-    const link = new RestClientToControllerLink({
-      restControllerId: "ctrl-1",
-      restClientId: "client-1",
+    const link = new HttpClientToServerApiLink({
+      httpServerApiId: "ctrl-1",
+      httpClientApiId: "client-1",
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
-      matchMethod: "INTERFACE",
+      matchMethod: "CONTRACT_TYPE",
       basis: "extract",
       confidence: 1,
     }).toCreateIntent();
@@ -187,7 +187,7 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
         ApplicationModule: [serverModule, clientModule],
       },
       linkArrays: {
-        RestClientToControllerLink: [
+        HttpClientToServerApiLink: [
           {
             ...link,
             transformProcessor: "scan.transform.rest:clients-to-controllers-links",

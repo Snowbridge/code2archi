@@ -40,8 +40,8 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
     "RuntimeEnvironment",
     "ApplicationModule",
     "ApplicationModuleDependency",
-    "RestController",
-    "RestClient",
+    "HttpServerApi",
+    "HttpClientApi",
     "MessageConsumer",
     "MessageProducer",
   ],
@@ -51,7 +51,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
 > = {
-  "scan.transform": ["RestClientToControllerLink"],
+  "scan.transform": ["HttpClientToServerApiLink"],
 };
 
 function isEntityTypeAllowedForGroup(

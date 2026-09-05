@@ -84,12 +84,12 @@ describe("KotlinRestControllerKtorAndRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-kotlin-functional-router");
     const output = new KotlinRestControllerKtorAndRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "userRoutes");
-    assert.equal(controllers[0]?.fqcn, "com.example.UserRouterConfig#userRoutes");
-    assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
+    assert.equal(controllers[0]?.symbolKey, "com.example.UserRouterConfig#userRoutes");
+    assert.equal(controllers[0]?.bindingStyle, "ROUTER");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "GET /users/:id"]);
     assert.match(controllers[0]?.sourceFile ?? "", /\.kt$/);
   });
@@ -106,7 +106,7 @@ describe("KotlinRestControllerKtorAndRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-kotlin-chained-router");
     const output = new KotlinRestControllerKtorAndRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "userRoutes");
@@ -125,12 +125,12 @@ describe("KotlinRestControllerKtorAndRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-kotlin-co-router");
     const output = new KotlinRestControllerKtorAndRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "coRoutes");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /items"]);
-    assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
+    assert.equal(controllers[0]?.concurrencyModel, "NON_BLOCKING");
   });
 
   it("creates RestController from Ktor routing host", () => {
@@ -145,7 +145,7 @@ describe("KotlinRestControllerKtorAndRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-kotlin-ktor-routing");
     const output = new KotlinRestControllerKtorAndRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "module");
@@ -164,7 +164,7 @@ describe("KotlinRestControllerKtorAndRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-kotlin-micronaut-route");
     const output = new KotlinRestControllerKtorAndRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "issuesRoutes");
@@ -183,7 +183,7 @@ describe("KotlinRestControllerKtorAndRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-kotlin-quarkus-route");
     const output = new KotlinRestControllerKtorAndRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "ReactiveRoutes");

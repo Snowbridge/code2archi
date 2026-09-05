@@ -10,8 +10,8 @@ import { AssignmentRelationship } from "../../../../../archimate-model/relations
 import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { RestControllerRecord } from "../../../../../discovery-model/entities/rest-controller.js";
-import type { RestClientToControllerLinkRecord } from "../../../../../discovery-model/links/rest-client-to-controller-link.js";
+import type { HttpServerApiRecord } from "../../../../../discovery-model/entities/http-server-api.js";
+import type { HttpClientToServerApiLinkRecord } from "../../../../../discovery-model/links/http-client-to-server-api-link.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
 import {
   dedupeAndSortFolderIntents,
@@ -26,7 +26,7 @@ import {
   restApiContractAssignmentRelationshipId,
   restApiContractElementId,
   restApiContractLogicalId,
-  selectBestRestClientToControllerLinksPerClient,
+  selectBestHttpClientToServerApiLinksPerClient,
 } from "../../../../../generate/rest-api-contracts.js";
 import {
   AbstractProcessor,
@@ -52,7 +52,7 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Creates REST API contract ApplicationInterfaces per RestController and assigns them to controllers and matched clients.";
+    "Creates REST API contract ApplicationInterfaces per HttpServerApi and assigns them to servers and matched clients.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -75,20 +75,20 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
         .map((record) => [record.id, record as unknown as ApplicationModuleRecord]),
     );
 
-    const controllers = [...input.discovery.listEntities("RestController")]
-      .map((record) => record as unknown as RestControllerRecord)
+    const servers = [...input.discovery.listEntities("HttpServerApi")]
+      .map((record) => record as unknown as HttpServerApiRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
     const contractProfile = RestApiContractProfile.create();
 
-    for (const controller of controllers) {
-      const module = modulesById.get(controller.applicationModuleId);
+    for (const server of servers) {
+      const module = modulesById.get(server.applicationModuleId);
       if (module === undefined) {
         continue;
       }
 
-      const contractId = restApiContractElementId(module.id, controller.fqcn);
+      const contractId = restApiContractElementId(module.id, server.symbolKey);
       const repository = repositoriesById.get(String(module.repositoryId));
       const folderSegments = repositoryFolderSegments(repository, { includeRepoName: true });
       const targetFolder = ensureFolderPath(
@@ -104,7 +104,7 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
           .name(
             decorateElementName(
               "rest-api-contract",
-              String(controller.name),
+              String(server.name),
               {},
               input.options,
             ),
@@ -113,16 +113,16 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
           .profiles(contractProfile.id);
 
         const documentation = buildRestApiContractDocumentation({
-          endpoints: controller.endpoints,
-          dtoFqcn: controller.dtoFqcn,
-          implementedInterfaceFqcn: controller.implementedInterfaceFqcn,
+          endpoints: server.endpoints,
+          payloadTypes: server.payloadTypes,
+          contractTypes: server.contractTypes,
         });
         if (documentation !== undefined) {
           elementBuilder = elementBuilder.documentation(documentation);
         }
 
         for (const property of standardGenerateElementProperties({
-          logicalId: restApiContractLogicalId(module.id, controller.fqcn),
+          logicalId: restApiContractLogicalId(module.id, server.symbolKey),
           generatorCoordinate: GENERATOR_COORDINATE,
           slot: "rest-api-contract",
         })) {
@@ -131,28 +131,25 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
 
         const elementIntent = withEntityDebugProperties(elementBuilder.build().toCreateIntent(), [
           {
-            entityType: "RestController",
-            record: controller as unknown as DiscoveryEntityRecord,
+            entityType: "HttpServerApi",
+            record: server as unknown as DiscoveryEntityRecord,
           },
         ]);
         elements.push(elementIntent);
       }
 
-      const controllerAssignmentId = restApiContractAssignmentRelationshipId(
-        contractId,
-        controller.id,
-      );
-      if (!input.archi.getRelationship(controllerAssignmentId)) {
-        let assignmentBuilder = AssignmentRelationship.withId(controllerAssignmentId)
+      const serverAssignmentId = restApiContractAssignmentRelationshipId(contractId, server.id);
+      if (!input.archi.getRelationship(serverAssignmentId)) {
+        let assignmentBuilder = AssignmentRelationship.withId(serverAssignmentId)
           .source(contractId)
-          .target(controller.id);
+          .target(server.id);
 
         for (const property of standardGenerateElementProperties({
           logicalId: restApiContractAssignmentLogicalId(
             module.id,
-            controller.fqcn,
+            server.symbolKey,
             "restcontroller",
-            controller.id,
+            server.id,
           ),
           generatorCoordinate: GENERATOR_COORDINATE,
           slot: "rest-api-contract-assignment",
@@ -164,23 +161,23 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
       }
     }
 
-    const controllerFqcnById = new Map(
-      controllers.map((controller) => {
-        const module = modulesById.get(controller.applicationModuleId);
+    const serverSymbolKeyById = new Map(
+      servers.map((server) => {
+        const module = modulesById.get(server.applicationModuleId);
         return [
-          controller.id,
-          module === undefined ? undefined : { moduleId: module.id, fqcn: controller.fqcn },
+          server.id,
+          module === undefined ? undefined : { moduleId: module.id, symbolKey: server.symbolKey },
         ] as const;
       }),
     );
 
     const links = input.discovery
-      .listLinks("RestClientToControllerLink")
-      .map((record) => record as unknown as RestClientToControllerLinkRecord)
+      .listLinks("HttpClientToServerApiLink")
+      .map((record) => record as unknown as HttpClientToServerApiLinkRecord)
       .map((record) => ({
         id: record.id,
-        restControllerId: record.restControllerId,
-        restClientId: record.restClientId,
+        httpServerApiId: record.httpServerApiId,
+        httpClientApiId: record.httpClientApiId,
         sourceApplicationModuleId: record.sourceApplicationModuleId,
         targetApplicationModuleId: record.targetApplicationModuleId,
         matchMethod: record.matchMethod,
@@ -188,28 +185,28 @@ export class ApiContractsAndAssignmentsProcessor extends AbstractProcessor<
         confidence: record.confidence,
       }));
 
-    for (const link of selectBestRestClientToControllerLinksPerClient(links)) {
-      const controllerMeta = controllerFqcnById.get(link.restControllerId);
-      if (controllerMeta === undefined) {
+    for (const link of selectBestHttpClientToServerApiLinksPerClient(links)) {
+      const serverMeta = serverSymbolKeyById.get(link.httpServerApiId);
+      if (serverMeta === undefined) {
         continue;
       }
 
-      const contractId = restApiContractElementId(controllerMeta.moduleId, controllerMeta.fqcn);
-      const assignmentId = restApiContractAssignmentRelationshipId(contractId, link.restClientId);
+      const contractId = restApiContractElementId(serverMeta.moduleId, serverMeta.symbolKey);
+      const assignmentId = restApiContractAssignmentRelationshipId(contractId, link.httpClientApiId);
       if (input.archi.getRelationship(assignmentId)) {
         continue;
       }
 
       let assignmentBuilder = AssignmentRelationship.withId(assignmentId)
         .source(contractId)
-        .target(link.restClientId);
+        .target(link.httpClientApiId);
 
       for (const property of standardGenerateElementProperties({
         logicalId: restApiContractAssignmentLogicalId(
-          controllerMeta.moduleId,
-          controllerMeta.fqcn,
+          serverMeta.moduleId,
+          serverMeta.symbolKey,
           "restclient",
-          link.restClientId,
+          link.httpClientApiId,
         ),
         generatorCoordinate: GENERATOR_COORDINATE,
         slot: "rest-api-contract-assignment",

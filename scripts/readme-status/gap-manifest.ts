@@ -18,7 +18,7 @@ function missingEntityTypes(status: ImplementationStatus, entityTypes: readonly 
 }
 
 function interServiceEntityTypes(): readonly string[] {
-  return ["RestClient", "MessageConsumer", "MessageProducer"];
+  return ["HttpClientApi", "MessageConsumer", "MessageProducer"];
 }
 
 function hasJsTsRestScan(status: ImplementationStatus): boolean {
@@ -174,7 +174,7 @@ export function buildGapRows(status: ImplementationStatus): GapRow[] {
 
 export function buildGapSummary(status: ImplementationStatus, rows: readonly GapRow[]): string {
   const openAreas = rows.filter((row) => !row.complete).map((row) => row.area.toLowerCase());
-  const hasRestScan = status.scanEntityTypes.has("RestController");
+  const hasRestScan = status.scanEntityTypes.has("HttpServerApi");
   const highlights: string[] = [
     "repositories",
     "modules",

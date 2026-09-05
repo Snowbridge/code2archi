@@ -1,26 +1,28 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
 import { filterMeaningfulEndpoints } from "./rest-infrastructure-endpoints.js";
-import type { RestClientToControllerLinkMethod } from "../discovery-model/links/rest-client-to-controller-link.js";
+import type { HttpClientToServerApiLinkMethod } from "../discovery-model/links/http-client-to-server-api-link.js";
+import type { TypeReference } from "../discovery-model/entities/type-reference.js";
+import { typeReferenceMatchKeys } from "../discovery-model/entities/type-reference.js";
 import {
   compareDirectRestServingMatches,
   type DirectRestServingMatchLike,
 } from "./direct-rest-serving.js";
 
-export function restApiContractElementId(applicationModuleId: string, fqcn: string): string {
-  return computeArchiId("ApplicationInterface", "api-contract", applicationModuleId, fqcn);
+export function restApiContractElementId(applicationModuleId: string, symbolKey: string): string {
+  return computeArchiId("ApplicationInterface", "api-contract", applicationModuleId, symbolKey);
 }
 
-export function restApiContractLogicalId(applicationModuleId: string, fqcn: string): string {
-  return `api-contract:${applicationModuleId}:${fqcn}`;
+export function restApiContractLogicalId(applicationModuleId: string, symbolKey: string): string {
+  return `api-contract:${applicationModuleId}:${symbolKey}`;
 }
 
 export function restApiContractAssignmentLogicalId(
   applicationModuleId: string,
-  fqcn: string,
+  symbolKey: string,
   role: "restcontroller" | "restclient",
   peerId: string,
 ): string {
-  return `assignment:rest-api-contract:${applicationModuleId}:${fqcn}:${role}:${peerId}`;
+  return `assignment:rest-api-contract:${applicationModuleId}:${symbolKey}:${role}:${peerId}`;
 }
 
 export function restApiContractAssignmentRelationshipId(
@@ -32,8 +34,8 @@ export function restApiContractAssignmentRelationshipId(
 
 export function buildRestApiContractDocumentation(input: {
   readonly endpoints: readonly string[];
-  readonly dtoFqcn: readonly string[];
-  readonly implementedInterfaceFqcn: readonly string[];
+  readonly payloadTypes: readonly TypeReference[];
+  readonly contractTypes: readonly TypeReference[];
 }): string | undefined {
   const sections: string[] = [];
 
@@ -42,22 +44,22 @@ export function buildRestApiContractDocumentation(input: {
     sections.push("Endpoints:", ...meaningfulEndpoints.map((endpoint) => `- ${endpoint}`));
   }
 
-  if (input.dtoFqcn.length > 0) {
+  const payloadKeys = typeReferenceMatchKeys(input.payloadTypes);
+  if (payloadKeys.length > 0) {
     if (sections.length > 0) {
       sections.push("");
     }
-    sections.push("DTOs:", ...[...input.dtoFqcn].sort((a, b) => a.localeCompare(b)).map((dto) => `- ${dto}`));
+    sections.push("Payload types:", ...[...payloadKeys].sort((a, b) => a.localeCompare(b)).map((dto) => `- ${dto}`));
   }
 
-  if (input.implementedInterfaceFqcn.length > 0) {
+  const contractKeys = typeReferenceMatchKeys(input.contractTypes);
+  if (contractKeys.length > 0) {
     if (sections.length > 0) {
       sections.push("");
     }
     sections.push(
-      "Implemented interfaces:",
-      ...[...input.implementedInterfaceFqcn]
-        .sort((a, b) => a.localeCompare(b))
-        .map((fqcn) => `- ${fqcn}`),
+      "Contract types:",
+      ...[...contractKeys].sort((a, b) => a.localeCompare(b)).map((name) => `- ${name}`),
     );
   }
 
@@ -68,37 +70,41 @@ export function buildRestApiContractDocumentation(input: {
   return sections.join("\n");
 }
 
-export interface RestClientToControllerLinkLike extends DirectRestServingMatchLike {
-  readonly restControllerId: string;
-  readonly restClientId: string;
+export interface HttpClientToServerApiLinkLike extends DirectRestServingMatchLike {
+  readonly httpServerApiId: string;
+  readonly httpClientApiId: string;
 }
 
-export function selectBestRestClientToControllerLinksPerClient(
-  links: readonly RestClientToControllerLinkLike[],
-): RestClientToControllerLinkLike[] {
-  const bestByClientAndController = new Map<string, RestClientToControllerLinkLike>();
+export function selectBestHttpClientToServerApiLinksPerClient(
+  links: readonly HttpClientToServerApiLinkLike[],
+): HttpClientToServerApiLinkLike[] {
+  const bestByClientAndServer = new Map<string, HttpClientToServerApiLinkLike>();
 
   for (const link of links) {
-    const key = `${link.restClientId}\u0000${link.restControllerId}`;
-    const currentBest = bestByClientAndController.get(key);
+    const key = `${link.httpClientApiId}\u0000${link.httpServerApiId}`;
+    const currentBest = bestByClientAndServer.get(key);
     if (currentBest === undefined || compareDirectRestServingMatches(link, currentBest) < 0) {
-      bestByClientAndController.set(key, link);
+      bestByClientAndServer.set(key, link);
     }
   }
 
-  return [...bestByClientAndController.values()].sort((left, right) => {
-    const clientCompare = left.restClientId.localeCompare(right.restClientId);
+  return [...bestByClientAndServer.values()].sort((left, right) => {
+    const clientCompare = left.httpClientApiId.localeCompare(right.httpClientApiId);
     if (clientCompare !== 0) {
       return clientCompare;
     }
 
-    const controllerCompare = left.restControllerId.localeCompare(right.restControllerId);
-    if (controllerCompare !== 0) {
-      return controllerCompare;
+    const serverCompare = left.httpServerApiId.localeCompare(right.httpServerApiId);
+    if (serverCompare !== 0) {
+      return serverCompare;
     }
 
     return compareDirectRestServingMatches(left, right);
   });
 }
 
-export type { RestClientToControllerLinkMethod };
+export type { HttpClientToServerApiLinkMethod };
+
+/** @deprecated Use selectBestHttpClientToServerApiLinksPerClient */
+export const selectBestRestClientToControllerLinksPerClient =
+  selectBestHttpClientToServerApiLinksPerClient;

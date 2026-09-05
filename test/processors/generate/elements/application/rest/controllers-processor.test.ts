@@ -7,7 +7,7 @@ import { MavenModuleProfile, RestControllerProfile } from "../../../../../../src
 import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
 import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
 import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
-import { RestController } from "../../../../../../src/discovery-model/entities/rest-controller.js";
+import { HttpServerApi } from "../../../../../../src/discovery-model/entities/http-server-api.js";
 import { applicationComponentIdForModule } from "../../../../../../src/generate/application-module-components.js";
 import {
   restControllerRealizationRelationshipId,
@@ -30,10 +30,10 @@ function moduleRecord(
   return new ApplicationModule(naturalKeys).toCreateIntent();
 }
 
-function restControllerRecord(
-  naturalKeys: ConstructorParameters<typeof RestController>[0],
+function httpServerApiRecord(
+  naturalKeys: ConstructorParameters<typeof HttpServerApi>[0],
 ): ReturnType<RestController["toCreateIntent"]> {
-  return new RestController(naturalKeys).toCreateIntent();
+  return new HttpServerApi(naturalKeys).toCreateIntent();
 }
 
 function discoverySnapshot(
@@ -48,7 +48,7 @@ function discoverySnapshot(
     entityArrays: {
       Repository: repositories,
       ApplicationModule: modules,
-      RestController: controllers,
+      HttpServerApi: controllers,
     },
   });
 }
@@ -109,26 +109,26 @@ describe("ControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const declarativeController = restControllerRecord({
+    const declarativeController = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "LimitController",
-      fqcn: "com.example.LimitController",
-      dtoFqcn: [],
+      symbolKey: "com.example.LimitController",
+      payloadTypes: [],
       endpoints: ["GET /limits"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/LimitController.java",
     });
-    const functionalController = restControllerRecord({
+    const functionalController = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "routes",
-      fqcn: "com.example.RouterConfig#routes",
-      dtoFqcn: [],
+      symbolKey: "com.example.RouterConfig#routes",
+      payloadTypes: [],
       endpoints: ["GET /api"],
-      tcpStackType: "NON_BLOCKING",
-      programmingModel: "FUNCTIONAL",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "NON_BLOCKING",
+      bindingStyle: "ROUTER",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/RouterConfig.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
@@ -199,15 +199,15 @@ describe("ControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const controller = restControllerRecord({
+    const controller = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "LimitController",
-      fqcn: "com.example.LimitController",
-      dtoFqcn: [],
+      symbolKey: "com.example.LimitController",
+      payloadTypes: [],
       endpoints: ["GET /limits"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/LimitController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
@@ -243,15 +243,15 @@ describe("ControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const controller = restControllerRecord({
+    const controller = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "LimitController",
-      fqcn: "com.example.LimitController",
-      dtoFqcn: [],
+      symbolKey: "com.example.LimitController",
+      payloadTypes: [],
       endpoints: ["GET /limits"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/LimitController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
@@ -311,15 +311,15 @@ describe("ControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const controller = restControllerRecord({
+    const controller = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "LimitController",
-      fqcn: "com.example.LimitController",
-      dtoFqcn: [],
+      symbolKey: "com.example.LimitController",
+      payloadTypes: [],
       endpoints: ["GET /limits"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/LimitController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
@@ -334,7 +334,7 @@ describe("ControllersProcessor", () => {
 
     const properties = output.elements?.[0]?.properties ?? [];
     assert.equal(
-      properties.find((property) => property.key === "c2a-debug:RestController:name")?.value,
+      properties.find((property) => property.key === "c2a-debug:HttpServerApi:name")?.value,
       "LimitController",
     );
   });
@@ -358,15 +358,15 @@ describe("ControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const controller = restControllerRecord({
+    const controller = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "ActuatorController",
-      fqcn: "com.example.ActuatorController",
-      dtoFqcn: [],
+      symbolKey: "com.example.ActuatorController",
+      payloadTypes: [],
       endpoints: ["GET /actuator/health", "GET /management/info"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/ActuatorController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
@@ -402,15 +402,15 @@ describe("ControllersProcessor", () => {
       buildScript: "pom.xml",
       isMultimodule: false,
     });
-    const controller = restControllerRecord({
+    const controller = httpServerApiRecord({
       applicationModuleId: module.id,
       name: "MixedController",
-      fqcn: "com.example.MixedController",
-      dtoFqcn: [],
+      symbolKey: "com.example.MixedController",
+      payloadTypes: [],
       endpoints: ["GET /", "GET /lots", "GET /actuator/health"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [],
       sourceFile: "src/main/java/com/example/MixedController.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });

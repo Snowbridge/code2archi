@@ -1,5 +1,5 @@
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import { RestClient } from "../../../../../discovery-model/entities/rest-client.js";
+import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import {
   AbstractProcessor,
@@ -35,7 +35,7 @@ export class JavaRestClientDeclarativeProcessor extends AbstractProcessor<ScanAp
     "Discovers declarative Java REST clients (Feign, HttpExchange, MP REST Client, Micronaut, Retrofit).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
     forEachRepository(input, (repository) => {
       const contexts = this.buildModuleContextsForRepository(input, repository);
       const fileContexts = collectSourceFiles(contexts, ".java");
@@ -44,7 +44,7 @@ export class JavaRestClientDeclarativeProcessor extends AbstractProcessor<ScanAp
 
     return {
       entities: {
-        RestClient: clients.map((client) => client.toCreateIntent()),
+        HttpClientApi: clients.map((client) => client.toCreateIntent()),
       },
     };
   }
@@ -76,9 +76,9 @@ export class JavaRestClientDeclarativeProcessor extends AbstractProcessor<ScanAp
     return contexts;
   }
 
-  private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
+  private scanModules(fileContexts: readonly SourceFileContext[]): HttpClientApi[] {
     const byModule = groupSourceFilesByModule(fileContexts);
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
 
     for (const { context, paths } of byModule.values()) {
       const index = new ModuleTypeIndex();

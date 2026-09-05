@@ -1,4 +1,4 @@
-import { RestClient } from "../../../../../discovery-model/entities/rest-client.js";
+import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import {
   AbstractProcessor,
@@ -31,10 +31,10 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers programmatic Java REST clients (WebClient, RestTemplate, Spring RestClient, Apache HttpClient).";
+    "Discovers programmatic Java REST clients (WebClient, RestTemplate, Spring HttpClientApi, Apache HttpClient).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
     forEachRepository(input, (repository) => {
       const contexts = this.buildModuleContextsForRepository(input, repository);
       const fileContexts = collectSourceFiles(contexts, ".java");
@@ -43,7 +43,7 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
 
     return {
       entities: {
-        RestClient: clients.map((client) => client.toCreateIntent()),
+        HttpClientApi: clients.map((client) => client.toCreateIntent()),
       },
     };
   }
@@ -75,9 +75,9 @@ export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanA
     return contexts;
   }
 
-  private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
+  private scanModules(fileContexts: readonly SourceFileContext[]): HttpClientApi[] {
     const byModule = groupSourceFilesByModule(fileContexts);
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
 
     for (const { context, paths } of byModule.values()) {
       for (const absolutePath of paths) {

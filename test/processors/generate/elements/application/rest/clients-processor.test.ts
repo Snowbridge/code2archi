@@ -6,7 +6,8 @@ import { MavenModuleProfile, RestClientProfile } from "../../../../../../src/arc
 import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
 import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
 import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
-import { RestClient } from "../../../../../../src/discovery-model/entities/rest-client.js";
+import { HttpClientApi } from "../../../../../../src/discovery-model/entities/http-client-api.js";
+import { toTypeReferenceFromQualifiedName } from "../../../../../../src/discovery-model/entities/type-reference.js";
 import { applicationComponentIdForModule } from "../../../../../../src/generate/application-module-components.js";
 import {
   restClientRealizationRelationshipId,
@@ -27,10 +28,10 @@ function moduleRecord(
   return new ApplicationModule(naturalKeys).toCreateIntent();
 }
 
-function restClientRecord(
-  naturalKeys: ConstructorParameters<typeof RestClient>[0],
+function httpClientApiRecord(
+  naturalKeys: ConstructorParameters<typeof HttpClientApi>[0],
 ): ReturnType<RestClient["toCreateIntent"]> {
-  return new RestClient(naturalKeys).toCreateIntent();
+  return new HttpClientApi(naturalKeys).toCreateIntent();
 }
 
 function discoverySnapshot(
@@ -45,7 +46,7 @@ function discoverySnapshot(
     entityArrays: {
       Repository: repositories,
       ApplicationModule: modules,
-      RestClient: clients,
+      HttpClientApi: clients,
     },
   });
 }
@@ -114,16 +115,16 @@ describe("ClientsProcessor", () => {
 
   it("creates REST client and realization for Feign client", () => {
     const { repository, module } = baseRepositoryAndModule();
-    const client = restClientRecord({
+    const client = httpClientApiRecord({
       applicationModuleId: module.id,
       name: "PaymentFeignClient",
-      fqcn: "com.example.client.PaymentFeignClient",
-      dtoFqcn: [],
+      symbolKey: "com.example.client.PaymentFeignClient",
+      payloadTypes: [],
       endpoints: ["GET /api/payments/{id}", "POST /api/payments"],
-      tcpStackType: "BLOCKING",
-      discoveryStyle: "DECLARATIVE",
-      clientFramework: "feign",
-      extendedInterfaceFqcn: ["com.example.api.PaymentApi"],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "INTERFACE_MARKER",
+      clientLibrary: "feign",
+      inheritedContractTypes: [toTypeReferenceFromQualifiedName("com.example.api.PaymentApi")],
       sourceFile: "src/main/java/com/example/client/PaymentFeignClient.java",
       baseUrl: "${payment.url}",
     });
@@ -169,16 +170,16 @@ describe("ClientsProcessor", () => {
 
   it("omits documentation when endpoints are empty", () => {
     const { repository, module } = baseRepositoryAndModule();
-    const client = restClientRecord({
+    const client = httpClientApiRecord({
       applicationModuleId: module.id,
       name: "EmptyEndpointsClient",
-      fqcn: "com.example.EmptyEndpointsClient",
-      dtoFqcn: [],
+      symbolKey: "com.example.EmptyEndpointsClient",
+      payloadTypes: [],
       endpoints: [],
-      tcpStackType: "BLOCKING",
-      discoveryStyle: "PROGRAMMATIC",
-      clientFramework: "webclient",
-      extendedInterfaceFqcn: [],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "INLINE_HTTP",
+      clientLibrary: "webclient",
+      inheritedContractTypes: [],
       sourceFile: "src/main/java/com/example/EmptyEndpointsClient.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
@@ -196,16 +197,16 @@ describe("ClientsProcessor", () => {
 
   it("creates rest-client without Realization when app-module-component is missing", () => {
     const { repository, module } = baseRepositoryAndModule();
-    const client = restClientRecord({
+    const client = httpClientApiRecord({
       applicationModuleId: module.id,
       name: "PaymentFeignClient",
-      fqcn: "com.example.client.PaymentFeignClient",
-      dtoFqcn: [],
+      symbolKey: "com.example.client.PaymentFeignClient",
+      payloadTypes: [],
       endpoints: ["GET /api/payments/{id}"],
-      tcpStackType: "BLOCKING",
-      discoveryStyle: "DECLARATIVE",
-      clientFramework: "feign",
-      extendedInterfaceFqcn: ["com.example.api.PaymentApi"],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "INTERFACE_MARKER",
+      clientLibrary: "feign",
+      inheritedContractTypes: [toTypeReferenceFromQualifiedName("com.example.api.PaymentApi")],
       sourceFile: "src/main/java/com/example/client/PaymentFeignClient.java",
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });

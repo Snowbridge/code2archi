@@ -1,6 +1,7 @@
-import type { JavaMethodDeclaration, JavaTypeRef } from "../java-ast-model.js";
+export type { ConcurrencyModel, TcpStackType } from "../../../discovery-model/entities/http-api-concurrency-model.js";
 
-export type TcpStackType = "BLOCKING" | "NON_BLOCKING";
+import type { ConcurrencyModel } from "../../../discovery-model/entities/http-api-concurrency-model.js";
+import type { JavaMethodDeclaration, JavaTypeRef } from "../java-ast-model.js";
 
 const NON_BLOCKING_RETURN_TYPES = new Set(["Mono", "Flux", "Uni", "Multi"]);
 
@@ -16,9 +17,9 @@ function returnTypeContainsNonBlockingWrapper(typeRef: JavaTypeRef | undefined):
   return typeRef.typeArguments.some(returnTypeContainsNonBlockingWrapper);
 }
 
-export function resolveTcpStackType(
+export function resolveConcurrencyModel(
   handlerMethods: readonly JavaMethodDeclaration[],
-): TcpStackType {
+): ConcurrencyModel {
   for (const method of handlerMethods) {
     if (method.isSuspend) {
       return "NON_BLOCKING";
@@ -33,3 +34,6 @@ export function resolveTcpStackType(
 
   return "BLOCKING";
 }
+
+/** @deprecated Use resolveConcurrencyModel */
+export const resolveTcpStackType = resolveConcurrencyModel;

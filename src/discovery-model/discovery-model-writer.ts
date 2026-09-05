@@ -16,14 +16,14 @@ export const APPLICATION_MODULE_SCHEMA_ID =
 export const APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID =
   "https://code2archi.dev/specifications/discovery-model/schemas/ApplicationModuleDependency.schema.json";
 
-export const REST_CONTROLLER_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/RestController.schema.json";
+export const HTTP_SERVER_API_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/HttpServerApi.schema.json";
 
-export const REST_CLIENT_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/RestClient.schema.json";
+export const HTTP_CLIENT_API_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/HttpClientApi.schema.json";
 
-export const REST_CLIENT_TO_CONTROLLER_LINK_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/RestClientToControllerLink.schema.json";
+export const HTTP_CLIENT_TO_SERVER_API_LINK_SCHEMA_ID =
+  "https://code2archi.dev/specifications/discovery-model/schemas/HttpClientToServerApiLink.schema.json";
 
 interface ManifestCollectionEntry {
   readonly path: string;
@@ -76,26 +76,26 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
     collectionPath: "application-module-dependencies.json",
     schemaId: APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   },
-  RestController: {
-    collectionPath: "rest-controllers.json",
-    schemaId: REST_CONTROLLER_SCHEMA_ID,
+  HttpServerApi: {
+    collectionPath: "http-server-apis.json",
+    schemaId: HTTP_SERVER_API_SCHEMA_ID,
   },
-  RestClient: {
-    collectionPath: "rest-clients.json",
-    schemaId: REST_CLIENT_SCHEMA_ID,
+  HttpClientApi: {
+    collectionPath: "http-client-apis.json",
+    schemaId: HTTP_CLIENT_API_SCHEMA_ID,
   },
   MessageConsumer: { collectionPath: "message-consumers.json" },
   MessageProducer: { collectionPath: "message-producers.json" },
 };
 
 const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
-  RestClientToControllerLink: {
-    collectionPath: "rest-client-to-controller-links.json",
-    schemaId: REST_CLIENT_TO_CONTROLLER_LINK_SCHEMA_ID,
-    fromEntityType: "RestController",
-    toEntityType: "RestClient",
-    fromIdField: "restControllerId",
-    toIdField: "restClientId",
+  HttpClientToServerApiLink: {
+    collectionPath: "http-client-to-server-api-links.json",
+    schemaId: HTTP_CLIENT_TO_SERVER_API_LINK_SCHEMA_ID,
+    fromEntityType: "HttpServerApi",
+    toEntityType: "HttpClientApi",
+    fromIdField: "httpServerApiId",
+    toIdField: "httpClientApiId",
   },
 };
 

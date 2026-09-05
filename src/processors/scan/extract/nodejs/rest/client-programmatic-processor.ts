@@ -1,4 +1,4 @@
-import { RestClient } from "../../../../../discovery-model/entities/rest-client.js";
+import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -31,7 +31,7 @@ export class NodejsRestClientProgrammaticProcessor extends AbstractProcessor<
     "Discovers programmatic Node.js HTTP clients (axios, fetch, undici, got, node:http, superagent, @nestjs/axios).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
 
     forEachNpmRepository(input, (repository) => {
       const contexts = buildNpmModuleContexts(input, repository, [
@@ -72,7 +72,7 @@ export class NodejsRestClientProgrammaticProcessor extends AbstractProcessor<
 
     return {
       entities: {
-        RestClient: clients.map((client) => client.toCreateIntent()),
+        HttpClientApi: clients.map((client) => client.toCreateIntent()),
       },
     };
   }

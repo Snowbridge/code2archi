@@ -241,18 +241,18 @@ public class FlowController {
       },
     });
 
-    const controllersPath = path.join(outputDir, "rest-controllers.json");
+    const controllersPath = path.join(outputDir, "http-server-apis.json");
     assert.ok(existsSync(controllersPath));
 
     const controllers = JSON.parse(readFileSync(controllersPath, "utf8")) as Array<{
       name: string;
       endpoints: string[];
-      programmingModel: string;
+      bindingStyle: string;
     }>;
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "FlowController");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
   });
 
   it("discovers Kotlin RestController entities from maven kotlin sources in scan.extract", async () => {
@@ -307,13 +307,13 @@ class FlowController {
     });
 
     const controllers = JSON.parse(
-      readFileSync(path.join(outputDir, "rest-controllers.json"), "utf8"),
-    ) as Array<{ name: string; endpoints: string[]; programmingModel: string; sourceFile: string }>;
+      readFileSync(path.join(outputDir, "http-server-apis.json"), "utf8"),
+    ) as Array<{ name: string; endpoints: string[]; bindingStyle: string; sourceFile: string }>;
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "FlowController");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
     assert.equal(controllers[0]?.sourceFile, "src/main/kotlin/com/flow/FlowController.kt");
   });
 
@@ -365,13 +365,13 @@ class FlowController {
     });
 
     const controllers = JSON.parse(
-      readFileSync(path.join(outputDir, "rest-controllers.json"), "utf8"),
-    ) as Array<{ name: string; programmingModel: string; fqcn: string }>;
+      readFileSync(path.join(outputDir, "http-server-apis.json"), "utf8"),
+    ) as Array<{ name: string; bindingStyle: string; symbolKey: string }>;
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "userRoutes");
-    assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
-    assert.equal(controllers[0]?.fqcn, "com.example.UserRouterConfig#userRoutes");
+    assert.equal(controllers[0]?.bindingStyle, "ROUTER");
+    assert.equal(controllers[0]?.symbolKey, "com.example.UserRouterConfig#userRoutes");
   });
 
   it("records profiling metrics when profiling is enabled", async () => {

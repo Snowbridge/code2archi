@@ -1,6 +1,6 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
 import { applicationComponentIdForModule } from "./application-module-components.js";
-import type { RestClientToControllerLinkMethod } from "../discovery-model/links/rest-client-to-controller-link.js";
+import type { HttpClientToServerApiLinkMethod } from "../discovery-model/links/http-client-to-server-api-link.js";
 
 const DIRECT_REST_SERVING_ID_SUFFIX = "direct-rest";
 
@@ -31,17 +31,17 @@ export function directRestServingTargetId(targetApplicationModuleId: string): st
   return applicationComponentIdForModule(targetApplicationModuleId);
 }
 
-const MATCH_METHOD_PRIORITY: Readonly<Record<RestClientToControllerLinkMethod, number>> = {
-  INTERFACE: 3,
+const MATCH_METHOD_PRIORITY: Readonly<Record<HttpClientToServerApiLinkMethod, number>> = {
+  CONTRACT_TYPE: 3,
   ENDPOINT: 2,
-  DTO: 1,
+  PAYLOAD_TYPE: 1,
 };
 
 export interface DirectRestServingMatchLike {
   readonly id: string;
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
-  readonly matchMethod: RestClientToControllerLinkMethod;
+  readonly matchMethod: HttpClientToServerApiLinkMethod;
   readonly basis: "extract" | "inference";
   readonly confidence: number;
 }

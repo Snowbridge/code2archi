@@ -1,5 +1,5 @@
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
+import type { HttpServerApi } from "../../../../../discovery-model/entities/http-server-api.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import {
   AbstractProcessor,
@@ -18,6 +18,7 @@ import {
 } from "../../../../../parsers/rest-client-module-scan.js";
 import { parseScanJavaFile } from "../../../../../platform/scan-io/index.js";
 import { toRepoRelativePath } from "../../../../../utils/repo-relative-path.js";
+import { toHttpServerApi } from "../../http-api-entity-mapper.js";
 
 export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcessor<ScanAppInput, ScanAppOutput> {
   readonly id: ProcessorId = {
@@ -33,7 +34,7 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
     "Discovers Java REST controllers from annotation-based frameworks in Maven and Gradle modules.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const controllers: RestController[] = [];
+    const controllers: HttpServerApi[] = [];
     forEachRepository(input, (repository) => {
       const moduleContexts = this.buildModuleContextsForRepository(input, repository);
       const javaFiles = collectSourceFiles(moduleContexts, ".java");
@@ -44,7 +45,7 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
 
     return {
       entities: {
-        RestController: controllers.map((controller) => controller.toCreateIntent()),
+        HttpServerApi: controllers.map((controller) => controller.toCreateIntent()),
       },
     };
   }
@@ -83,7 +84,7 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
     );
   }
 
-  private scanJavaFile(fileContext: SourceFileContext): RestController[] {
+  private scanJavaFile(fileContext: SourceFileContext): HttpServerApi[] {
     let compilationUnit;
     try {
       compilationUnit = parseScanJavaFile(fileContext.absolutePath);
@@ -101,20 +102,19 @@ export class JavaRestControllerAnnotationBasedProcessor extends AbstractProcesso
       fileContext.absolutePath,
     );
 
-    return parsedControllers.map(
-      (parsed) =>
-        new RestController({
-          applicationModuleId: fileContext.module.id,
-          name: parsed.name,
-          fqcn: parsed.fqcn,
-          dtoFqcn: parsed.dtoFqcn,
-          endpoints: parsed.endpoints,
-          tcpStackType: parsed.tcpStackType,
-          programmingModel: "DECLARATIVE",
-          implementedInterfaceFqcn: parsed.implementedInterfaceFqcn,
-          sourceFile,
-          ...(parsed.baseClassFqcn ? { baseClassFqcn: parsed.baseClassFqcn } : {}),
-        }),
+    return parsedControllers.map((parsed) =>
+      toHttpServerApi({
+        applicationModuleId: fileContext.module.id,
+        name: parsed.name,
+        symbolKey: parsed.fqcn,
+        payloadTypeNames: parsed.dtoFqcn,
+        endpoints: parsed.endpoints,
+        concurrencyModel: parsed.tcpStackType,
+        bindingStyle: "ANNOTATION",
+        contractTypeNames: parsed.implementedInterfaceFqcn,
+        sourceFile,
+        ...(parsed.baseClassFqcn ? { baseTypeName: parsed.baseClassFqcn } : {}),
+      }),
     );
   }
 }

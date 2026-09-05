@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import { RestClient } from "../../../../../discovery-model/entities/rest-client.js";
+import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import {
   AbstractProcessor,
@@ -35,7 +35,7 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
     "Discovers programmatic Kotlin REST clients (WebClient wrappers, Ktor HttpClient).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
     forEachRepository(input, (repository) => {
       const contexts = this.buildModuleContextsForRepository(input, repository);
       const fileContexts = collectSourceFiles(contexts, ".kt");
@@ -44,7 +44,7 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
 
     return {
       entities: {
-        RestClient: clients.map((client) => client.toCreateIntent()),
+        HttpClientApi: clients.map((client) => client.toCreateIntent()),
       },
     };
   }
@@ -76,9 +76,9 @@ export class KotlinRestClientProgrammaticProcessor extends AbstractProcessor<Sca
     return contexts;
   }
 
-  private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
+  private scanModules(fileContexts: readonly SourceFileContext[]): HttpClientApi[] {
     const byModule = groupSourceFilesByModule(fileContexts);
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
 
     for (const { context, paths } of byModule.values()) {
       for (const absolutePath of paths) {

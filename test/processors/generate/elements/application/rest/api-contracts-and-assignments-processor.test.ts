@@ -6,9 +6,10 @@ import { RestApiContractProfile } from "../../../../../../src/archimate-model/pr
 import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
 import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
 import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
-import { RestClient } from "../../../../../../src/discovery-model/entities/rest-client.js";
-import { RestController } from "../../../../../../src/discovery-model/entities/rest-controller.js";
-import { RestClientToControllerLink } from "../../../../../../src/discovery-model/links/rest-client-to-controller-link.js";
+import { HttpClientApi } from "../../../../../../src/discovery-model/entities/http-client-api.js";
+import { HttpServerApi } from "../../../../../../src/discovery-model/entities/http-server-api.js";
+import { HttpClientToServerApiLink } from "../../../../../../src/discovery-model/links/http-client-to-server-api-link.js";
+import { toTypeReferenceFromQualifiedName } from "../../../../../../src/discovery-model/entities/type-reference.js";
 import {
   restApiContractAssignmentRelationshipId,
   restApiContractElementId,
@@ -53,46 +54,46 @@ describe("ApiContractsAndAssignmentsProcessor (generate)", () => {
       repoPath: "client",
     }).toCreateIntent();
 
-    const controller = new RestController({
+    const controller = new HttpServerApi({
       applicationModuleId: serverModule.id,
       name: "LotsController",
-      fqcn: "com.example.LotsController",
-      dtoFqcn: ["com.example.LotDto"],
+      symbolKey: "com.example.LotsController",
+      payloadTypes: [toTypeReferenceFromQualifiedName("com.example.LotDto")],
       endpoints: ["GET /api/lots"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: ["com.example.LotsApi"],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [toTypeReferenceFromQualifiedName("com.example.LotsApi")],
       sourceFile: "LotsController.java",
     }).toCreateIntent();
 
-    const restClient = new RestClient({
+    const restClient = new HttpClientApi({
       applicationModuleId: clientModule.id,
       name: "LotsClient",
-      fqcn: "com.example.LotsClient",
-      dtoFqcn: ["com.example.LotDto"],
+      symbolKey: "com.example.LotsClient",
+      payloadTypes: [toTypeReferenceFromQualifiedName("com.example.LotDto")],
       endpoints: ["GET /api/lots"],
-      tcpStackType: "BLOCKING",
-      discoveryStyle: "DECLARATIVE",
-      clientFramework: "feign",
-      extendedInterfaceFqcn: ["com.example.LotsApi"],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "INTERFACE_MARKER",
+      clientLibrary: "feign",
+      inheritedContractTypes: [toTypeReferenceFromQualifiedName("com.example.LotsApi")],
       sourceFile: "LotsClient.java",
     }).toCreateIntent();
 
-    const endpointLink = new RestClientToControllerLink({
-      restControllerId: controller.id,
-      restClientId: restClient.id,
+    const endpointLink = new HttpClientToServerApiLink({
+      httpServerApiId: controller.id,
+      httpClientApiId: restClient.id,
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
       matchMethod: "ENDPOINT",
       basis: "inference",
       confidence: 0.7,
     }).toCreateIntent();
-    const dtoLink = new RestClientToControllerLink({
-      restControllerId: controller.id,
-      restClientId: restClient.id,
+    const dtoLink = new HttpClientToServerApiLink({
+      httpServerApiId: controller.id,
+      httpClientApiId: restClient.id,
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
-      matchMethod: "DTO",
+      matchMethod: "PAYLOAD_TYPE",
       basis: "inference",
       confidence: 0.4,
     }).toCreateIntent();
@@ -104,11 +105,11 @@ describe("ApiContractsAndAssignmentsProcessor (generate)", () => {
       entityArrays: {
         Repository: [repository],
         ApplicationModule: [serverModule, clientModule],
-        RestController: [controller],
-        RestClient: [restClient],
+        HttpServerApi: [controller],
+        HttpClientApi: [restClient],
       },
       linkArrays: {
-        RestClientToControllerLink: [
+        HttpClientToServerApiLink: [
           {
             ...endpointLink,
             transformProcessor: "scan.transform.rest:clients-to-controllers-links",
@@ -157,12 +158,12 @@ describe("ApiContractsAndAssignmentsProcessor (generate)", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    const contractId = restApiContractElementId(serverModule.id, controller.fqcn);
+    const contractId = restApiContractElementId(serverModule.id, controller.symbolKey);
     assert.equal(output.elements?.length, 1);
     assert.equal(output.elements?.[0]?.id, contractId);
     assert.equal(
       output.elements?.[0]?.properties.find((property) => property.key === "c2a:Id")?.value,
-      restApiContractLogicalId(serverModule.id, controller.fqcn),
+      restApiContractLogicalId(serverModule.id, controller.symbolKey),
     );
     assert.equal(output.elements?.[0]?.name, "LotsController API Contract");
 

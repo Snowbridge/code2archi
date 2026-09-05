@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildDiscoveryModelSnapshot } from "../../../../../src/discovery-model/discovery-model-snapshot.js";
 import { ApplicationModule } from "../../../../../src/discovery-model/entities/application-module.js";
-import { RestClient } from "../../../../../src/discovery-model/entities/rest-client.js";
-import { RestController } from "../../../../../src/discovery-model/entities/rest-controller.js";
+import { HttpClientApi } from "../../../../../src/discovery-model/entities/http-client-api.js";
+import { HttpServerApi } from "../../../../../src/discovery-model/entities/http-server-api.js";
+import { toTypeReferenceFromQualifiedName } from "../../../../../src/discovery-model/entities/type-reference.js";
 import { ClientsToControllersLinksProcessor } from "../../../../../src/processors/scan/transform/rest/clients-to-controllers-links-processor.js";
 
 describe("ClientsToControllersLinksProcessor (scan)", () => {
@@ -16,7 +17,7 @@ describe("ClientsToControllersLinksProcessor (scan)", () => {
     });
   });
 
-  it("emits INTERFACE, DTO and ENDPOINT links for cross-module pairs", () => {
+  it("emits CONTRACT_TYPE, PAYLOAD_TYPE and ENDPOINT links for cross-module pairs", () => {
     const serverModule = new ApplicationModule({
       repositoryId: "repo-1",
       name: "server",
@@ -36,28 +37,28 @@ describe("ClientsToControllersLinksProcessor (scan)", () => {
       repoPath: "client",
     }).toCreateIntent();
 
-    const controller = new RestController({
+    const server = new HttpServerApi({
       applicationModuleId: serverModule.id,
       name: "LotsController",
-      fqcn: "com.example.LotsController",
-      dtoFqcn: ["com.example.LotDto"],
+      symbolKey: "com.example.LotsController",
+      payloadTypes: [toTypeReferenceFromQualifiedName("com.example.LotDto")],
       endpoints: ["GET /api/lots", "GET /actuator/health"],
-      tcpStackType: "BLOCKING",
-      programmingModel: "DECLARATIVE",
-      implementedInterfaceFqcn: ["com.example.LotsApi"],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "ANNOTATION",
+      contractTypes: [toTypeReferenceFromQualifiedName("com.example.LotsApi")],
       sourceFile: "LotsController.java",
     }).toCreateIntent();
 
-    const restClient = new RestClient({
+    const client = new HttpClientApi({
       applicationModuleId: clientModule.id,
       name: "LotsClient",
-      fqcn: "com.example.LotsClient",
-      dtoFqcn: ["com.example.LotDto"],
+      symbolKey: "com.example.LotsClient",
+      payloadTypes: [toTypeReferenceFromQualifiedName("com.example.LotDto")],
       endpoints: ["GET /api/lots"],
-      tcpStackType: "BLOCKING",
-      discoveryStyle: "DECLARATIVE",
-      clientFramework: "feign",
-      extendedInterfaceFqcn: ["com.example.LotsApi"],
+      concurrencyModel: "BLOCKING",
+      bindingStyle: "INTERFACE_MARKER",
+      clientLibrary: "feign",
+      inheritedContractTypes: [toTypeReferenceFromQualifiedName("com.example.LotsApi")],
       sourceFile: "LotsClient.java",
     }).toCreateIntent();
 
@@ -67,18 +68,19 @@ describe("ClientsToControllersLinksProcessor (scan)", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
       entityArrays: {
         ApplicationModule: [serverModule, clientModule],
-        RestController: [controller],
-        RestClient: [restClient],
+        HttpServerApi: [server],
+        HttpClientApi: [client],
       },
+      linkArrays: {},
     });
 
-    const output = new ClientsToControllersLinksProcessor().process(snapshot);
-    const links = output.links?.RestClientToControllerLink ?? [];
+    const processor = new ClientsToControllersLinksProcessor();
+    const output = processor.process(snapshot);
 
+    const links = output.links?.HttpClientToServerApiLink ?? [];
     assert.equal(links.length, 3);
-    assert.deepEqual(
-      [...new Set(links.map((link) => link.matchMethod))].sort(),
-      ["DTO", "ENDPOINT", "INTERFACE"],
-    );
+    assert.ok(links.some((link) => link.matchMethod === "CONTRACT_TYPE"));
+    assert.ok(links.some((link) => link.matchMethod === "PAYLOAD_TYPE"));
+    assert.ok(links.some((link) => link.matchMethod === "ENDPOINT"));
   });
 });

@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import { RestClient } from "../../../../../discovery-model/entities/rest-client.js";
+import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
 import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
 import {
   AbstractProcessor,
@@ -37,7 +37,7 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
     "Discovers declarative Kotlin REST clients (Feign, HttpExchange, MP REST Client, Micronaut, Retrofit).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
     forEachRepository(input, (repository) => {
       const contexts = this.buildModuleContextsForRepository(input, repository);
       const fileContexts = collectSourceFiles(contexts, ".kt");
@@ -46,7 +46,7 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
 
     return {
       entities: {
-        RestClient: clients.map((client) => client.toCreateIntent()),
+        HttpClientApi: clients.map((client) => client.toCreateIntent()),
       },
     };
   }
@@ -78,9 +78,9 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
     return contexts;
   }
 
-  private scanModules(fileContexts: readonly SourceFileContext[]): RestClient[] {
+  private scanModules(fileContexts: readonly SourceFileContext[]): HttpClientApi[] {
     const byModule = groupSourceFilesByModule(fileContexts);
-    const clients: RestClient[] = [];
+    const clients: HttpClientApi[] = [];
 
     for (const { context, paths } of byModule.values()) {
       const index = new ModuleTypeIndex();

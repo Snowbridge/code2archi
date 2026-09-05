@@ -1,4 +1,4 @@
-import { RestController } from "../../../../../discovery-model/entities/rest-controller.js";
+import { HttpServerApi } from "../../../../../discovery-model/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -31,7 +31,7 @@ export class NodejsRestControllerNextjsAppRouterProcessor extends AbstractProces
   readonly description = "Discovers Next.js App Router route handlers in app/**/route.ts.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
-    const controllers: RestController[] = [];
+    const controllers: HttpServerApi[] = [];
 
     forEachRepository(input, (repository) => {
       for (const entity of input.listEntities("ApplicationModule")) {
@@ -99,7 +99,7 @@ export class NodejsRestControllerNextjsAppRouterProcessor extends AbstractProces
 
     return {
       entities: {
-        RestController: controllers.map((controller) => controller.toCreateIntent()),
+        HttpServerApi: controllers.map((controller) => controller.toCreateIntent()),
       },
     };
   }

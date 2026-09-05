@@ -24,7 +24,7 @@ import {
 } from "../../../../../generate/rest-client-services.js";
 import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
 import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { RestClientRecord } from "../../../../../discovery-model/entities/rest-client.js";
+import type { HttpClientApiRecord } from "../../../../../discovery-model/entities/http-client-api.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,
@@ -46,7 +46,7 @@ export class ClientsProcessor extends AbstractProcessor<GenerateProcessorInput, 
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps RestClient entities to ApplicationServices with Realization from ApplicationComponents.";
+    "Maps HttpClientApi entities to ApplicationServices with Realization from ApplicationComponents.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -69,8 +69,8 @@ export class ClientsProcessor extends AbstractProcessor<GenerateProcessorInput, 
         .map((record) => [record.id, record as unknown as ApplicationModuleRecord]),
     );
 
-    const clients = [...input.discovery.listEntities("RestClient")]
-      .map((record) => record as unknown as RestClientRecord)
+    const clients = [...input.discovery.listEntities("HttpClientApi")]
+      .map((record) => record as unknown as HttpClientApiRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
@@ -113,14 +113,14 @@ export class ClientsProcessor extends AbstractProcessor<GenerateProcessorInput, 
           elementBuilder = elementBuilder.property(property.key, property.value);
         }
 
-        elementBuilder = elementBuilder.property("c2a:tcpStackType", client.tcpStackType);
+        elementBuilder = elementBuilder.property("c2a:tcpStackType", client.concurrencyModel);
         if (client.baseUrl !== undefined) {
           elementBuilder = elementBuilder.property("c2a:baseUrl", client.baseUrl);
         }
 
         const elementIntent = withEntityDebugProperties(elementBuilder.build().toCreateIntent(), [
           {
-            entityType: "RestClient",
+            entityType: "HttpClientApi",
             record: client as unknown as DiscoveryEntityRecord,
           },
         ]);

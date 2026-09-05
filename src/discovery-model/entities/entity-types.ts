@@ -6,8 +6,8 @@ export const ENTITY_TYPES = [
   "RuntimeEnvironment",
   "ApplicationModule",
   "ApplicationModuleDependency",
-  "RestController",
-  "RestClient",
+  "HttpServerApi",
+  "HttpClientApi",
   "MessageConsumer",
   "MessageProducer",
 ] as const;

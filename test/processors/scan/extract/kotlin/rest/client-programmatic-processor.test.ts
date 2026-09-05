@@ -40,13 +40,13 @@ class BasepriceDataApiWebclient(private val webClient: WebClient) {
     const { module, store } = createStore(root);
     const processor = new KotlinRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "BasepriceDataApiWebclient");
-    assert.equal(clients[0]?.fqcn, "com.example.BasepriceDataApiWebclient");
-    assert.equal(clients[0]?.discoveryStyle, "PROGRAMMATIC");
-    assert.equal(clients[0]?.clientFramework, "webclient");
+    assert.equal(clients[0]?.symbolKey, "com.example.BasepriceDataApiWebclient");
+    assert.equal(clients[0]?.bindingStyle, "INLINE_HTTP");
+    assert.equal(clients[0]?.clientLibrary, "webclient");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/baseprice/$id"]);
     assert.equal(clients[0]?.applicationModuleId, module.id);
   });
@@ -80,14 +80,14 @@ suspend fun fetchPrice(client: HttpClient): String {
     const { store } = createStore(root);
     const processor = new KotlinRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "fetchPrice");
-    assert.equal(clients[0]?.fqcn, "com.example.GatewaysKt#fetchPrice");
-    assert.equal(clients[0]?.clientFramework, "ktor-client");
+    assert.equal(clients[0]?.symbolKey, "com.example.GatewaysKt#fetchPrice");
+    assert.equal(clients[0]?.clientLibrary, "ktor-client");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/prices"]);
-    assert.equal(clients[0]?.tcpStackType, "NON_BLOCKING");
+    assert.equal(clients[0]?.concurrencyModel, "NON_BLOCKING");
   });
 
   it("creates RestClient from OkHttpClient wrapper class", () => {
@@ -122,11 +122,11 @@ class OkOrderClient(private val client: OkHttpClient) {
     const { store } = createStore(root);
     const processor = new KotlinRestClientProgrammaticProcessor();
     const output = processor.process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "OkOrderClient");
-    assert.equal(clients[0]?.clientFramework, "okhttp");
+    assert.equal(clients[0]?.clientLibrary, "okhttp");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/orders"]);
   });
 });

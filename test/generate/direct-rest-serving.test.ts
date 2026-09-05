@@ -17,7 +17,7 @@ describe("selectBestDirectRestServingMatches", () => {
         id: "link-dto",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
-        matchMethod: "DTO",
+        matchMethod: "PAYLOAD_TYPE",
         basis: "inference",
         confidence: 0.7,
       },
@@ -25,14 +25,14 @@ describe("selectBestDirectRestServingMatches", () => {
         id: "link-interface",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
-        matchMethod: "INTERFACE",
+        matchMethod: "CONTRACT_TYPE",
         basis: "extract",
         confidence: 1,
       },
     ]);
 
     assert.equal(winners.length, 1);
-    assert.equal(winners[0]?.matchMethod, "INTERFACE");
+    assert.equal(winners[0]?.matchMethod, "CONTRACT_TYPE");
   });
 
   it("breaks equal scores by matchMethod priority", () => {
@@ -49,7 +49,7 @@ describe("selectBestDirectRestServingMatches", () => {
         id: "link-dto",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
-        matchMethod: "DTO",
+        matchMethod: "PAYLOAD_TYPE",
         basis: "inference",
         confidence: 0.7,
       },

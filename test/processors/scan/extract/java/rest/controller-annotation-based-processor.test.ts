@@ -101,15 +101,15 @@ public class EntityController {
     const { module, store } = createMavenStore(root, "scan-annotation-based");
     const processor = new JavaRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "EntityController");
     assert.equal(controllers[0]?.applicationModuleId, module.id);
     assert.equal(controllers[0]?.sourceFile, "src/main/java/com/example/EntityController.java");
     assert.deepEqual(controllers[0]?.endpoints, ["PUT /api/entity/:id"]);
-    assert.equal(controllers[0]?.tcpStackType, "BLOCKING");
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.concurrencyModel, "BLOCKING");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
   });
 
   it("skips npm modules and modules with unknown java version", () => {
@@ -165,7 +165,7 @@ public class EntityController {
     const processor = new JavaRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
 
-    assert.equal(output.entities?.RestController?.length ?? 0, 0);
+    assert.equal(output.entities?.HttpServerApi?.length ?? 0, 0);
   });
 
   it("creates RestController from Micronaut @Controller", () => {
@@ -178,12 +178,12 @@ public class EntityController {
     const { store } = createMavenStore(root, "scan-annotation-micronaut");
     const processor = new JavaRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "UserController");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /api/users/:id"]);
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
   });
 
   it("creates RestController from Quarkus JAX-RS @Path", () => {
@@ -196,11 +196,11 @@ public class EntityController {
     const { store } = createMavenStore(root, "scan-annotation-quarkus");
     const processor = new JavaRestControllerAnnotationBasedProcessor();
     const output = processor.process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "ItemResource");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /v1/items/:id"]);
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
   });
 });

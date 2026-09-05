@@ -87,18 +87,18 @@ describe("JavaRestControllerFunctionalRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-functional-router");
     const output = new JavaRestControllerFunctionalRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "userRoutes");
-    assert.equal(controllers[0]?.fqcn, "com.example.UserRouterConfig#userRoutes");
-    assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
+    assert.equal(controllers[0]?.symbolKey, "com.example.UserRouterConfig#userRoutes");
+    assert.equal(controllers[0]?.bindingStyle, "ROUTER");
     assert.deepEqual(controllers[0]?.endpoints, [
       "GET /users",
       "GET /users/:id",
       "PUT /users/:id",
     ]);
-    assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
+    assert.equal(controllers[0]?.concurrencyModel, "NON_BLOCKING");
   });
 
   it("creates RestController entities from RouterFunction field initializers", () => {
@@ -113,11 +113,11 @@ describe("JavaRestControllerFunctionalRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-functional-router-field");
     const output = new JavaRestControllerFunctionalRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "userRoutes");
-    assert.equal(controllers[0]?.fqcn, "com.example.FieldRouterConfig#userRoutes");
+    assert.equal(controllers[0]?.symbolKey, "com.example.FieldRouterConfig#userRoutes");
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "GET /users/:id"]);
   });
 
@@ -133,7 +133,7 @@ describe("JavaRestControllerFunctionalRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-functional-and-route");
     const output = new JavaRestControllerFunctionalRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "combinedRoutes");
@@ -152,7 +152,7 @@ describe("JavaRestControllerFunctionalRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-functional-micronaut");
     const output = new JavaRestControllerFunctionalRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "issuesRoutes");
@@ -168,7 +168,7 @@ describe("JavaRestControllerFunctionalRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-functional-quarkus-vertx");
     const output = new JavaRestControllerFunctionalRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "init");
@@ -187,7 +187,7 @@ describe("JavaRestControllerFunctionalRouterBasedProcessor", () => {
 
     const store = createMavenStore(root, "scan-functional-quarkus-route");
     const output = new JavaRestControllerFunctionalRouterBasedProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "ReactiveRoutes");

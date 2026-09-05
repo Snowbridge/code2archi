@@ -87,14 +87,14 @@ export function registerUserRoutes(app: express.Application) {
 
     const store = createNpmStore(root, "scan-nodejs-express");
     const output = new NodejsRestControllerFunctionalRouterProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "registerUserRoutes");
-    assert.equal(controllers[0]?.programmingModel, "FUNCTIONAL");
-    assert.match(controllers[0]?.fqcn ?? "", /routes\.ts#registerUserRoutes$/);
+    assert.equal(controllers[0]?.bindingStyle, "ROUTER");
+    assert.match(controllers[0]?.symbolKey ?? "", /routes\.ts#registerUserRoutes$/);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "POST /users"]);
-    assert.equal(controllers[0]?.tcpStackType, "NON_BLOCKING");
+    assert.equal(controllers[0]?.concurrencyModel, "NON_BLOCKING");
   });
 
   it("discovers NestJS declarative controllers", () => {
@@ -123,12 +123,12 @@ export class UsersController {
 
     const store = createNpmStore(root, "scan-nodejs-nest");
     const output = new NodejsRestControllerDeclarativeProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
     assert.equal(controllers[0]?.name, "UsersController");
-    assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
-    assert.match(controllers[0]?.fqcn ?? "", /users\.controller\.ts#UsersController$/);
+    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
+    assert.match(controllers[0]?.symbolKey ?? "", /users\.controller\.ts#UsersController$/);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /users", "POST /users/:id"]);
   });
 
@@ -151,11 +151,11 @@ export function POST() {
 
     const store = createNpmStore(root, "scan-nodejs-next");
     const output = new NodejsRestControllerNextjsAppRouterProcessor().process(store.snapshot());
-    const controllers = output.entities?.RestController ?? [];
+    const controllers = output.entities?.HttpServerApi ?? [];
 
     assert.equal(controllers.length, 1);
-    assert.equal(controllers[0]?.programmingModel, "CONVENTION_BASED");
-    assert.match(controllers[0]?.fqcn ?? "", /route\.ts$/);
+    assert.equal(controllers[0]?.bindingStyle, "FILE_CONVENTION");
+    assert.match(controllers[0]?.symbolKey ?? "", /route\.ts$/);
     assert.deepEqual(controllers[0]?.endpoints, ["GET /api/users/:id", "POST /api/users/:id"]);
   });
 
@@ -177,12 +177,12 @@ export async function fetchUsers() {
 
     const store = createNpmStore(root, "scan-nodejs-axios");
     const output = new NodejsRestClientProgrammaticProcessor().process(store.snapshot());
-    const clients = output.entities?.RestClient ?? [];
+    const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
     assert.equal(clients[0]?.name, "fetchUsers");
-    assert.equal(clients[0]?.clientFramework, "axios");
-    assert.match(clients[0]?.fqcn ?? "", /user-client\.ts#fetchUsers$/);
+    assert.equal(clients[0]?.clientLibrary, "axios");
+    assert.match(clients[0]?.symbolKey ?? "", /user-client\.ts#fetchUsers$/);
     assert.deepEqual(clients[0]?.endpoints, ["GET /users", "POST /users"]);
   });
 
@@ -281,7 +281,7 @@ export async function loadOrders() {
     );
 
     const linkOutput = new ClientsToControllersLinksProcessor().process(store.snapshot());
-    const links = linkOutput.links?.RestClientToControllerLink ?? [];
+    const links = linkOutput.links?.HttpClientToServerApiLink ?? [];
 
     assert.equal(links.length, 1);
     assert.equal(links[0]?.matchMethod, "ENDPOINT");
