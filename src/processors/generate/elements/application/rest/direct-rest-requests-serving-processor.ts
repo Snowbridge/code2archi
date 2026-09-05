@@ -54,8 +54,8 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
           sourceApplicationModuleId: record.sourceApplicationModuleId,
           targetApplicationModuleId: record.targetApplicationModuleId,
           matchMethod: record.matchMethod,
+          basis: record.basis,
           confidence: record.confidence,
-          confidenceScore: record.confidenceScore,
         }),
       );
 
@@ -85,8 +85,8 @@ export class DirectRestRequestsServingProcessor extends AbstractProcessor<
             ),
             generatorCoordinate: GENERATOR_COORDINATE,
             slot: "direct-rest-requests-serving",
+            basis: match.basis,
             confidence: match.confidence,
-            confidenceScore: match.confidenceScore,
           })) {
             builder = builder.property(property.key, property.value);
           }

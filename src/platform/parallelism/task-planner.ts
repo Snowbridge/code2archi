@@ -51,7 +51,7 @@ export function buildScanRepositoryBatchTasks(
   const repositories = snapshot.listEntities("Repository");
 
   return repositories.map((repository) => ({
-    taskId: `scan.source:${phaseScope}:${repository.id}`,
+    taskId: `scan.extract:${phaseScope}:${repository.id}`,
     input: {
       repositoryId: repository.id,
       processors: processorIds,

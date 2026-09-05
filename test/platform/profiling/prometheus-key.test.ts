@@ -12,9 +12,9 @@ describe("formatMetricKey", () => {
       formatMetricKey(
         "run.processor.duration.avg",
         ["groupId", "artifactId"],
-        ["scan.source", "annotation-based"],
+        ["scan.extract", "annotation-based"],
       ),
-      'run.processor.duration.avg{artifactId="annotation-based",groupId="scan.source"}',
+      'run.processor.duration.avg{artifactId="annotation-based",groupId="scan.extract"}',
     );
   });
 

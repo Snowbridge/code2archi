@@ -1,7 +1,7 @@
 import {
-  SCAN_LINK_GROUP_ID,
+  SCAN_TRANSFORM_GROUP_ID,
   SCAN_SCOPE_GROUP_ID,
-  SCAN_SOURCE_GROUP_ID,
+  SCAN_EXTRACT_GROUP_ID,
   type GlobalArgv,
 } from "../cli/processor-groups.js";
 import {
@@ -72,11 +72,11 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     input.processorFilters,
   ).length;
   const sourceProcessorCount = processorRegistry.listForBuiltInStep(
-    SCAN_SOURCE_GROUP_ID,
+    SCAN_EXTRACT_GROUP_ID,
     input.processorFilters,
   ).length;
   const linkProcessorCount = processorRegistry.listForBuiltInStep(
-    SCAN_LINK_GROUP_ID,
+    SCAN_TRANSFORM_GROUP_ID,
     input.processorFilters,
   ).length;
 
@@ -85,8 +85,8 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     steps: defineFlowSteps(
       scopeDiscoveryFlowStep(input.sourceDirs.length, scopeProcessorCount),
       { id: "1b", label: "Repository namespaces", initialTotal: 1 },
-      processorGroupFlowStep("2", "Source discovery", sourceProcessorCount, 0),
-      processorGroupFlowStep("3", "Link discovery", linkProcessorCount),
+      processorGroupFlowStep("2", "Extract", sourceProcessorCount, 0),
+      processorGroupFlowStep("3", "Transform", linkProcessorCount),
       { id: "4", label: "Writing discovery-model", initialTotal: 1 },
     ),
   });
@@ -132,11 +132,11 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
       progress.step("1b").tick(1);
     });
 
-    logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_SOURCE_GROUP_ID });
+    logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_EXTRACT_GROUP_ID });
     activeStep = "2";
     await measureFlowStep("2", async () => {
       await runCreateIntentProcessorGroup(
-        SCAN_SOURCE_GROUP_ID,
+        SCAN_EXTRACT_GROUP_ID,
         input.processorFilters,
         store,
         progress.step("2"),
@@ -146,11 +146,11 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     });
     logger.info("step completed", { step: 2 });
 
-    logger.info("step start", { step: 3, action: "link discovery", groupId: SCAN_LINK_GROUP_ID });
+    logger.info("step start", { step: 3, action: "link discovery", groupId: SCAN_TRANSFORM_GROUP_ID });
     activeStep = "3";
     await measureFlowStep("3", async () => {
       await runCreateIntentProcessorGroup(
-        SCAN_LINK_GROUP_ID,
+        SCAN_TRANSFORM_GROUP_ID,
         input.processorFilters,
         store,
         progress.step("3"),

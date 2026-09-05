@@ -62,13 +62,13 @@ describe("resolveProcessorFilters", () => {
       emptyGlobalArgv({
         without: ["scan.scope.git-repositories"],
         with: ["scan.scope.unversioned-folders"],
-        withOnly: ["scan.source.assembly.maven.modules-and-dependencies"],
+        withOnly: ["scan.extract.assembly.maven.modules-and-dependencies"],
       }),
     );
 
     assert.deepEqual(filters.without, ["scan.scope.git-repositories"]);
     assert.deepEqual(filters.with, ["scan.scope.unversioned-folders"]);
-    assert.deepEqual(filters.withOnly, ["scan.source.assembly.maven.modules-and-dependencies"]);
+    assert.deepEqual(filters.withOnly, ["scan.extract.assembly.maven.modules-and-dependencies"]);
   });
 });
 
@@ -90,12 +90,12 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
 
   it("includes custom subgroup processors for built-in step", () => {
     const registry = new ProcessorRegistry();
-    const builtIn = new StubProcessor({ groupId: "scan.source", artifactId: "alpha" });
-    const custom = new StubProcessor({ groupId: "scan.source.assembly.maven", artifactId: "beta" });
+    const builtIn = new StubProcessor({ groupId: "scan.extract", artifactId: "alpha" });
+    const custom = new StubProcessor({ groupId: "scan.extract.assembly.maven", artifactId: "beta" });
     registry.register(builtIn);
     registry.register(custom);
 
-    const result = registry.listForBuiltInStep("scan.source", emptyFilters());
+    const result = registry.listForBuiltInStep("scan.extract", emptyFilters());
 
     assert.deepEqual(result, [builtIn, custom]);
   });
@@ -103,7 +103,7 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
   it("applies global with-only filter", () => {
     const registry = new ProcessorRegistry();
     const scope = new StubProcessor({ groupId: "scan.scope", artifactId: "alpha" });
-    const source = new StubProcessor({ groupId: "scan.source", artifactId: "beta" });
+    const source = new StubProcessor({ groupId: "scan.extract", artifactId: "beta" });
     registry.register(scope);
     registry.register(source);
 
@@ -117,14 +117,14 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
 
   it("applies wildcard without filter", () => {
     const registry = new ProcessorRegistry();
-    const alpha = new StubProcessor({ groupId: "scan.source", artifactId: "alpha" });
-    const beta = new StubProcessor({ groupId: "scan.source", artifactId: "beta" });
+    const alpha = new StubProcessor({ groupId: "scan.extract", artifactId: "alpha" });
+    const beta = new StubProcessor({ groupId: "scan.extract", artifactId: "beta" });
     registry.register(alpha);
     registry.register(beta);
 
     const result = registry.listForBuiltInStep(
-      "scan.source",
-      emptyFilters({ without: ["scan.source.*"] }),
+      "scan.extract",
+      emptyFilters({ without: ["scan.extract.*"] }),
     );
 
     assert.deepEqual(result, []);
@@ -151,17 +151,17 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
   it("includes processors that share artifactId under different subgroup groupIds", () => {
     const registry = new ProcessorRegistry();
     const java = new StubProcessor({
-      groupId: "scan.source.java.rest",
+      groupId: "scan.extract.java.rest",
       artifactId: "controller-annotation-based",
     });
     const kotlin = new StubProcessor({
-      groupId: "scan.source.kotlin.rest",
+      groupId: "scan.extract.kotlin.rest",
       artifactId: "controller-annotation-based",
     });
     registry.register(java);
     registry.register(kotlin);
 
-    const result = registry.listForBuiltInStep("scan.source", emptyFilters());
+    const result = registry.listForBuiltInStep("scan.extract", emptyFilters());
 
     assert.deepEqual(result, [java, kotlin]);
   });

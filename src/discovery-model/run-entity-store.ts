@@ -35,7 +35,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly EntityType[]>
 > = {
   "scan.scope": ["Repository"],
-  "scan.source": [
+  "scan.extract": [
     "BuildScript",
     "RuntimeEnvironment",
     "ApplicationModule",
@@ -53,7 +53,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
 > = {
-  "scan.link": ["DirectRestRequestsServingMatch", "NodejsDirectRestRequestsServingMatch"],
+  "scan.transform": ["DirectRestRequestsServingMatch", "NodejsDirectRestRequestsServingMatch"],
 };
 
 function isEntityTypeAllowedForGroup(
@@ -70,7 +70,7 @@ function isLinkTypeAllowedForGroup(
   return (GROUP_LINK_ALLOWLIST[builtInGroupId] ?? []).includes(linkType);
 }
 
-function formatScannerExtractor(processorId: ProcessorId): string {
+function formatProcessorCoordinate(processorId: ProcessorId): string {
   return `${processorId.groupId}:${processorId.artifactId}`;
 }
 
@@ -86,8 +86,8 @@ function enrichDiscoveryEntity(
   return {
     ...record,
     id: record.id,
-    scannerExtractor: formatScannerExtractor(processorId),
-    scannerSchema: packageVersion,
+    extractProcessor: formatProcessorCoordinate(processorId),
+    extractSchema: packageVersion,
     extractedAt: formatIso8601WithOffset(extractedAt),
   };
 }
@@ -104,8 +104,8 @@ function enrichDiscoveryLink(
   return {
     ...record,
     id: record.id,
-    linkerExtractor: formatScannerExtractor(processorId),
-    linkerSchema: packageVersion,
+    transformProcessor: formatProcessorCoordinate(processorId),
+    transformSchema: packageVersion,
     linkedAt: formatIso8601WithOffset(linkedAt),
   } as DiscoveryLinkRecord;
 }

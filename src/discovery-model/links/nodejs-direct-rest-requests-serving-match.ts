@@ -3,7 +3,7 @@ import { Link } from "./link.js";
 
 export type NodejsDirectRestRequestsServingMatchMethod = "INTERFACE" | "DTO" | "ENDPOINT";
 
-export type NodejsDirectRestRequestsServingMatchConfidence = "confirmed" | "inferred";
+export type NodejsDirectRestRequestsServingMatchBasis = "extract" | "inference";
 
 export interface NodejsDirectRestRequestsServingMatchCreateIntent {
   readonly id: string;
@@ -12,8 +12,8 @@ export interface NodejsDirectRestRequestsServingMatchCreateIntent {
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
   readonly matchMethod: NodejsDirectRestRequestsServingMatchMethod;
-  readonly confidence: NodejsDirectRestRequestsServingMatchConfidence;
-  readonly confidenceScore: number;
+  readonly basis: NodejsDirectRestRequestsServingMatchBasis;
+  readonly confidence: number;
   readonly matchedValues?: readonly string[];
 }
 
@@ -23,8 +23,8 @@ export interface NodejsDirectRestRequestsServingMatchNaturalKeys {
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
   readonly matchMethod: NodejsDirectRestRequestsServingMatchMethod;
-  readonly confidence: NodejsDirectRestRequestsServingMatchConfidence;
-  readonly confidenceScore: number;
+  readonly basis: NodejsDirectRestRequestsServingMatchBasis;
+  readonly confidence: number;
   readonly matchedValues?: readonly string[];
 }
 
@@ -36,8 +36,8 @@ export class NodejsDirectRestRequestsServingMatch extends Link {
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
   readonly matchMethod: NodejsDirectRestRequestsServingMatchMethod;
-  readonly confidence: NodejsDirectRestRequestsServingMatchConfidence;
-  readonly confidenceScore: number;
+  readonly basis: NodejsDirectRestRequestsServingMatchBasis;
+  readonly confidence: number;
   readonly matchedValues?: readonly string[];
 
   constructor(naturalKeys: NodejsDirectRestRequestsServingMatchNaturalKeys) {
@@ -51,8 +51,8 @@ export class NodejsDirectRestRequestsServingMatch extends Link {
     this.sourceApplicationModuleId = naturalKeys.sourceApplicationModuleId;
     this.targetApplicationModuleId = naturalKeys.targetApplicationModuleId;
     this.matchMethod = naturalKeys.matchMethod;
+    this.basis = naturalKeys.basis;
     this.confidence = naturalKeys.confidence;
-    this.confidenceScore = naturalKeys.confidenceScore;
     if (naturalKeys.matchedValues !== undefined) {
       this.matchedValues = naturalKeys.matchedValues;
     }
@@ -66,8 +66,8 @@ export class NodejsDirectRestRequestsServingMatch extends Link {
       sourceApplicationModuleId: this.sourceApplicationModuleId,
       targetApplicationModuleId: this.targetApplicationModuleId,
       matchMethod: this.matchMethod,
+      basis: this.basis,
       confidence: this.confidence,
-      confidenceScore: this.confidenceScore,
       ...(this.matchedValues !== undefined ? { matchedValues: this.matchedValues } : {}),
     };
   }

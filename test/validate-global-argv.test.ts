@@ -34,7 +34,7 @@ describe("validateGlobalArgv", () => {
     assert.doesNotThrow(() =>
       validateGlobalArgv({
         ...baseArgv(),
-        without: ["scan.source.*"],
+        without: ["scan.extract.*"],
         withOnly: ["scan.scope.git-repositories"],
       }),
     );

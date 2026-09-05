@@ -3,31 +3,31 @@ import { describe, it } from "node:test";
 import { selectBestDirectRestServingMatches } from "../../src/generate/direct-rest-serving.js";
 
 describe("selectBestDirectRestServingMatches", () => {
-  it("keeps one winner per module pair with highest confidenceScore", () => {
+  it("keeps one winner per module pair with highest confidence", () => {
     const winners = selectBestDirectRestServingMatches([
       {
         id: "link-endpoint",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
         matchMethod: "ENDPOINT",
-        confidence: "inferred",
-        confidenceScore: 0.4,
+        basis: "inference",
+        confidence: 0.4,
       },
       {
         id: "link-dto",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
         matchMethod: "DTO",
-        confidence: "inferred",
-        confidenceScore: 0.7,
+        basis: "inference",
+        confidence: 0.7,
       },
       {
         id: "link-interface",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
         matchMethod: "INTERFACE",
-        confidence: "confirmed",
-        confidenceScore: 1,
+        basis: "extract",
+        confidence: 1,
       },
     ]);
 
@@ -42,16 +42,16 @@ describe("selectBestDirectRestServingMatches", () => {
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
         matchMethod: "ENDPOINT",
-        confidence: "inferred",
-        confidenceScore: 0.7,
+        basis: "inference",
+        confidence: 0.7,
       },
       {
         id: "link-dto",
         sourceApplicationModuleId: "mod-server",
         targetApplicationModuleId: "mod-client",
         matchMethod: "DTO",
-        confidence: "inferred",
-        confidenceScore: 0.7,
+        basis: "inference",
+        confidence: 0.7,
       },
     ]);
 

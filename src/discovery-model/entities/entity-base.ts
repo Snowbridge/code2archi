@@ -1,7 +1,7 @@
 export interface DiscoveryEntityBase {
   readonly id: string;
-  readonly scannerExtractor: string;
-  readonly scannerSchema: string;
+  readonly extractProcessor: string;
+  readonly extractSchema: string;
   readonly extractedAt: string;
 }
 

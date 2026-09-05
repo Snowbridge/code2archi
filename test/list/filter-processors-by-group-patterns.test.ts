@@ -67,13 +67,13 @@ describe("filterProcessorsByGroupPatterns", () => {
     registry.register(new StubProcessor({ groupId: "scan.scope", artifactId: "b" }));
     registry.register(new StubProcessor({ groupId: "scan.scope", artifactId: "a" }));
     registry.register(
-      new StubProcessor({ groupId: "scan.source.java.rest", artifactId: "x" }),
+      new StubProcessor({ groupId: "scan.extract.java.rest", artifactId: "x" }),
     );
 
     const processors = registry.listAll();
     assert.deepEqual(listDistinctGroupIds(processors), [
+      "scan.extract.java.rest",
       "scan.scope",
-      "scan.source.java.rest",
     ]);
   });
 });

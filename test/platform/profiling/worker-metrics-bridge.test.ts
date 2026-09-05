@@ -89,7 +89,7 @@ describe("worker metrics bridge", () => {
     initProfiling({ enabled: true });
     const bridge = createMainThreadBridge(new Map());
     const serialized = serializeDiscoverySnapshot(snapshot);
-    setWorkerPhase("scan.source.assembly", serialized, "assembly");
+    setWorkerPhase("scan.extract.assembly", serialized, "assembly");
 
     initWorkerRuntime({
       threadId: "worker-1",
@@ -104,7 +104,7 @@ describe("worker metrics bridge", () => {
         trackWorkerTaskMetrics: false,
         input: {
           processor: {
-            groupId: "scan.source.assembly.maven",
+            groupId: "scan.extract.assembly.maven",
             artifactId: "modules-and-dependencies",
           },
           repositoryId: "repo-app",
@@ -113,14 +113,14 @@ describe("worker metrics bridge", () => {
 
       assert.equal(
         getValue(METRIC_PROCESSOR_SUCCESS, [
-          "scan.source.assembly.maven",
+          "scan.extract.assembly.maven",
           "modules-and-dependencies",
         ]),
         1,
       );
       assert.ok(
         (getValue(METRIC_PROCESSOR_DURATION_AVG, [
-          "scan.source.assembly.maven",
+          "scan.extract.assembly.maven",
           "modules-and-dependencies",
         ]) ?? 0) > 0,
       );
@@ -155,7 +155,7 @@ describe("worker snapshot cache", () => {
     });
 
     const serialized = serializeDiscoverySnapshot(snapshot);
-    setWorkerPhase("scan.source.assembly", serialized, "assembly");
+    setWorkerPhase("scan.extract.assembly", serialized, "assembly");
 
     const first = getOrBuildRepositorySnapshot("repo-a");
     const second = getOrBuildRepositorySnapshot("repo-a");
@@ -164,7 +164,7 @@ describe("worker snapshot cache", () => {
 });
 
 describe("parallel scan profiling", () => {
-  it("records processor and file metrics with parallel scan.source", async () => {
+  it("records processor and file metrics with parallel scan.extract", async () => {
     const root = createTestTempDir("c2a-parallel-profile-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
@@ -193,7 +193,7 @@ describe("parallel scan profiling", () => {
         profile: false,
         parallelism: { threads: 2, sync: false, continueOnError: false },
         processorFilters: {
-          with: ["scan.scope.unversioned-folders", "scan.source.assembly.maven"],
+          with: ["scan.scope.unversioned-folders", "scan.extract.assembly.maven"],
           without: [],
           withOnly: [],
         },

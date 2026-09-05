@@ -84,8 +84,8 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
       matchMethod: "INTERFACE",
-      confidence: "confirmed",
-      confidenceScore: 1,
+      basis: "extract",
+      confidence: 1,
       matchedValues: ["com.example.Api"],
     }).toCreateIntent();
     const dtoLink = new DirectRestRequestsServingMatch({
@@ -94,8 +94,8 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
       matchMethod: "DTO",
-      confidence: "inferred",
-      confidenceScore: 0.7,
+      basis: "inference",
+      confidence: 0.7,
       matchedValues: ["com.example.FooDto"],
     }).toCreateIntent();
 
@@ -108,8 +108,8 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       },
       linkArrays: {
         DirectRestRequestsServingMatch: [
-          { ...interfaceLink, linkerExtractor: "scan.link.rest:direct-rest-requests-serving", linkerSchema: "0.0.0", linkedAt: "2026-01-01T00:00:00+00:00" },
-          { ...dtoLink, linkerExtractor: "scan.link.rest:direct-rest-requests-serving", linkerSchema: "0.0.0", linkedAt: "2026-01-01T00:00:00+00:00" },
+          { ...interfaceLink, transformProcessor: "scan.transform.rest:direct-rest-requests-serving", transformSchema: "0.0.0", linkedAt: "2026-01-01T00:00:00+00:00" },
+          { ...dtoLink, transformProcessor: "scan.transform.rest:direct-rest-requests-serving", transformSchema: "0.0.0", linkedAt: "2026-01-01T00:00:00+00:00" },
         ],
       },
     });
@@ -135,11 +135,11 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       directRestServingRelationshipId(sourceId, targetId),
     );
     assert.equal(
-      relation?.properties.find((property) => property.key === "c2a:confidence")?.value,
-      "confirmed",
+      relation?.properties.find((property) => property.key === "c2a:basis")?.value,
+      "extract",
     );
     assert.equal(
-      relation?.properties.find((property) => property.key === "c2a:confidenceScore")?.value,
+      relation?.properties.find((property) => property.key === "c2a:confidence")?.value,
       "1",
     );
     assert.equal(
@@ -175,8 +175,8 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       sourceApplicationModuleId: serverModule.id,
       targetApplicationModuleId: clientModule.id,
       matchMethod: "INTERFACE",
-      confidence: "confirmed",
-      confidenceScore: 1,
+      basis: "extract",
+      confidence: 1,
     }).toCreateIntent();
 
     const discovery = buildDiscoveryModelSnapshot({
@@ -190,8 +190,8 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
         DirectRestRequestsServingMatch: [
           {
             ...link,
-            linkerExtractor: "scan.link.rest:direct-rest-requests-serving",
-            linkerSchema: "0.0.0",
+            transformProcessor: "scan.transform.rest:direct-rest-requests-serving",
+            transformSchema: "0.0.0",
             linkedAt: "2026-01-01T00:00:00+00:00",
           },
         ],

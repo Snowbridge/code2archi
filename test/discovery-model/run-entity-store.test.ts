@@ -16,12 +16,12 @@ const SCAN_SCOPE_PROCESSOR = {
 };
 
 const SCAN_SOURCE_PROCESSOR = {
-  groupId: "scan.source",
+  groupId: "scan.extract",
   artifactId: "test-processor",
 };
 
 const SCAN_LINK_PROCESSOR = {
-  groupId: "scan.link.rest",
+  groupId: "scan.transform.rest",
   artifactId: "direct-rest-requests-serving",
 };
 
@@ -62,8 +62,8 @@ describe("RunEntityStore", () => {
     const repository = store.getEntities("Repository")[0];
     assert.equal(store.getEntities("Repository").length, 1);
     assert.equal(repository?.name, "a");
-    assert.equal(repository?.scannerExtractor, "scan.scope:git-repositories");
-    assert.equal(repository?.scannerSchema, packageVersion);
+    assert.equal(repository?.extractProcessor, "scan.scope:git-repositories");
+    assert.equal(repository?.extractSchema, packageVersion);
     assert.equal(repository?.extractedAt, "2026-08-28T12:49:00.123+03:00");
   });
 
@@ -74,15 +74,15 @@ describe("RunEntityStore", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    store.addCreateIntents("scan.source", { groupId: "scan.source", artifactId: "maven-module" }, {
+    store.addCreateIntents("scan.extract", { groupId: "scan.extract", artifactId: "maven-module" }, {
       entities: {
         BuildScript: [{ id: "bs-1" }],
       },
     });
 
     assert.equal(
-      store.getEntities("BuildScript")[0]?.scannerExtractor,
-      "scan.source:maven-module",
+      store.getEntities("BuildScript")[0]?.extractProcessor,
+      "scan.extract:maven-module",
     );
   });
 
@@ -143,7 +143,7 @@ describe("RunEntityStore", () => {
 
     assert.throws(
       () =>
-        store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
+        store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
           entities: {
             BuildScript: [{ id: "shared-id", script: "build" }],
           },
@@ -186,7 +186,7 @@ describe("RunEntityStore", () => {
         Repository: [{ id: "repo-1", name: "repo" }],
       },
     });
-    store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
       entities: {
         ApplicationModule: [
           {
@@ -277,7 +277,7 @@ describe("RunEntityStore", () => {
 
   it("mirrors group allowlist from specifications", () => {
     assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.scope"], ["Repository"]);
-    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.source"], [
+    assert.deepEqual(GROUP_ENTITY_ALLOWLIST["scan.extract"], [
       "BuildScript",
       "RuntimeEnvironment",
       "ApplicationModule",
@@ -289,13 +289,13 @@ describe("RunEntityStore", () => {
       "MessageConsumer",
       "MessageProducer",
     ]);
-    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.link"], [
+    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], [
       "DirectRestRequestsServingMatch",
       "NodejsDirectRestRequestsServingMatch",
     ]);
   });
 
-  it("adds links allowed for scan.link with platform metadata", () => {
+  it("adds links allowed for scan.transform with platform metadata", () => {
     const store = new RunEntityStore({
       sourceDirs: ["/tmp/src"],
       scanId: "scan-1",
@@ -308,11 +308,11 @@ describe("RunEntityStore", () => {
       sourceApplicationModuleId: "mod-server",
       targetApplicationModuleId: "mod-client",
       matchMethod: "INTERFACE",
-      confidence: "confirmed",
-      confidenceScore: 1,
+      basis: "extract",
+      confidence: 1,
     });
 
-    store.addCreateIntents("scan.link", SCAN_LINK_PROCESSOR, {
+    store.addCreateIntents("scan.transform", SCAN_LINK_PROCESSOR, {
       links: {
         DirectRestRequestsServingMatch: [link],
       },
@@ -320,8 +320,8 @@ describe("RunEntityStore", () => {
 
     const stored = store.getLinks("DirectRestRequestsServingMatch")[0];
     assert.equal(stored?.matchMethod, "INTERFACE");
-    assert.equal(stored?.linkerExtractor, "scan.link.rest:direct-rest-requests-serving");
-    assert.equal(stored?.linkerSchema, packageVersion);
+    assert.equal(stored?.transformProcessor, "scan.transform.rest:direct-rest-requests-serving");
+    assert.equal(stored?.transformSchema, packageVersion);
 
     const snapshot = store.snapshot();
     assert.equal(snapshot.listLinks("DirectRestRequestsServingMatch").length, 1);

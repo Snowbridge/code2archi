@@ -13,7 +13,7 @@ describe("standardGenerateElementProperties", () => {
 
     assert.deepEqual(properties, [
       { key: "c2a:Id", value: "demo-id" },
-      { key: "c2a:confidence", value: "confirmed" },
+      { key: "c2a:basis", value: "extract" },
       { key: "c2a:schema", value: packageVersion },
       { key: "c2a:generator", value: "generate.elements.technology:code-repositories" },
       { key: "c2a:slot", value: "repo-artifact" },
@@ -25,12 +25,12 @@ describe("standardGenerateElementProperties", () => {
       logicalId: "demo-id",
       generatorCoordinate: "generate.elements.technology:code-repositories",
       slot: "repo-artifact",
-      confidence: "inferred",
+      basis: "inference",
     });
 
     assert.equal(
-      properties.find((property) => property.key === "c2a:confidence")?.value,
-      "inferred",
+      properties.find((property) => property.key === "c2a:basis")?.value,
+      "inference",
     );
   });
 });

@@ -26,7 +26,7 @@ export function setWorkerPhase(
 
 export function getWorkerPhase(): WorkerPhaseContext {
   if (!currentPhase) {
-    throw new Error("Worker phase is not initialized; call setupPhase before scan.source tasks");
+    throw new Error("Worker phase is not initialized; call setupPhase before scan.extract tasks");
   }
   return currentPhase;
 }

@@ -119,9 +119,9 @@ describe("SyssoftForNoBuildOrRuntimeToolsProcessor", () => {
     assert.equal(systemSoftware?.some((element) => element.name === "Java unknown"), true);
     assert.equal(
       systemSoftware?.find((element) => element.id === mavenUnknownId)?.properties?.find(
-        (property) => property.key === "c2a:confidence",
+        (property) => property.key === "c2a:basis",
       )?.value,
-      "unknown",
+      "extract",
     );
     assert.equal(
       systemSoftware?.find((element) => element.id === mavenUnknownId)?.properties?.find(

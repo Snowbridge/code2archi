@@ -20,14 +20,14 @@ function listScopeProcessors(processors: readonly ProcessorInfo[]): ProcessorInf
 }
 
 function listAssemblyProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
-  return processors.filter((processor) => processor.groupId.startsWith("scan.source.assembly"));
+  return processors.filter((processor) => processor.groupId.startsWith("scan.extract.assembly"));
 }
 
 function listRestProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
   return processors.filter(
     (processor) =>
-      (processor.groupId === "scan.source.java.rest" ||
-        processor.groupId === "scan.source.kotlin.rest") &&
+      (processor.groupId === "scan.extract.java.rest" ||
+        processor.groupId === "scan.extract.kotlin.rest") &&
       processor.artifactId.startsWith("controller-"),
   );
 }
@@ -35,8 +35,8 @@ function listRestProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo
 function listRestClientProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
   return processors.filter(
     (processor) =>
-      (processor.groupId === "scan.source.java.rest" ||
-        processor.groupId === "scan.source.kotlin.rest") &&
+      (processor.groupId === "scan.extract.java.rest" ||
+        processor.groupId === "scan.extract.kotlin.rest") &&
       processor.artifactId.startsWith("client-"),
   );
 }
@@ -178,7 +178,7 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
       })
       .join(", ");
     lines.push(
-      `- **Application modules** — ${buildSystems} (including workspaces where applicable) with inter-module dependencies (\`scan.source.assembly\`)`,
+      `- **Application modules** — ${buildSystems} (including workspaces where applicable) with inter-module dependencies (\`scan.extract.assembly\`)`,
     );
   }
 

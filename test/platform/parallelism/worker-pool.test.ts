@@ -132,7 +132,7 @@ describe("worker pool", () => {
     }
   });
 
-  it("setupPhase delivers snapshot to workers for scan.source tasks", async () => {
+  it("setupPhase delivers snapshot to workers for scan.extract tasks", async () => {
     const root = createTestTempDir("c2a-phase-setup-");
     const repoDir = path.join(root, "app");
     const { mkdirSync, writeFileSync } = await import("node:fs");
@@ -174,7 +174,7 @@ describe("worker pool", () => {
     try {
       await pool.setupPhase(
         {
-          phaseId: "scan.source.assembly",
+          phaseId: "scan.extract.assembly",
           snapshot: serializeDiscoverySnapshot(snapshot),
           snapshotFilterScope: "assembly",
         },
@@ -189,7 +189,7 @@ describe("worker pool", () => {
             taskId: "maven:repo-app",
             input: {
               processor: {
-                groupId: "scan.source.assembly.maven",
+                groupId: "scan.extract.assembly.maven",
                 artifactId: "modules-and-dependencies",
               },
               repositoryId: "repo-app",

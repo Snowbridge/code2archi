@@ -23,7 +23,7 @@ import { createTestTempDir } from "../../test-temp-dir.js";
 import "../../../src/platform/processors/builtin-processors.js";
 
 const mavenProcessor = {
-  groupId: "scan.source.assembly.maven",
+  groupId: "scan.extract.assembly.maven",
   artifactId: "modules-and-dependencies",
 } as const;
 
@@ -75,7 +75,7 @@ describe("runScanRepositoryBatchTask", () => {
     initProfiling({ enabled: true });
     initScanIoCache(DEFAULT_SCAN_IO_CACHE_OPTIONS);
     const bridge = createMainThreadBridge(new Map());
-    setWorkerPhase("scan.source.assembly", serialized, "assembly");
+    setWorkerPhase("scan.extract.assembly", serialized, "assembly");
 
     initWorkerRuntime({
       threadId: "worker-1",
@@ -113,7 +113,7 @@ describe("runScanRepositoryBatchTask", () => {
 
   it("collects per-processor errors when continueOnError is true", () => {
     const { repositoryId, serialized } = setupMavenRepo();
-    setWorkerPhase("scan.source.assembly", serialized, "assembly");
+    setWorkerPhase("scan.extract.assembly", serialized, "assembly");
     const bridge = createMainThreadBridge(new Map());
 
     initWorkerRuntime({
@@ -124,7 +124,7 @@ describe("runScanRepositoryBatchTask", () => {
 
     try {
       const missingProcessor = {
-        groupId: "scan.source.assembly.maven",
+        groupId: "scan.extract.assembly.maven",
         artifactId: "missing-artifact",
       };
       const result = runScanRepositoryBatchTask({
@@ -145,7 +145,7 @@ describe("runScanRepositoryBatchTask", () => {
 
   it("throws on first processor error when continueOnError is false", () => {
     const { repositoryId, serialized } = setupMavenRepo();
-    setWorkerPhase("scan.source.assembly", serialized, "assembly");
+    setWorkerPhase("scan.extract.assembly", serialized, "assembly");
     const bridge = createMainThreadBridge(new Map());
 
     initWorkerRuntime({
@@ -161,7 +161,7 @@ describe("runScanRepositoryBatchTask", () => {
             repositoryId,
             processors: [
               {
-                groupId: "scan.source.assembly.maven",
+                groupId: "scan.extract.assembly.maven",
                 artifactId: "missing-artifact",
               },
             ],

@@ -79,7 +79,7 @@ describe("runScanScopeGroup", () => {
     );
   });
 
-  it("stores merged repositories in run entity store with scannerExtractor", async () => {
+  it("stores merged repositories in run entity store with extractProcessor", async () => {
     const repository: RepositoryCreateIntent = {
       id: "repo-1",
       name: "a",
@@ -112,7 +112,7 @@ describe("runScanScopeGroup", () => {
     assert.equal(store.getEntities("Repository").length, 1);
     assert.equal(store.getEntities("Repository")[0]?.name, "a");
     assert.equal(
-      store.getEntities("Repository")[0]?.scannerExtractor,
+      store.getEntities("Repository")[0]?.extractProcessor,
       `scan.scope:${STUB_STORE}`,
     );
   });

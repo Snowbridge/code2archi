@@ -1,7 +1,7 @@
 export interface DiscoveryLinkBase {
   readonly id: string;
-  readonly linkerExtractor: string;
-  readonly linkerSchema: string;
+  readonly transformProcessor: string;
+  readonly transformSchema: string;
   readonly linkedAt: string;
 }
 

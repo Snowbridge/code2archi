@@ -86,7 +86,6 @@ export class SyssoftForNoBuildOrRuntimeToolsProcessor extends AbstractProcessor<
         logicalId: entry.systemSoftwareId,
         generatorCoordinate: GENERATOR_COORDINATE,
         slot: systemSoftwareSlotForField(entry.field),
-        confidence: "unknown",
       })) {
         elementBuilder = elementBuilder.property(property.key, property.value);
       }
@@ -121,7 +120,6 @@ export class SyssoftForNoBuildOrRuntimeToolsProcessor extends AbstractProcessor<
         ),
         generatorCoordinate: GENERATOR_COORDINATE,
         slot: "syssoft-assign",
-        confidence: "unknown",
       })) {
         relationBuilder = relationBuilder.property(property.key, property.value);
       }

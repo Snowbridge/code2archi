@@ -15,7 +15,7 @@ const GIT_REPOS_PROCESSOR = {
 };
 
 const SCAN_SOURCE_PROCESSOR = {
-  groupId: "scan.source",
+  groupId: "scan.extract",
   artifactId: "test-processor",
 };
 
@@ -105,13 +105,13 @@ describe("DiscoveryModelWriter", () => {
       readFileSync(repositoriesPath, "utf8"),
     ) as Array<{
       id: string;
-      scannerExtractor: string;
-      scannerSchema: string;
+      extractProcessor: string;
+      extractSchema: string;
       extractedAt: string;
     }>;
     assert.equal(writtenRepositories.length, 1);
-    assert.equal(writtenRepositories[0]?.scannerExtractor, "scan.scope:git-repositories");
-    assert.equal(writtenRepositories[0]?.scannerSchema, packageVersion);
+    assert.equal(writtenRepositories[0]?.extractProcessor, "scan.scope:git-repositories");
+    assert.equal(writtenRepositories[0]?.extractSchema, packageVersion);
     assert.equal(writtenRepositories[0]?.extractedAt, "2026-08-27T15:00:00.000+03:00");
   });
 
@@ -154,7 +154,7 @@ describe("DiscoveryModelWriter", () => {
       scanId: "scan-3",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
-    store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
       entities: {
         BuildScript: [{ id: "bs-1", name: "build.gradle" }],
       },
@@ -179,7 +179,7 @@ describe("DiscoveryModelWriter", () => {
       scanId: "scan-rest-client",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
-    store.addCreateIntents("scan.source", SCAN_SOURCE_PROCESSOR, {
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
       entities: {
         RestClient: [
           {
@@ -234,8 +234,8 @@ describe("DiscoveryModelWriter", () => {
     });
 
     store.addCreateIntents(
-      "scan.link",
-      { groupId: "scan.link.rest", artifactId: "direct-rest-requests-serving" },
+      "scan.transform",
+      { groupId: "scan.transform.rest", artifactId: "direct-rest-requests-serving" },
       {
         links: {
           DirectRestRequestsServingMatch: [
@@ -245,8 +245,8 @@ describe("DiscoveryModelWriter", () => {
               sourceApplicationModuleId: "mod-server",
               targetApplicationModuleId: "mod-client",
               matchMethod: "INTERFACE",
-              confidence: "confirmed",
-              confidenceScore: 1,
+              basis: "extract",
+              confidence: 1,
             }),
           ],
         },

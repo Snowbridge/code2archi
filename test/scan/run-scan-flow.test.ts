@@ -67,7 +67,7 @@ describe("runScanFlow", async () => {
     assert.equal(repositories[0]?.namespace, "");
   });
 
-  it("finalizes repository namespace from common root before scan.source", async () => {
+  it("finalizes repository namespace from common root before scan.extract", async () => {
     const root = createTestTempDir("c2a-scan-flow-ns-");
     const sourceDir = path.join(root, "fizz");
     const repoDir = path.join(sourceDir, "fuzz", "bar", "buzz", "flow-app");
@@ -113,7 +113,7 @@ describe("runScanFlow", async () => {
     assert.equal(flowApp?.namespace, "fuzz/bar/buzz");
   });
 
-  it("writes application modules after scan.source for maven repository", async () => {
+  it("writes application modules after scan.extract for maven repository", async () => {
     const root = createTestTempDir("c2a-scan-flow-maven-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");
@@ -190,7 +190,7 @@ describe("runScanFlow", async () => {
     assert.equal(dependencies[0]?.artifactId, "shared");
   });
 
-  it("discovers RestController entities after maven modules are scanned in scan.source", async () => {
+  it("discovers RestController entities after maven modules are scanned in scan.extract", async () => {
     const root = createTestTempDir("c2a-scan-flow-rest-");
     const sourceDir = path.join(root, "src");
     const javaDir = path.join(sourceDir, "src", "main", "java", "com", "flow");
@@ -255,7 +255,7 @@ public class FlowController {
     assert.equal(controllers[0]?.programmingModel, "DECLARATIVE");
   });
 
-  it("discovers Kotlin RestController entities from maven kotlin sources in scan.source", async () => {
+  it("discovers Kotlin RestController entities from maven kotlin sources in scan.extract", async () => {
     const root = createTestTempDir("c2a-scan-flow-kotlin-");
     const sourceDir = path.join(root, "src");
     const kotlinDir = path.join(sourceDir, "src", "main", "kotlin", "com", "flow");
@@ -317,7 +317,7 @@ class FlowController {
     assert.equal(controllers[0]?.sourceFile, "src/main/kotlin/com/flow/FlowController.kt");
   });
 
-  it("discovers functional RouterFunction controllers in scan.source", async () => {
+  it("discovers functional RouterFunction controllers in scan.extract", async () => {
     const root = createTestTempDir("c2a-scan-flow-functional-");
     const sourceDir = path.join(root, "src");
     const javaDir = path.join(sourceDir, "src", "main", "java", "com", "example");

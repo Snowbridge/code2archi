@@ -33,7 +33,7 @@ function hasJsTsRestScan(status: ImplementationStatus): boolean {
 
 function hasNpmAssemblyOnly(status: ImplementationStatus): boolean {
   const hasNpmAssembly = status.processors.some((processor) =>
-    processor.coordinate.startsWith("scan.source.assembly.npm/"),
+    processor.coordinate.startsWith("scan.extract.assembly.npm/"),
   );
   const hasJsTsRest = hasJsTsRestScan(status);
   return hasNpmAssembly && !hasJsTsRest;

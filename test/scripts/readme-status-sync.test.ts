@@ -17,7 +17,7 @@ test("every registered scan processor has entity-type metadata or is generate-on
     if (!processor.groupId.startsWith("scan.")) {
       continue;
     }
-    if (processor.groupId.startsWith("scan.link")) {
+    if (processor.groupId.startsWith("scan.transform")) {
       assert.ok(
         SCAN_PROCESSOR_LINK_TYPES[processor.coordinate],
         `Missing SCAN_PROCESSOR_LINK_TYPES entry for ${processor.coordinate}`,

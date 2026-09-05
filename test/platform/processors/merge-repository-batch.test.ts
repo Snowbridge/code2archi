@@ -34,11 +34,11 @@ describe("mergeRepositoryBatchResults", () => {
     );
 
     const mavenProcessor = {
-      groupId: "scan.source.assembly.maven",
+      groupId: "scan.extract.assembly.maven",
       artifactId: "modules-and-dependencies",
     };
     const gradleProcessor = {
-      groupId: "scan.source.assembly.gradle",
+      groupId: "scan.extract.assembly.gradle",
       artifactId: "modules-and-dependencies",
     };
 
@@ -75,7 +75,7 @@ describe("mergeRepositoryBatchResults", () => {
       },
     };
 
-    mergeRepositoryBatchResults("scan.source", store, new Map([["scan.source:assembly:repo-a", batch]]));
+    mergeRepositoryBatchResults("scan.extract", store, new Map([["scan.extract:assembly:repo-a", batch]]));
 
     const snapshot = store.snapshot();
     assert.equal(snapshot.listEntities("ApplicationModule").length, 2);
@@ -89,11 +89,11 @@ describe("collectRepositoryBatchProcessorErrors", () => {
     const errors = collectRepositoryBatchProcessorErrors(
       new Map([
         [
-          "scan.source:rest:repo-a",
+          "scan.extract:rest:repo-a",
           {
             outputs: {},
             errors: {
-              "scan.source.java.rest/client-declarative": { message: "boom" },
+              "scan.extract.java.rest/client-declarative": { message: "boom" },
             },
           },
         ],
@@ -101,9 +101,9 @@ describe("collectRepositoryBatchProcessorErrors", () => {
     );
 
     assert.equal(errors.size, 1);
-    assert.ok(errors.has("scan.source:rest:repo-a:scan.source.java.rest/client-declarative"));
+    assert.ok(errors.has("scan.extract:rest:repo-a:scan.extract.java.rest/client-declarative"));
     assert.equal(
-      errors.get("scan.source:rest:repo-a:scan.source.java.rest/client-declarative")?.message,
+      errors.get("scan.extract:rest:repo-a:scan.extract.java.rest/client-declarative")?.message,
       "boom",
     );
   });

@@ -43,8 +43,8 @@ export interface DirectRestServingMatchLike {
   readonly sourceApplicationModuleId: string;
   readonly targetApplicationModuleId: string;
   readonly matchMethod: DirectRestRequestsServingMatchMethod;
-  readonly confidence: "confirmed" | "inferred" | "unknown";
-  readonly confidenceScore: number;
+  readonly basis: "extract" | "inference";
+  readonly confidence: number;
 }
 
 export function modulePairKey(
@@ -58,8 +58,8 @@ export function compareDirectRestServingMatches(
   left: DirectRestServingMatchLike,
   right: DirectRestServingMatchLike,
 ): number {
-  if (left.confidenceScore !== right.confidenceScore) {
-    return right.confidenceScore - left.confidenceScore;
+  if (left.confidence !== right.confidence) {
+    return right.confidence - left.confidence;
   }
 
   const leftPriority = MATCH_METHOD_PRIORITY[left.matchMethod];

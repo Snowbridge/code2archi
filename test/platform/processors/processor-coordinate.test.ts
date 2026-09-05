@@ -31,7 +31,7 @@ describe("validateGroupPattern", () => {
 describe("matchesGroupPattern", () => {
   it("matches exact groupId literal", () => {
     assert.equal(matchesGroupPattern("scan.scope", "scan.scope"), true);
-    assert.equal(matchesGroupPattern("scan.source", "scan.scope"), false);
+    assert.equal(matchesGroupPattern("scan.extract", "scan.scope"), false);
   });
 
   it("does not treat coordinate-like pattern as processor coordinate", () => {

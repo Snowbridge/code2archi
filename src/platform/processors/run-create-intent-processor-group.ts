@@ -1,4 +1,4 @@
-import { SCAN_SOURCE_GROUP_ID, type BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
+import { SCAN_EXTRACT_GROUP_ID, type BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
 import type { DiscoveryModelSnapshot, RunEntityStore } from "../../discovery-model/run-entity-store.js";
@@ -8,7 +8,7 @@ import {
   buildScanLinkTasks,
   buildScanRepositoryBatchTasks,
 } from "../parallelism/task-planner.js";
-import { partitionScanSourceProcessors } from "../parallelism/scan-source-phases.js";
+import { partitionScanSourceProcessors } from "../parallelism/scan-extract-phases.js";
 import { serializeDiscoverySnapshot } from "../parallelism/snapshot-serialization.js";
 import type { SnapshotRepositoryFilterScope } from "../parallelism/snapshot-serialization.js";
 import type { WorkerPool } from "../parallelism/worker-pool.js";
@@ -62,9 +62,9 @@ function runSequentialCreateIntentGroup(
     filters,
   );
 
-  const passProgress = builtInGroupId === SCAN_SOURCE_GROUP_ID && progress !== undefined;
+  const passProgress = builtInGroupId === SCAN_EXTRACT_GROUP_ID && progress !== undefined;
 
-  if (builtInGroupId === SCAN_SOURCE_GROUP_ID) {
+  if (builtInGroupId === SCAN_EXTRACT_GROUP_ID) {
     resetScanIoCache();
   }
 
@@ -94,7 +94,7 @@ function runSequentialCreateIntentGroup(
     const count = countCreateIntents(output);
     if (!output.entities && !output.links) {
       processor.logCompleted(0);
-      if (builtInGroupId !== SCAN_SOURCE_GROUP_ID) {
+      if (builtInGroupId !== SCAN_EXTRACT_GROUP_ID) {
         progress?.tick(1);
       }
       continue;
@@ -102,7 +102,7 @@ function runSequentialCreateIntentGroup(
 
     store.addCreateIntents(builtInGroupId, processor.id, output);
     processor.logCompleted(count);
-    if (builtInGroupId !== SCAN_SOURCE_GROUP_ID) {
+    if (builtInGroupId !== SCAN_EXTRACT_GROUP_ID) {
       progress?.tick(1);
     }
   }
@@ -123,7 +123,7 @@ async function runParallelScanSourcePhase(
 
   const snapshot = store.snapshot();
   const serialized = serializeDiscoverySnapshot(snapshot);
-  const phaseId = `scan.source.${snapshotFilterScope}`;
+  const phaseId = `scan.extract.${snapshotFilterScope}`;
   await parallel.pool.setupPhase(
     {
       phaseId,
@@ -149,16 +149,16 @@ async function runParallelScanSourcePhase(
     parallel.bridge,
     tasks,
     parallel.continueOnError,
-    SCAN_SOURCE_GROUP_ID,
+    SCAN_EXTRACT_GROUP_ID,
   );
 
-  mergeRepositoryBatchResults(SCAN_SOURCE_GROUP_ID, store, results);
+  mergeRepositoryBatchResults(SCAN_EXTRACT_GROUP_ID, store, results);
   const processorErrors = collectRepositoryBatchProcessorErrors(results);
   if (processorErrors.size > 0) {
     const logger = getLogger("platform.parallelism");
     for (const [taskId, error] of processorErrors) {
       logger.info("processor failed in batch", {
-        pool: SCAN_SOURCE_GROUP_ID,
+        pool: SCAN_EXTRACT_GROUP_ID,
         taskId,
         message: error.message,
       });
@@ -166,7 +166,7 @@ async function runParallelScanSourcePhase(
     if (parallel.continueOnError) {
       throw new AggregateError(
         [...processorErrors.values()],
-        `${SCAN_SOURCE_GROUP_ID}: ${processorErrors.size} processor(s) failed in batch`,
+        `${SCAN_EXTRACT_GROUP_ID}: ${processorErrors.size} processor(s) failed in batch`,
       );
     }
     throw [...processorErrors.values()][0];
@@ -208,10 +208,10 @@ async function runParallelScanLinkGroup(
     parallel.bridge,
     tasks,
     parallel.continueOnError,
-    "scan.link",
+    "scan.transform",
   );
 
-  mergeParallelCreateIntentResults("scan.link", store, processorByTaskId, results);
+  mergeParallelCreateIntentResults("scan.transform", store, processorByTaskId, results);
 
   for (const processor of processors) {
     progress?.tick(1);
@@ -247,9 +247,9 @@ export async function runCreateIntentProcessorGroup(
 
   const snapshot = store.snapshot();
 
-  if (builtInGroupId === SCAN_SOURCE_GROUP_ID) {
+  if (builtInGroupId === SCAN_EXTRACT_GROUP_ID) {
     await runParallelScanSourceGroup(processors, store, parallel, progressStepId ?? "2");
-  } else if (builtInGroupId === "scan.link") {
+  } else if (builtInGroupId === "scan.transform") {
     await runParallelScanLinkGroup(processors, snapshot, store, parallel, progress);
   } else {
     runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress);
