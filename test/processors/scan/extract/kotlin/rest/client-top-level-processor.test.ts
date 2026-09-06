@@ -41,12 +41,52 @@ suspend fun fetchPrice(client: HttpClient): String {
     const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.name, "fetchPrice");
-    assert.equal(clients[0]?.symbolKey, "com.example.GatewaysKt#fetchPrice");
+    assert.equal(clients[0]?.name, "GatewaysKt");
+    assert.equal(clients[0]?.symbolKey, "com.example.GatewaysKt");
     assert.equal(clients[0]?.clientLibrary, "ktor-client");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/prices"]);
     assert.equal(clients[0]?.concurrencyModel, "NON_BLOCKING");
     assert.deepEqual(clients[0]?.inheritedContractTypes, []);
+  });
+
+  it("aggregates multiple top-level functions into one FileKt client", () => {
+    const root = createTestTempDir("c2a-kotlin-ktor-top-level-multi-");
+    const kotlinDir = path.join(root, "src", "main", "kotlin", "com", "example");
+    mkdirSync(kotlinDir, { recursive: true });
+    writeFileSync(
+      path.join(root, "pom.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`,
+    );
+    writeFileSync(
+      path.join(kotlinDir, "Gateways.kt"),
+      `package com.example
+
+import io.ktor.client.HttpClient
+
+suspend fun fetchPrice(client: HttpClient): String {
+    return client.get { url("/api/prices") }.bodyAsText()
+}
+
+suspend fun fetchStock(client: HttpClient): String {
+    return client.get { url("/api/stock") }.bodyAsText()
+}
+`,
+    );
+
+    const { store } = createStore(root);
+    const processor = new KotlinRestClientTopLevelProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.HttpClientApi ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.symbolKey, "com.example.GatewaysKt");
+    assert.deepEqual(clients[0]?.endpoints, ["GET /api/prices", "GET /api/stock"]);
   });
 });
 

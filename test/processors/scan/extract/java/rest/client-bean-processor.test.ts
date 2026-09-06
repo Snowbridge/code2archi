@@ -47,8 +47,8 @@ public class ExternalApiConfig {
     const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.name, "pricingWebClient");
-    assert.equal(clients[0]?.symbolKey, "com.example.ExternalApiConfig#pricingWebClient");
+    assert.equal(clients[0]?.name, "ExternalApiConfig");
+    assert.equal(clients[0]?.symbolKey, "com.example.ExternalApiConfig");
     assert.equal(clients[0]?.clientLibrary, "webclient");
     assert.deepEqual(clients[0]?.endpoints, ["GET /api/prices"]);
     assert.deepEqual(clients[0]?.inheritedContractTypes, []);

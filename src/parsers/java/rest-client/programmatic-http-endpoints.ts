@@ -24,6 +24,14 @@ const REST_TEMPLATE_CALLS = new Set([
   "patchForObject",
 ]);
 
+export function isSpringBeanMethod(method: JavaMethodDeclaration): boolean {
+  return method.annotations.some(
+    (annotation) =>
+      annotation.name === "Bean" ||
+      annotation.qualifiedName === "org.springframework.context.annotation.Bean",
+  );
+}
+
 function parseHttpMethodFromName(methodName: string): string | undefined {
   const upper = methodName.toUpperCase();
   if (upper === "GET" || upper === "POST" || upper === "PUT" || upper === "PATCH" || upper === "DELETE") {
@@ -126,9 +134,11 @@ export function extractJavaHttpEndpointsFromBody(
 export function collectJavaClassHttpEndpoints(
   type: JavaTypeDeclaration,
   clientFramework: string,
+  options?: { excludeSpringBeanMethods?: boolean },
 ): { endpoints: string[]; handlerMethods: JavaMethodDeclaration[] } {
   const endpoints = new Set<string>();
   const handlerMethods: JavaMethodDeclaration[] = [];
+  const excludeSpringBeanMethods = options?.excludeSpringBeanMethods ?? false;
 
   if (clientFramework === APACHE_HTTP_CLIENT_FRAMEWORK) {
     for (const endpoint of extractApacheHttpEndpointsForType(type)) {
@@ -136,12 +146,15 @@ export function collectJavaClassHttpEndpoints(
     }
 
     for (const method of type.methods) {
-      if (method.body) {
+      if (method.body && (!excludeSpringBeanMethods || !isSpringBeanMethod(method))) {
         handlerMethods.push(method);
       }
     }
   } else {
     for (const method of type.methods) {
+      if (excludeSpringBeanMethods && isSpringBeanMethod(method)) {
+        continue;
+      }
       const methodEndpoints = extractJavaHttpEndpointsFromBody(method.body, clientFramework, type);
       if (methodEndpoints.length > 0) {
         handlerMethods.push(method);

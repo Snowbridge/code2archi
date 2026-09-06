@@ -237,3 +237,16 @@ export function extractKotlinProgrammaticRestClients(
 
   return clients;
 }
+
+export function isEligibleKotlinProgrammaticRestClientClass(
+  compilationUnit: KotlinCompilationUnit,
+  type: KotlinTypeDeclaration,
+): boolean {
+  return extractClassClient(compilationUnit, type) !== undefined;
+}
+
+export function hasKotlinProgrammaticRestClientClass(
+  compilationUnit: KotlinCompilationUnit,
+): boolean {
+  return compilationUnit.types.some((type) => isEligibleKotlinProgrammaticRestClientClass(compilationUnit, type));
+}

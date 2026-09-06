@@ -104,3 +104,24 @@ export function collectPayloadTypesFromJavaMethods(
     compilationUnit.imports,
   );
 }
+
+export function collectKotlinTopLevelPublicPayloadTypes(
+  compilationUnit: KotlinCompilationUnit,
+): string[] {
+  const publicFunctions = compilationUnit.topLevelFunctions.filter(isPublicKotlinMethod);
+  return collectPayloadTypesFromMethods(
+    publicFunctions.map((method) => ({
+      name: method.name,
+      returnType: method.returnType,
+      parameters: method.parameters.map((parameter) => ({
+        name: parameter.name,
+        type: parameter.type,
+        annotations: parameter.annotations,
+      })),
+      annotations: method.annotations,
+      visibility: "public",
+    })),
+    compilationUnit.packageName,
+    compilationUnit.imports,
+  );
+}

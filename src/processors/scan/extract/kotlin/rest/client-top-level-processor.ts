@@ -32,7 +32,7 @@ export class KotlinRestClientTopLevelProcessor extends AbstractProcessor<ScanApp
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers programmatic Kotlin REST clients in top-level functions (Ktor HttpClient, WebClient).";
+    "Discovers programmatic Kotlin REST clients aggregated per FileKt from top-level functions.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const clients: HttpClientApi[] = [];

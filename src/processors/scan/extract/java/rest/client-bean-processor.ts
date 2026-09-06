@@ -31,7 +31,7 @@ export class JavaRestClientBeanProcessor extends AbstractProcessor<ScanAppInput,
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers programmatic Java REST clients from Spring @Bean factory methods (WebClient, RestClient).";
+    "Discovers programmatic Java REST clients in classes with Spring @Bean WebClient/RestClient factories.";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const clients: HttpClientApi[] = [];

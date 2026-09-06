@@ -18,6 +18,7 @@ import {
 import {
   collectJavaClassHttpEndpoints,
   extractJavaHttpEndpointsFromBody,
+  isSpringBeanMethod,
 } from "./programmatic-http-endpoints.js";
 
 export interface ParsedProgrammaticRestClient {
@@ -63,6 +64,9 @@ function detectClientFramework(
   }
 
   for (const method of type.methods) {
+    if (isSpringBeanMethod(method)) {
+      continue;
+    }
     const returnSimple = typeSimpleName(method.returnType);
     if (returnSimple) {
       typeNames.add(returnSimple);
@@ -116,7 +120,9 @@ function extractClassClient(
     return undefined;
   }
 
-  const { endpoints, handlerMethods } = collectJavaClassHttpEndpoints(type, clientFramework);
+  const { endpoints, handlerMethods } = collectJavaClassHttpEndpoints(type, clientFramework, {
+    excludeSpringBeanMethods: true,
+  });
   if (endpoints.length === 0) {
     return undefined;
   }
@@ -145,6 +151,13 @@ export function extractProgrammaticRestClients(
   }
 
   return clients;
+}
+
+export function isEligibleProgrammaticRestClientClass(
+  compilationUnit: JavaCompilationUnit,
+  type: JavaTypeDeclaration,
+): boolean {
+  return extractClassClient(compilationUnit, type) !== undefined;
 }
 
 export {
