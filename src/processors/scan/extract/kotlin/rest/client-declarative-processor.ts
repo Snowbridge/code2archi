@@ -34,7 +34,7 @@ export class KotlinRestClientDeclarativeProcessor extends AbstractProcessor<Scan
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers declarative Kotlin REST clients (Feign, HttpExchange, MP REST Client, Micronaut, Retrofit).";
+    "Discovers declarative Kotlin REST clients (HttpExchange, MP REST Client, Micronaut, Retrofit).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const clients: HttpClientApi[] = [];

@@ -1,4 +1,3 @@
-import { getAnnotationAttribute } from "../java-annotation-utils.js";
 import type { JavaCompilationUnit } from "../java-ast-model.js";
 import { parseJavaSourceFile } from "../java-compilation-unit.js";
 import type { KotlinCompilationUnit } from "../../kotlin/kotlin-ast-model.js";
@@ -15,23 +14,6 @@ import {
 } from "./programmatic-http-client-extractor.js";
 
 export type { ParsedRestClient, ParsedProgrammaticRestClient };
-
-export function readFeignServiceName(
-  annotations: readonly { readonly name: string; readonly qualifiedName: string; readonly attributes: Readonly<Record<string, string | readonly string[]>> }[],
-): string | undefined {
-  const feignAnnotation = annotations.find(
-    (annotation) =>
-      annotation.name === "FeignClient" ||
-      annotation.qualifiedName === "org.springframework.cloud.openfeign.FeignClient",
-  );
-  if (!feignAnnotation) {
-    return undefined;
-  }
-  const nameAttr =
-    getAnnotationAttribute(feignAnnotation, "name") ??
-    getAnnotationAttribute(feignAnnotation, "value");
-  return typeof nameAttr === "string" && nameAttr.length > 0 ? nameAttr : undefined;
-}
 
 export function parseJavaCompilationUnits(
   sources: ReadonlyMap<string, string>,

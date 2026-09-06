@@ -1,4 +1,3 @@
-import { getAnnotationAttribute } from "../java-annotation-utils.js";
 import type { JavaCompilationUnit, JavaMethodDeclaration, JavaTypeDeclaration } from "../java-ast-model.js";
 import { resolveTypeFqcn } from "../java-type-resolver.js";
 import { collectDtoFqcn, filterHandlerMethods } from "../rest/rest-dto-collector.js";
@@ -32,30 +31,6 @@ function flattenTypes(types: readonly JavaTypeDeclaration[]): JavaTypeDeclaratio
     flattened.push(...flattenTypes(type.nestedTypes));
   }
   return flattened;
-}
-
-function readFeignMetadata(annotations: JavaTypeDeclaration["annotations"]): {
-  serviceName?: string;
-  baseUrl?: string;
-} {
-  const feignAnnotation = annotations.find(
-    (annotation) =>
-      annotation.name === "FeignClient" ||
-      annotation.qualifiedName === "org.springframework.cloud.openfeign.FeignClient",
-  );
-  if (!feignAnnotation) {
-    return {};
-  }
-
-  const nameAttr =
-    getAnnotationAttribute(feignAnnotation, "name") ??
-    getAnnotationAttribute(feignAnnotation, "value");
-  const urlAttr = getAnnotationAttribute(feignAnnotation, "url");
-
-  return {
-    ...(typeof nameAttr === "string" && nameAttr.length > 0 ? { serviceName: nameAttr } : {}),
-    ...(typeof urlAttr === "string" && urlAttr.length > 0 ? { baseUrl: urlAttr } : {}),
-  };
 }
 
 function collectHandlerMethods(
@@ -137,8 +112,6 @@ function extractClientFromType(
     )
     .sort();
 
-  const feignMetadata = readFeignMetadata(type.annotations);
-
   return {
     name: type.name,
     fqcn: type.fqcn,
@@ -152,7 +125,6 @@ function extractClientFromType(
     tcpStackType: resolveTcpStackType(handlerMethods),
     clientFramework: profile.id,
     extendedInterfaceFqcn,
-    ...feignMetadata,
   };
 }
 

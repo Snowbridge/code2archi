@@ -3,14 +3,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { HttpClientApi } from "../../../../../../src/discovery-model/entities/http-client-api.js";
 import { RunEntityStore } from "../../../../../../src/discovery-model/run-entity-store.js";
 import { KotlinRestClientDeclarativeProcessor } from "../../../../../../src/processors/scan/extract/kotlin/rest/client-declarative-processor.js";
 import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
 import { createTestTempDir } from "../../../../../test-temp-dir.js";
 
 describe("KotlinRestClientDeclarativeProcessor", () => {
-  it("creates RestClient from @FeignClient interface", () => {
+  it("does not create RestClient from @FeignClient interface", () => {
     const root = createTestTempDir("c2a-kotlin-feign-client-");
     const kotlinDir = path.join(root, "src", "main", "kotlin", "com", "example");
     mkdirSync(kotlinDir, { recursive: true });
@@ -39,34 +38,12 @@ interface PaymentFeignClient {
 `,
     );
 
-    const { module, store } = createStore(root);
+    const { store } = createStore(root);
     const processor = new KotlinRestClientDeclarativeProcessor();
     const output = processor.process(store.snapshot());
     const clients = output.entities?.HttpClientApi ?? [];
 
-    assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.name, "PaymentFeignClient");
-    assert.equal(clients[0]?.bindingStyle, "INTERFACE_MARKER");
-    assert.equal(clients[0]?.clientLibrary, "feign");
-    assert.deepEqual(clients[0]?.endpoints, ["GET /api/payments/:id"]);
-    assert.equal(clients[0]?.applicationModuleId, module.id);
-
-    const entity = new HttpClientApi({
-      applicationModuleId: module.id,
-      name: clients[0]!.name,
-      symbolKey: clients[0]!.symbolKey,
-      payloadTypes: clients[0]!.payloadTypes,
-      endpoints: clients[0]!.endpoints,
-      concurrencyModel: clients[0]!.concurrencyModel,
-      bindingStyle: "INTERFACE_MARKER",
-      clientLibrary: "feign",
-      inheritedContractTypes: [],
-      sourceFile: clients[0]!.sourceFile,
-      serviceName: clients[0]!.serviceName,
-      baseUrl: clients[0]!.baseUrl,
-    });
-    assert.equal(entity.id, clients[0]?.id);
-    assert.equal(clients[0]?.symbolKey, "com.example.PaymentFeignClient");
+    assert.equal(clients.length, 0);
   });
 });
 

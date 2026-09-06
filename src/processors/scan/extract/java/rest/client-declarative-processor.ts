@@ -32,7 +32,7 @@ export class JavaRestClientDeclarativeProcessor extends AbstractProcessor<ScanAp
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Discovers declarative Java REST clients (Feign, HttpExchange, MP REST Client, Micronaut, Retrofit).";
+    "Discovers declarative Java REST clients (HttpExchange, MP REST Client, Micronaut, Retrofit).";
 
   protected doProcess(input: ScanAppInput): ScanAppOutput {
     const clients: HttpClientApi[] = [];

@@ -3,7 +3,6 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { HttpClientApi } from "../../../../../../src/discovery-model/entities/http-client-api.js";
 import { toTypeReferenceFromQualifiedName } from "../../../../../../src/discovery-model/entities/type-reference.js";
 import { RunEntityStore } from "../../../../../../src/discovery-model/run-entity-store.js";
 import { JavaRestClientDeclarativeProcessor } from "../../../../../../src/processors/scan/extract/java/rest/client-declarative-processor.js";
@@ -11,7 +10,7 @@ import { Repository } from "../../../../../../src/discovery-model/entities/repos
 import { createTestTempDir } from "../../../../../test-temp-dir.js";
 
 describe("JavaRestClientDeclarativeProcessor", () => {
-  it("creates RestClient from @FeignClient interface", () => {
+  it("does not create RestClient from @FeignClient interface", () => {
     const root = createTestTempDir("c2a-java-feign-client-");
     const javaDir = path.join(root, "src", "main", "java", "com", "example");
     mkdirSync(javaDir, { recursive: true });
@@ -40,39 +39,16 @@ public interface PaymentFeignClient {
 `,
     );
 
-    const { module, store } = createStore(root);
+    const { store } = createStore(root);
     const processor = new JavaRestClientDeclarativeProcessor();
     const output = processor.process(store.snapshot());
     const clients = output.entities?.HttpClientApi ?? [];
 
-    assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.name, "PaymentFeignClient");
-    assert.equal(clients[0]?.bindingStyle, "INTERFACE_MARKER");
-    assert.equal(clients[0]?.clientLibrary, "feign");
-    assert.equal(clients[0]?.serviceName, "payment-service");
-    assert.equal(clients[0]?.baseUrl, "${payment.url}");
-    assert.deepEqual(clients[0]?.endpoints, ["GET /api/payments/:id"]);
-    assert.equal(clients[0]?.applicationModuleId, module.id);
-
-    const entity = new HttpClientApi({
-      applicationModuleId: module.id,
-      name: clients[0]!.name,
-      symbolKey: clients[0]!.symbolKey,
-      payloadTypes: clients[0]!.payloadTypes,
-      endpoints: clients[0]!.endpoints,
-      concurrencyModel: clients[0]!.concurrencyModel,
-      bindingStyle: "INTERFACE_MARKER",
-      clientLibrary: "feign",
-      inheritedContractTypes: [],
-      sourceFile: clients[0]!.sourceFile,
-      serviceName: clients[0]!.serviceName,
-      baseUrl: clients[0]!.baseUrl,
-    });
-    assert.equal(entity.id, clients[0]?.id);
+    assert.equal(clients.length, 0);
   });
 
   it("inherits endpoints from super-interface in same module", () => {
-    const root = createTestTempDir("c2a-java-feign-extends-");
+    const root = createTestTempDir("c2a-java-http-exchange-extends-");
     const javaDir = path.join(root, "src", "main", "java", "com", "example");
     mkdirSync(javaDir, { recursive: true });
     writeFileSync(
@@ -89,22 +65,22 @@ public interface PaymentFeignClient {
       path.join(javaDir, "GeneratedApi.java"),
       `package com.example;
 
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.service.annotation.GetExchange;
 
 public interface GeneratedApi {
-    @GetMapping("/v1/items")
+    @GetExchange("/v1/items")
     String listItems();
 }
 `,
     );
     writeFileSync(
-      path.join(javaDir, "ItemFeignClient.java"),
+      path.join(javaDir, "ItemClient.java"),
       `package com.example;
 
-import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.service.annotation.HttpExchange;
 
-@FeignClient(name = "items")
-public interface ItemFeignClient extends GeneratedApi {
+@HttpExchange
+public interface ItemClient extends GeneratedApi {
 }
 `,
     );
@@ -115,7 +91,7 @@ public interface ItemFeignClient extends GeneratedApi {
     const clients = output.entities?.HttpClientApi ?? [];
 
     assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.symbolKey, "com.example.ItemFeignClient");
+    assert.equal(clients[0]?.symbolKey, "com.example.ItemClient");
     assert.deepEqual(clients[0]?.endpoints, ["GET /v1/items"]);
     assert.deepEqual(clients[0]?.inheritedContractTypes, [
       toTypeReferenceFromQualifiedName("com.example.GeneratedApi"),
