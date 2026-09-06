@@ -550,7 +550,176 @@ public class AgentBillingServiceRestClientImpl {
     assert.equal(clients[0]?.clientLibrary, "apache-http");
     assert.deepEqual(clients[0]?.endpoints, ["GET /act/:year/:month/:agentId", "POST /charge"]);
   });
+
+  it("creates RestClient from PrimeServiceImpl with contract and payload types", () => {
+    const root = createTestTempDir("c2a-java-prime-service-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(path.join(root, "pom.xml"), mavenPom());
+    writeFileSync(
+      path.join(javaDir, "PrimeService.java"),
+      `package com.example;
+
+public interface PrimeService {
+    CompanyRegData getCompanyRegData(String inn);
+    CompanyAccReportStatus getCompanyAccountReportXml(String inn, String year);
+}
+`,
+    );
+    writeFileSync(
+      path.join(javaDir, "CompanyRegData.java"),
+      `package com.example;
+
+public class CompanyRegData {}
+`,
+    );
+    writeFileSync(
+      path.join(javaDir, "CompanyAccReportStatus.java"),
+      `package com.example;
+
+public class CompanyAccReportStatus {}
+`,
+    );
+    writeFileSync(
+      path.join(javaDir, "PrimeServiceImpl.java"),
+      `package com.example;
+
+import org.springframework.web.client.RestTemplate;
+
+public class PrimeServiceImpl implements PrimeService {
+    private final RestTemplate restTemplate;
+
+    public PrimeServiceImpl(String baseUrl) {
+        this.restTemplate = new RestTemplate();
+    }
+
+    @Override
+    public CompanyRegData getCompanyRegData(String inn) {
+        return restTemplate.getForObject("/company-reg-data", CompanyRegData.class);
+    }
+
+    @Override
+    public CompanyAccReportStatus getCompanyAccountReportXml(String inn, String year) {
+        return restTemplate.getForObject("/account-report-xml", CompanyAccReportStatus.class);
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-prime-service");
+    const processor = new JavaRestClientProgrammaticProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.HttpClientApi ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "PrimeServiceImpl");
+    assert.equal(clients[0]?.symbolKey, "com.example.PrimeServiceImpl");
+    assert.deepEqual(
+      clients[0]?.inheritedContractTypes.map((type) => type.qualifiedName),
+      ["com.example.PrimeService"],
+    );
+    assert.deepEqual(
+      clients[0]?.payloadTypes.map((type) => type.qualifiedName).sort(),
+      ["com.example.CompanyAccReportStatus", "com.example.CompanyRegData"],
+    );
+    assert.deepEqual(clients[0]?.endpoints, ["GET /account-report-xml", "GET /company-reg-data"]);
+  });
+
+  it("creates RestClient from IntegrationServiceHttpImpl with apache contract and payload types", () => {
+    const root = createTestTempDir("c2a-java-integration-http-");
+    const javaDir = path.join(root, "src", "main", "java", "com", "example");
+    mkdirSync(javaDir, { recursive: true });
+    writeFileSync(path.join(root, "pom.xml"), mavenPom());
+    writeFileSync(
+      path.join(javaDir, "IntegrationService.java"),
+      `package com.example;
+
+public interface IntegrationService {
+    ZgrConfirmation upload(ZgrBankGuarantee bankGuarantee) throws Exception;
+    ZgrConfirmation getConfirmation(String refId) throws Exception;
+}
+`,
+    );
+    writeFileSync(
+      path.join(javaDir, "ZgrBankGuarantee.java"),
+      `package com.example;
+
+public class ZgrBankGuarantee {}
+`,
+    );
+    writeFileSync(
+      path.join(javaDir, "ZgrConfirmation.java"),
+      `package com.example;
+
+public class ZgrConfirmation {
+    public ZgrConfirmation(String body) {}
+}
+`,
+    );
+    writeFileSync(
+      path.join(javaDir, "IntegrationServiceHttpImpl.java"),
+      `package com.example;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+
+public class IntegrationServiceHttpImpl implements IntegrationService {
+    private final CloseableHttpClient httpClient;
+    private final String baseUrl;
+
+    public IntegrationServiceHttpImpl(CloseableHttpClient httpClient, String baseUrl) {
+        this.httpClient = httpClient;
+        this.baseUrl = baseUrl;
+    }
+
+    @Override
+    public ZgrConfirmation upload(ZgrBankGuarantee bankGuarantee) throws Exception {
+        HttpPost post = new HttpPost(baseUrl + "/upload");
+        return new ZgrConfirmation(post(httpClient.execute(post).getEntity()));
+    }
+
+    @Override
+    public ZgrConfirmation getConfirmation(String refId) throws Exception {
+        HttpPost post = new HttpPost(baseUrl + "/uploadResult");
+        return new ZgrConfirmation(post(httpClient.execute(post).getEntity()));
+    }
+
+    private String post(HttpEntity entity) {
+        return "ok";
+    }
+}
+`,
+    );
+
+    const { store } = createMavenStore(root, "scan-integration-http");
+    const processor = new JavaRestClientProgrammaticProcessor();
+    const output = processor.process(store.snapshot());
+    const clients = output.entities?.HttpClientApi ?? [];
+
+    assert.equal(clients.length, 1);
+    assert.equal(clients[0]?.name, "IntegrationServiceHttpImpl");
+    assert.deepEqual(
+      clients[0]?.inheritedContractTypes.map((type) => type.qualifiedName),
+      ["com.example.IntegrationService"],
+    );
+    assert.deepEqual(
+      clients[0]?.payloadTypes.map((type) => type.qualifiedName).sort(),
+      ["com.example.ZgrBankGuarantee", "com.example.ZgrConfirmation"],
+    );
+    assert.deepEqual(clients[0]?.endpoints, ["POST /upload", "POST /uploadResult"]);
+  });
 });
+
+function mavenPom(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>app</artifactId>
+  <version>1.0.0</version>
+</project>`;
+}
 
 function createMavenStore(root: string, scanId: string): { store: RunEntityStore } {
   const repository = new Repository({

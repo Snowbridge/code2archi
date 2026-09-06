@@ -64,6 +64,7 @@ export function adaptKotlinMethodToJava(method: KotlinMethodDeclaration): JavaMe
       annotations: parameter.annotations,
     })),
     annotations: method.annotations,
+    visibility: method.visibility === "public" ? "public" : "private",
     isSuspend: method.isSuspend,
   };
 }

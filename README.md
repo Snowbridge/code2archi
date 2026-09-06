@@ -142,6 +142,7 @@ Built-in processors discover:
   - Quarkus Vert.x / reactive routes
   - Ktor routing
 - **REST clients (Java/Kotlin)** — declarative and programmatic HTTP clients:
+  - Spring `@Bean` WebClient / RestClient factories
   - Spring OpenFeign
   - Spring HTTP Interface (`@HttpExchange`)
   - MicroProfile REST Client
@@ -154,6 +155,8 @@ Built-in processors discover:
   - `java.net.http.HttpClient`
   - Spring WebClient wrappers
   - Ktor `HttpClient`
+  - Top-level Ktor `HttpClient` functions
+  - Top-level WebClient helpers
 
 Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, …) validated against JSON Schema in the specifications repo.
 
@@ -205,7 +208,7 @@ The README above describes the **current slice** of the vision. The table below 
 | **Technology inventory** | Broad runtime, framework, and infra-pattern coverage (databases, messaging, deployment) | Limited to repo/module structure, versions from build files, runtime catalog |
 | **Diagrams** | `generate.views` — layout diagrams in Archi | Processor group exists; **no view processors** registered |
 | **Plugins** | Extend scan/generate without forking core | Processor registry is internal; **plugin host API not shipped** |
-| **Run configuration** | YAML run-config (`code2archi.yaml`), CLI merge, `config create` command | YAML bootstrap implemented; `config` command not yet shipped |
+| **Run configuration** | `config` command, merged CLI + file defaults | Not specified |
 | **Element slot coverage** | All documented `generate.elements` slots materialised in `.archimate` | 17/17 documented element slots implemented |
 | **Model refresh at scale** | Repeatable refresh every release cycle in hours | Mechanically possible via re-run; automation, diff, and reconcile reporting still missing |
 

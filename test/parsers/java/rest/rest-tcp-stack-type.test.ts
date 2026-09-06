@@ -9,6 +9,7 @@ function method(returnType: JavaMethodDeclaration["returnType"]): JavaMethodDecl
     returnType,
     parameters: [],
     annotations: [],
+    visibility: "public",
   };
 }
 

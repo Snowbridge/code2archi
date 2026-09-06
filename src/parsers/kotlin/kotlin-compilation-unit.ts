@@ -6,6 +6,7 @@ import type {
   KotlinParameter,
   KotlinPropertyDeclaration,
   KotlinTypeDeclaration,
+  KotlinVisibility,
 } from "./kotlin-ast-model.js";
 import { extractAnnotations, hasSuspendModifier } from "./kotlin-annotation-utils.js";
 import { createKotlinParser } from "./kotlin-tree-sitter.js";
@@ -142,6 +143,33 @@ function extractReceiverType(functionNode: SyntaxNode): ReturnType<typeof parseT
   return parseTypeRef(receiverNode);
 }
 
+function extractKotlinVisibility(functionNode: SyntaxNode): KotlinVisibility {
+  const modifiers =
+    findDirectChild(functionNode, "modifiers") ??
+    findFirstChild(functionNode, "modifiers");
+
+  if (!modifiers) {
+    return "public";
+  }
+
+  for (const child of nodeChildren(modifiers)) {
+    if (child.type === "private") {
+      return "private";
+    }
+    if (child.type === "protected") {
+      return "protected";
+    }
+    if (child.type === "internal") {
+      return "internal";
+    }
+    if (child.type === "public") {
+      return "public";
+    }
+  }
+
+  return "public";
+}
+
 function extractMethod(
   functionNode: SyntaxNode,
   options: { isTopLevel: boolean; enclosingTypeFqcn?: string },
@@ -163,6 +191,7 @@ function extractMethod(
     returnType: parseTypeRef(returnTypeNode),
     parameters: extractParameters(functionNode),
     annotations: extractAnnotations(functionNode),
+    visibility: extractKotlinVisibility(functionNode),
     isSuspend: hasSuspendModifier(functionNode),
     receiverType: extractReceiverType(functionNode),
     body: extractFunctionBody(functionNode),

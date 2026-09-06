@@ -51,45 +51,6 @@ class BasepriceDataApiWebclient(private val webClient: WebClient) {
     assert.equal(clients[0]?.applicationModuleId, module.id);
   });
 
-  it("creates RestClient from Ktor HttpClient top-level function", () => {
-    const root = createTestTempDir("c2a-kotlin-ktor-client-");
-    const kotlinDir = path.join(root, "src", "main", "kotlin", "com", "example");
-    mkdirSync(kotlinDir, { recursive: true });
-    writeFileSync(
-      path.join(root, "pom.xml"),
-      `<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example</groupId>
-  <artifactId>app</artifactId>
-  <version>1.0.0</version>
-</project>`,
-    );
-    writeFileSync(
-      path.join(kotlinDir, "Gateways.kt"),
-      `package com.example
-
-import io.ktor.client.HttpClient
-
-suspend fun fetchPrice(client: HttpClient): String {
-    return client.get { url("/api/prices") }.bodyAsText()
-}
-`,
-    );
-
-    const { store } = createStore(root);
-    const processor = new KotlinRestClientProgrammaticProcessor();
-    const output = processor.process(store.snapshot());
-    const clients = output.entities?.HttpClientApi ?? [];
-
-    assert.equal(clients.length, 1);
-    assert.equal(clients[0]?.name, "fetchPrice");
-    assert.equal(clients[0]?.symbolKey, "com.example.GatewaysKt#fetchPrice");
-    assert.equal(clients[0]?.clientLibrary, "ktor-client");
-    assert.deepEqual(clients[0]?.endpoints, ["GET /api/prices"]);
-    assert.equal(clients[0]?.concurrencyModel, "NON_BLOCKING");
-  });
-
   it("creates RestClient from OkHttpClient wrapper class", () => {
     const root = createTestTempDir("c2a-kotlin-okhttp-");
     const kotlinDir = path.join(root, "src", "main", "kotlin", "com", "example");

@@ -1,6 +1,8 @@
 import type { SyntaxNode } from "tree-sitter";
 import type { JavaAnnotation, JavaTypeRef } from "../java/java-ast-model.js";
 
+export type KotlinVisibility = "public" | "protected" | "private" | "internal";
+
 export interface KotlinParameter {
   readonly name?: string;
   readonly type: JavaTypeRef;
@@ -12,6 +14,7 @@ export interface KotlinMethodDeclaration {
   readonly returnType?: JavaTypeRef;
   readonly parameters: readonly KotlinParameter[];
   readonly annotations: readonly JavaAnnotation[];
+  readonly visibility: KotlinVisibility;
   readonly isSuspend: boolean;
   readonly receiverType?: JavaTypeRef;
   readonly body?: SyntaxNode;

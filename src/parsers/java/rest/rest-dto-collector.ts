@@ -93,6 +93,25 @@ export function collectDtoFqcn(
   return [...dtoFqcn].sort();
 }
 
+export function collectPayloadTypesFromMethods(
+  methods: readonly JavaMethodDeclaration[],
+  packageName: string | undefined,
+  imports: ReadonlyMap<string, string>,
+): string[] {
+  const emptyUnwrap = new Set<string>();
+  const dtoFqcn = new Set<string>();
+
+  for (const method of methods) {
+    collectTypesFromRef(method.returnType, packageName, imports, emptyUnwrap, dtoFqcn);
+
+    for (const parameter of method.parameters) {
+      collectTypesFromRef(parameter.type, packageName, imports, emptyUnwrap, dtoFqcn);
+    }
+  }
+
+  return [...dtoFqcn].sort();
+}
+
 export function filterHandlerMethods(
   methods: readonly JavaMethodDeclaration[],
   registry: RestAnnotationRegistry,

@@ -34,6 +34,9 @@ export const REST_PROCESSOR_HIGHLIGHTS: Readonly<Record<string, readonly string[
     "OkHttp",
     "`java.net.http.HttpClient`",
   ],
+  "scan.extract.java.rest/client-bean": [
+    "Spring `@Bean` WebClient / RestClient factories",
+  ],
   "scan.extract.kotlin.rest/client-declarative": [
     "Spring OpenFeign",
     "Spring HTTP Interface (`@HttpExchange`)",
@@ -45,5 +48,9 @@ export const REST_PROCESSOR_HIGHLIGHTS: Readonly<Record<string, readonly string[
     "Spring WebClient wrappers",
     "Ktor `HttpClient`",
     "OkHttp",
+  ],
+  "scan.extract.kotlin.rest/client-top-level": [
+    "Top-level Ktor `HttpClient` functions",
+    "Top-level WebClient helpers",
   ],
 };

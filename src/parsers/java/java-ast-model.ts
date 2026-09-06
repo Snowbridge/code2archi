@@ -1,5 +1,7 @@
 import type { GenericCstNode } from "./java-cst-utils.js";
 
+export type JavaVisibility = "public" | "protected" | "package" | "private";
+
 export interface JavaAnnotation {
   readonly name: string;
   readonly qualifiedName: string;
@@ -30,6 +32,7 @@ export interface JavaMethodDeclaration {
   readonly returnType?: JavaTypeRef;
   readonly parameters: readonly JavaParameter[];
   readonly annotations: readonly JavaAnnotation[];
+  readonly visibility: JavaVisibility;
   readonly body?: GenericCstNode;
   readonly isSuspend?: boolean;
 }

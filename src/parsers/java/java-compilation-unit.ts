@@ -7,6 +7,7 @@ import type {
   JavaParameter,
   JavaTypeDeclaration,
   JavaTypeRef,
+  JavaVisibility,
 } from "./java-ast-model.js";
 import {
   asGenericCstNode,
@@ -168,6 +169,28 @@ function extractFields(source: string, normalClass: GenericCstNode | undefined):
   return fields;
 }
 
+function extractVisibility(
+  modifiers: readonly GenericCstNode[] | undefined,
+): JavaVisibility {
+  if (!modifiers) {
+    return "package";
+  }
+
+  for (const modifier of modifiers) {
+    if (modifier.children?.Public) {
+      return "public";
+    }
+    if (modifier.children?.Private) {
+      return "private";
+    }
+    if (modifier.children?.Protected) {
+      return "protected";
+    }
+  }
+
+  return "package";
+}
+
 function extractMethodFromHeader(
   source: string,
   methodDeclaration: GenericCstNode,
@@ -180,11 +203,16 @@ function extractMethodFromHeader(
     return undefined;
   }
 
+  const modifierNodes = methodDeclaration.children?.[modifierKey]?.map((node) =>
+    asGenericCstNode(node),
+  ).filter((node): node is GenericCstNode => node !== undefined);
+
   return {
     name: methodName,
     returnType: parseTypeRef(firstChild(methodHeader, "result")),
     parameters: extractParameters(source, methodDeclarator),
     annotations: collectModifierAnnotations(source, methodDeclaration.children?.[modifierKey]),
+    visibility: extractVisibility(modifierNodes),
     body: firstChild(methodDeclaration, "methodBody"),
   };
 }
