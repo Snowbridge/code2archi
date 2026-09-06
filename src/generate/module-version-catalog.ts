@@ -9,8 +9,8 @@ import {
   NpmModuleArtifactProfile,
   RunsOnProfile,
 } from "../archimate-model/profiles/profile.js";
-import type { BuildSystem } from "../discovery-model/entities/application-module.js";
-import type { DiscoveryEntityRecord } from "../discovery-model/entities/entity-types.js";
+import type { BuildSystem } from "../code-inventory/entities/application-module.js";
+import type { DiscoveryEntityRecord } from "../code-inventory/entities/entity-types.js";
 import {
   MODULE_VERSION_FIELDS,
   type ModuleVersionField,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
+import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
 import { createMainThreadBridge } from "../../../src/platform/parallelism/main-thread-bridge.js";
 import { dispatchWorkerTask } from "../../../src/platform/parallelism/worker-dispatch.js";
 import { createWorkerPool } from "../../../src/platform/parallelism/worker-pool.js";
@@ -148,7 +148,7 @@ describe("worker pool", () => {
 </project>`,
     );
 
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: root,
       sourceDirs: [root],

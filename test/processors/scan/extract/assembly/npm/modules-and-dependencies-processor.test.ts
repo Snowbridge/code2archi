@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { RunEntityStore } from "../../../../../../src/discovery-model/run-entity-store.js";
+import { RunEntityStore } from "../../../../../../src/code-inventory/run-entity-store.js";
 import { ModulesAndDependenciesProcessor } from "../../../../../../src/processors/scan/extract/assembly/npm/modules-and-dependencies-processor.js";
 import { createTestTempDir } from "../../../../../test-temp-dir.js";
 

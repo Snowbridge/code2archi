@@ -1,8 +1,8 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
 import { filterMeaningfulEndpoints } from "./rest-infrastructure-endpoints.js";
-import type { HttpClientToServerApiLinkMethod } from "../discovery-model/links/http-client-to-server-api-link.js";
-import type { TypeReference } from "../discovery-model/entities/type-reference.js";
-import { typeReferenceMatchKeys } from "../discovery-model/entities/type-reference.js";
+import type { HttpClientToServerApiLinkMethod } from "../code-inventory/links/http-client-to-server-api-link.js";
+import type { TypeReference } from "../code-inventory/entities/type-reference.js";
+import { typeReferenceMatchKeys } from "../code-inventory/entities/type-reference.js";
 import {
   compareDirectRestServingMatches,
   type DirectRestServingMatchLike,

@@ -3,13 +3,13 @@ import { describe, it } from "node:test";
 import { ArchiModelStore } from "../../../../../../src/archimate-model/archi-model-store.js";
 import { ApplicationService } from "../../../../../../src/archimate-model/elements/archi-element.js";
 import { RestApiContractProfile } from "../../../../../../src/archimate-model/profiles/profile.js";
-import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
-import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
-import { HttpClientApi } from "../../../../../../src/discovery-model/entities/http-client-api.js";
-import { HttpServerApi } from "../../../../../../src/discovery-model/entities/http-server-api.js";
-import { HttpClientToServerApiLink } from "../../../../../../src/discovery-model/links/http-client-to-server-api-link.js";
-import { toTypeReferenceFromQualifiedName } from "../../../../../../src/discovery-model/entities/type-reference.js";
+import { buildCodeInventorySnapshot } from "../../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { ApplicationModule } from "../../../../../../src/code-inventory/entities/application-module.js";
+import { Repository } from "../../../../../../src/code-inventory/entities/repository.js";
+import { HttpClientApi } from "../../../../../../src/code-inventory/entities/http-client-api.js";
+import { HttpServerApi } from "../../../../../../src/code-inventory/entities/http-server-api.js";
+import { HttpClientToServerApiLink } from "../../../../../../src/code-inventory/links/http-client-to-server-api-link.js";
+import { toTypeReferenceFromQualifiedName } from "../../../../../../src/code-inventory/entities/type-reference.js";
 import {
   restApiContractAssignmentRelationshipId,
   restApiContractElementId,
@@ -98,7 +98,7 @@ describe("ApiContractsAndAssignmentsProcessor (generate)", () => {
       confidence: 0.4,
     }).toCreateIntent();
 
-    const discovery = buildDiscoveryModelSnapshot({
+    const discovery = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/workspace",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),

@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { DiscoveryModelWriter } from "../../src/discovery-model/discovery-model-writer.js";
-import { HttpClientToServerApiLink } from "../../src/discovery-model/links/http-client-to-server-api-link.js";
-import { RunEntityStore } from "../../src/discovery-model/run-entity-store.js";
-import { REPOSITORY_SCHEMA_ID, HTTP_CLIENT_API_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
+import { CodeInventoryWriter } from "../../src/code-inventory/code-inventory-writer.js";
+import { HttpClientToServerApiLink } from "../../src/code-inventory/links/http-client-to-server-api-link.js";
+import { RunEntityStore } from "../../src/code-inventory/run-entity-store.js";
+import { REPOSITORY_SCHEMA_ID, HTTP_CLIENT_API_SCHEMA_ID } from "../../src/code-inventory/code-inventory-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -19,7 +19,7 @@ const SCAN_SOURCE_PROCESSOR = {
   artifactId: "test-processor",
 };
 
-describe("DiscoveryModelWriter", () => {
+describe("CodeInventoryWriter", () => {
   const previousTz = process.env.TZ;
 
   beforeEach(() => {
@@ -67,7 +67,7 @@ describe("DiscoveryModelWriter", () => {
       scannedAt,
     );
 
-    new DiscoveryModelWriter().write({
+    new CodeInventoryWriter().write({
       outputDir,
       store,
       scannedAt,
@@ -130,7 +130,7 @@ describe("DiscoveryModelWriter", () => {
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
     });
 
-    new DiscoveryModelWriter().write({
+    new CodeInventoryWriter().write({
       outputDir,
       store,
       scannedAt: new Date("2026-08-27T12:00:00.000Z"),
@@ -160,7 +160,7 @@ describe("DiscoveryModelWriter", () => {
       },
     });
 
-    new DiscoveryModelWriter().write({
+    new CodeInventoryWriter().write({
       outputDir,
       store,
       scannedAt: new Date("2026-08-27T12:00:00.000Z"),
@@ -199,7 +199,7 @@ describe("DiscoveryModelWriter", () => {
       },
     });
 
-    new DiscoveryModelWriter().write({
+    new CodeInventoryWriter().write({
       outputDir,
       store,
       scannedAt: new Date("2026-08-27T12:00:00.000Z"),
@@ -253,7 +253,7 @@ describe("DiscoveryModelWriter", () => {
       },
     );
 
-    new DiscoveryModelWriter().write({
+    new CodeInventoryWriter().write({
       outputDir,
       store,
       scannedAt: new Date("2026-08-27T12:00:00.000Z"),

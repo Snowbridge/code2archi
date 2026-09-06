@@ -8,10 +8,10 @@ import type { ArchiProfile } from "../../../../../archimate-model/profiles/profi
 import { RestApiContractProfile } from "../../../../../archimate-model/profiles/profile.js";
 import { AssignmentRelationship } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { HttpServerApiRecord } from "../../../../../discovery-model/entities/http-server-api.js";
-import type { HttpClientToServerApiLinkRecord } from "../../../../../discovery-model/links/http-client-to-server-api-link.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import type { DiscoveryEntityRecord } from "../../../../../code-inventory/entities/entity-types.js";
+import type { HttpServerApiRecord } from "../../../../../code-inventory/entities/http-server-api.js";
+import type { HttpClientToServerApiLinkRecord } from "../../../../../code-inventory/links/http-client-to-server-api-link.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
 import {
   dedupeAndSortFolderIntents,

@@ -6,7 +6,7 @@ import {
 } from "../../../platform/processors/processor.js";
 import { RepositoryBuilder } from "../../../utils/repository-builder.js";
 import { GitWorkingCopy } from "../../../utils/git-working-copy.js";
-import { Repository } from "../../../discovery-model/entities/repository.js";
+import { Repository } from "../../../code-inventory/entities/repository.js";
 
 export class GitRepositoriesProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id: ProcessorId = {

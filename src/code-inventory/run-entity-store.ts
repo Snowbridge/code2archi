@@ -8,8 +8,8 @@ import {
   computeRepositoryCommonRoot,
   computeRepositoryNamespace,
 } from "../scan/repository-discovery-root.js";
-import { buildDiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
-import type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
+import { buildCodeInventorySnapshot } from "./code-inventory-snapshot.js";
+import type { CodeInventorySnapshot } from "./code-inventory-snapshot.js";
 import type { CreateIntents, LinkCreateIntentRecord } from "./entities/create-intents.js";
 import type { CreateIntentRecord } from "./entities/create-intents.js";
 import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
@@ -22,7 +22,7 @@ import type { DiscoveryLinkRecord } from "./links/link-records.js";
 import type { LinkType } from "./links/link-types.js";
 import { LINK_TYPES } from "./links/link-types.js";
 
-export type { DiscoveryModelSnapshot } from "./discovery-model-snapshot.js";
+export type { CodeInventorySnapshot } from "./code-inventory-snapshot.js";
 
 export interface RunEntityStoreInit {
   readonly sourceDirs: readonly string[];
@@ -30,7 +30,7 @@ export interface RunEntityStoreInit {
   readonly runStartedAt: Date;
 }
 
-/** Mirror of documentation/specifications/discovery-model/entity-types.md */
+/** Mirror of documentation/specifications/code-inventory/entity-types.md */
 export const GROUP_ENTITY_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly EntityType[]>
 > = {
@@ -47,7 +47,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
   ],
 };
 
-/** Mirror of documentation/specifications/discovery-model/entity-types.md § link types */
+/** Mirror of documentation/specifications/code-inventory/entity-types.md § link types */
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
 > = {
@@ -235,8 +235,8 @@ export class RunEntityStore {
     }
   }
 
-  snapshot(): DiscoveryModelSnapshot {
-    return buildDiscoveryModelSnapshot({
+  snapshot(): CodeInventorySnapshot {
+    return buildCodeInventorySnapshot({
       scanId: this.scanId,
       sourceRoot: this.sourceRoot,
       sourceDirs: this.sourceDirs,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { HttpClientApiRecord } from "../../../../../src/discovery-model/entities/http-client-api.js";
-import type { HttpServerApiRecord } from "../../../../../src/discovery-model/entities/http-server-api.js";
+import type { HttpClientApiRecord } from "../../../../../src/code-inventory/entities/http-client-api.js";
+import type { HttpServerApiRecord } from "../../../../../src/code-inventory/entities/http-server-api.js";
 import {
   collectHttpClientToServerApiLinks,
   matchHttpClientServerApiLinkCandidates,

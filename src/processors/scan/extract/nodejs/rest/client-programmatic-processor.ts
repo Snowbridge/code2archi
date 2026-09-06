@@ -1,4 +1,4 @@
-import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
+import { HttpClientApi } from "../../../../../code-inventory/entities/http-client-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,

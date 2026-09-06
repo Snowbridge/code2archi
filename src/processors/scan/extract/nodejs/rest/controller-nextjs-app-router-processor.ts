@@ -1,4 +1,4 @@
-import { HttpServerApi } from "../../../../../discovery-model/entities/http-server-api.js";
+import { HttpServerApi } from "../../../../../code-inventory/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -9,7 +9,7 @@ import { extractNextJsAppRouterRoutes } from "../../../../../parsers/nodejs/next
 import { collectNodejsRouteFiles } from "../../../../../parsers/nodejs/nodejs-module-scan.js";
 import { resolveNpmNextJsAppRoot, toRepositoryRelativePath } from "../../../../../parsers/nodejs/nodejs-source-roots.js";
 import { parseScanNodejsFile } from "../../../../../platform/scan-io/index.js";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
 import { isEligibleNpmModule, resolveNpmPackageRoot } from "../../../../../parsers/nodejs/nodejs-source-roots.js";
 import { hasFrameworkPackage } from "../../../../../parsers/nodejs/package-json-framework-deps.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";

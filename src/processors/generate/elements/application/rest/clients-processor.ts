@@ -22,9 +22,9 @@ import {
   restClientRealizationRelationshipId,
   restClientServiceLogicalId,
 } from "../../../../../generate/rest-client-services.js";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { HttpClientApiRecord } from "../../../../../discovery-model/entities/http-client-api.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import type { DiscoveryEntityRecord } from "../../../../../code-inventory/entities/entity-types.js";
+import type { HttpClientApiRecord } from "../../../../../code-inventory/entities/http-client-api.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,

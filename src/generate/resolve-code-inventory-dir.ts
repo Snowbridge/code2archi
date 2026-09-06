@@ -5,7 +5,7 @@ import { ExitCode } from "../cli/exit-codes.js";
 
 const SCAN_DIR_PREFIX = "code2archi-scan-";
 
-export function resolveLatestDiscoveryModelDir(cwd: string = process.cwd()): string {
+export function resolveLatestCodeInventoryDir(cwd: string = process.cwd()): string {
   if (!existsSync(cwd)) {
     throw new CliError(`Working directory does not exist: ${cwd}`, ExitCode.ARGV);
   }
@@ -26,7 +26,7 @@ export function resolveLatestDiscoveryModelDir(cwd: string = process.cwd()): str
 
   if (candidates.length === 0) {
     throw new CliError(
-      `No discovery-model directory found in ${cwd} (expected ${SCAN_DIR_PREFIX}<timestamp>)`,
+      `No code-inventory directory found in ${cwd} (expected ${SCAN_DIR_PREFIX}<timestamp>)`,
       ExitCode.ARGV,
     );
   }

@@ -5,8 +5,8 @@ import { ArchiModelStore } from "../../../../../src/archimate-model/archi-model-
 import { ArchiFolderIds } from "../../../../../src/archimate-model/folders/archi-folder.js";
 import { Artifact } from "../../../../../src/archimate-model/elements/archi-element.js";
 import { GitRepoProfile } from "../../../../../src/archimate-model/profiles/profile.js";
-import { buildDiscoveryModelSnapshot } from "../../../../../src/discovery-model/discovery-model-snapshot.js";
-import { Repository } from "../../../../../src/discovery-model/entities/repository.js";
+import { buildCodeInventorySnapshot } from "../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { Repository } from "../../../../../src/code-inventory/entities/repository.js";
 import { packageVersion } from "../../../../../src/package-version.js";
 import {
   CODE_REPOSITORIES_FOLDER,
@@ -24,7 +24,7 @@ function repositoryRecord(
 }
 
 function discoverySnapshot(repositories: ReturnType<typeof repositoryRecord>[]) {
-  return buildDiscoveryModelSnapshot({
+  return buildCodeInventorySnapshot({
     scanId: "scan-1",
     sourceRoot: "/workspace",
     runStartedAt: new Date("2026-08-27T12:00:00.000Z"),

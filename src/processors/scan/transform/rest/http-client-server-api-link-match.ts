@@ -2,13 +2,13 @@ import {
   filterMeaningfulEndpoints,
   hasMeaningfulEndpoints,
 } from "../../../../generate/rest-infrastructure-endpoints.js";
-import type { HttpClientApiRecord } from "../../../../discovery-model/entities/http-client-api.js";
-import type { HttpServerApiRecord } from "../../../../discovery-model/entities/http-server-api.js";
-import { typeReferenceMatchKeys } from "../../../../discovery-model/entities/type-reference.js";
+import type { HttpClientApiRecord } from "../../../../code-inventory/entities/http-client-api.js";
+import type { HttpServerApiRecord } from "../../../../code-inventory/entities/http-server-api.js";
+import { typeReferenceMatchKeys } from "../../../../code-inventory/entities/type-reference.js";
 import {
   HttpClientToServerApiLink,
   type HttpClientToServerApiLinkMethod,
-} from "../../../../discovery-model/links/http-client-to-server-api-link.js";
+} from "../../../../code-inventory/links/http-client-to-server-api-link.js";
 
 export interface HttpClientServerApiLinkCandidate {
   readonly httpServerApiId: string;

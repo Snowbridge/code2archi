@@ -1,4 +1,4 @@
-import { HttpServerApi } from "../../../../../discovery-model/entities/http-server-api.js";
+import { HttpServerApi } from "../../../../../code-inventory/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,

@@ -1,6 +1,6 @@
 import path from "node:path";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import type { RepositoryRecord } from "../../../../../code-inventory/entities/repository.js";
 import type { ParsedFunctionalRouter } from "../../../../../parsers/nodejs/functional-router-extractor.js";
 import type { ParsedNestJsController } from "../../../../../parsers/nodejs/nestjs-controller-extractor.js";
 import type { ParsedNextJsRouteFile } from "../../../../../parsers/nodejs/nextjs-app-router-extractor.js";

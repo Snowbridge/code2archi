@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
+import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
 import { createMainThreadBridge } from "../../../src/platform/parallelism/main-thread-bridge.js";
 import { dispatchWorkerTask } from "../../../src/platform/parallelism/worker-dispatch.js";
 import {
@@ -66,7 +66,7 @@ describe("worker metrics bridge", () => {
 </project>`,
     );
 
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: root,
       sourceDirs: [root],
@@ -134,7 +134,7 @@ describe("worker metrics bridge", () => {
 
 describe("worker snapshot cache", () => {
   it("reuses deserialized snapshot for the same repository", () => {
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/src",
       sourceDirs: ["/src"],

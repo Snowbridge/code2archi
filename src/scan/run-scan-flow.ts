@@ -11,8 +11,8 @@ import {
 } from "../platform/processors/processor-registry.js";
 import { runCreateIntentProcessorGroup } from "../platform/processors/run-create-intent-processor-group.js";
 import { runScanScopeGroup } from "../platform/processors/run-scan-scope-group.js";
-import { DiscoveryModelWriter } from "../discovery-model/discovery-model-writer.js";
-import { RunEntityStore } from "../discovery-model/run-entity-store.js";
+import { CodeInventoryWriter } from "../code-inventory/code-inventory-writer.js";
+import { RunEntityStore } from "../code-inventory/run-entity-store.js";
 import {
   createFlowProgress,
   createFlowParallelContext,
@@ -88,7 +88,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
       { id: "1b", label: "Repository namespaces", initialTotal: 1 },
       processorGroupFlowStep("2", "Extract", sourceProcessorCount, 0),
       processorGroupFlowStep("3", "Transform", linkProcessorCount),
-      { id: "4", label: "Writing discovery-model", initialTotal: 1 },
+      { id: "4", label: "Writing code-inventory", initialTotal: 1 },
     ),
   });
 
@@ -161,10 +161,10 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     });
     logger.info("step completed", { step: 3 });
 
-    logger.info("step start", { step: 4, action: "writing discovery-model", outputDir: input.outputDir });
+    logger.info("step start", { step: 4, action: "writing code-inventory", outputDir: input.outputDir });
     activeStep = "4";
     await measureFlowStep("4", async () => {
-      new DiscoveryModelWriter().write({
+      new CodeInventoryWriter().write({
         outputDir: input.outputDir,
         store,
         scannedAt: new Date(),

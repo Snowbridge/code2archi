@@ -1,6 +1,6 @@
 import { SCAN_SCOPE_GROUP_ID } from "../../cli/processor-groups.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
-import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
+import type { RunEntityStore } from "../../code-inventory/run-entity-store.js";
 import { WORKER_HANDLER_SCAN_SCOPE_UNIT } from "../parallelism/worker-handler-id.js";
 import { buildScanScopeTasks } from "../parallelism/task-planner.js";
 import { isSupportedScanScopeUnitProcessor } from "../parallelism/handlers/scan-handlers.js";
@@ -11,7 +11,7 @@ import { processorRegistry } from "./processor-registry.js";
 import type { ScanScopeInput, ScanScopeOutput } from "./processor.js";
 import { getLogger } from "../logging/index.js";
 import { throwOnPoolErrors } from "./parallel-group-runner.js";
-import type { Repository } from "../../discovery-model/entities/repository.js";
+import type { Repository } from "../../code-inventory/entities/repository.js";
 
 export async function runScanScopeGroup(
   sourceDirs: readonly string[],

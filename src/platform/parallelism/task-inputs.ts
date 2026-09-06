@@ -1,4 +1,4 @@
-import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
+import type { CreateIntents } from "../../code-inventory/entities/create-intents.js";
 import type { ProcessorId } from "../processors/processor.js";
 import type {
   SerializableDiscoverySnapshot,

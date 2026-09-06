@@ -1,5 +1,5 @@
-import type { ApplicationModuleRecord } from "../../../discovery-model/entities/application-module.js";
-import type { RepositoryRecord } from "../../../discovery-model/entities/repository.js";
+import type { ApplicationModuleRecord } from "../../../code-inventory/entities/application-module.js";
+import type { RepositoryRecord } from "../../../code-inventory/entities/repository.js";
 import type { ParsedRestClient } from "../../../parsers/java/rest-client/rest-client-extractor.js";
 import type { ParsedProgrammaticRestClient } from "../../../parsers/java/rest-client/programmatic-http-client-extractor.js";
 import { toRepoRelativePath } from "../../../utils/repo-relative-path.js";

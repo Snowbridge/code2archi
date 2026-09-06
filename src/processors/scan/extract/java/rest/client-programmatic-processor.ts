@@ -1,5 +1,5 @@
-import { HttpClientApi } from "../../../../../discovery-model/entities/http-client-api.js";
-import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
+import { HttpClientApi } from "../../../../../code-inventory/entities/http-client-api.js";
+import type { RepositoryRecord } from "../../../../../code-inventory/entities/repository.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -17,7 +17,7 @@ import {
   type ModuleSourceContext,
   type SourceFileContext,
 } from "../../../../../parsers/rest-client-module-scan.js";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
 import { toProgrammaticRestClientEntity } from "../../rest-client-entity-mapper.js";
 
 export class JavaRestClientProgrammaticProcessor extends AbstractProcessor<ScanAppInput, ScanAppOutput> {

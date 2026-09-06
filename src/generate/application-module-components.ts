@@ -9,8 +9,8 @@ import {
 import type {
   ApplicationModuleRecord,
   BuildSystem,
-} from "../discovery-model/entities/application-module.js";
-import type { ApplicationModuleDependencyRecord } from "../discovery-model/entities/application-module-dependency.js";
+} from "../code-inventory/entities/application-module.js";
+import type { ApplicationModuleDependencyRecord } from "../code-inventory/entities/application-module-dependency.js";
 
 export const APPLICATION_MODULE_COMPONENT_ID_PREFIX = "appmodule:";
 

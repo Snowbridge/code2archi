@@ -7,13 +7,13 @@ import type { ArchiElementCreateIntent } from "../../archimate-model/elements/ar
 import type { ArchiFolder } from "../../archimate-model/folders/archi-folder.js";
 import type { ArchiProfileCreateIntent } from "../../archimate-model/profiles/profile.js";
 import type { ArchiRelationshipCreateIntent } from "../../archimate-model/relationships/archi-relationship.js";
-import { buildDiscoveryModelSnapshot } from "../../discovery-model/discovery-model-snapshot.js";
-import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
-import type { DiscoveryEntityRecord, EntityType } from "../../discovery-model/entities/entity-types.js";
-import { ENTITY_TYPES } from "../../discovery-model/entities/entity-types.js";
-import type { DiscoveryLinkRecord } from "../../discovery-model/links/link-records.js";
-import type { LinkType } from "../../discovery-model/links/link-types.js";
-import { LINK_TYPES } from "../../discovery-model/links/link-types.js";
+import { buildCodeInventorySnapshot } from "../../code-inventory/code-inventory-snapshot.js";
+import type { CodeInventorySnapshot } from "../../code-inventory/run-entity-store.js";
+import type { DiscoveryEntityRecord, EntityType } from "../../code-inventory/entities/entity-types.js";
+import { ENTITY_TYPES } from "../../code-inventory/entities/entity-types.js";
+import type { DiscoveryLinkRecord } from "../../code-inventory/links/link-records.js";
+import type { LinkType } from "../../code-inventory/links/link-types.js";
+import { LINK_TYPES } from "../../code-inventory/links/link-types.js";
 
 export interface SerializableDiscoverySnapshot {
   readonly scanId: string;
@@ -26,7 +26,7 @@ export interface SerializableDiscoverySnapshot {
 }
 
 export function serializeDiscoverySnapshot(
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
 ): SerializableDiscoverySnapshot {
   const entities: Partial<Record<EntityType, readonly DiscoveryEntityRecord[]>> = {};
   for (const entityType of ENTITY_TYPES) {
@@ -57,8 +57,8 @@ export function serializeDiscoverySnapshot(
 
 export function deserializeDiscoverySnapshot(
   data: SerializableDiscoverySnapshot,
-): DiscoveryModelSnapshot {
-  return buildDiscoveryModelSnapshot({
+): CodeInventorySnapshot {
+  return buildCodeInventorySnapshot({
     scanId: data.scanId,
     sourceRoot: data.sourceRoot,
     sourceDirs: data.sourceDirs,

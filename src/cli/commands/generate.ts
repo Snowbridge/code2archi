@@ -11,8 +11,8 @@ import { finalizeProfiling } from "../../platform/profiling/index.js";
 import { packageVersion } from "../../package-version.js";
 
 export const generateCommand: CommandModule = {
-  command: "generate <output-file> [discovery-model]",
-  describe: "Generate ArchiMate model from discovery-model",
+  command: "generate <output-file> [code-inventory]",
+  describe: "Generate ArchiMate model from code-inventory",
   builder: (yargs) =>
     yargs
       .positional("output-file", {
@@ -20,8 +20,8 @@ export const generateCommand: CommandModule = {
         type: "string",
         demandOption: true,
       })
-      .positional("discovery-model", {
-        describe: "Discovery-model directory (default: latest code2archi-scan-* in cwd)",
+      .positional("code-inventory", {
+        describe: "Code-inventory directory (default: latest code2archi-scan-* in cwd)",
         type: "string",
       })
       .option("force", {
@@ -41,13 +41,13 @@ export const generateCommand: CommandModule = {
     try {
       const generateArgs = validateGenerateArgs({
         outputFile: argv["output-file"] as string,
-        discoveryModelDir: argv["discovery-model"] as string | undefined,
+        codeInventoryDir: argv["code-inventory"] as string | undefined,
         force: argv.force as boolean,
         noDecorate: argv["no-decorate"] as boolean,
       });
       logger.info("command start", {
         outputFile: generateArgs.outputFile,
-        discoveryModelDir: generateArgs.discoveryModelDir,
+        codeInventoryDir: generateArgs.codeInventoryDir,
       });
       await runGenerateFlow(
         createRunGenerateFlowInput(generateArgs, globalArgv),

@@ -14,11 +14,11 @@ import {
   serializeDiscoverySnapshot,
   type SerializableDiscoverySnapshot,
 } from "./snapshot-serialization.js";
-import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
+import type { CodeInventorySnapshot } from "../../code-inventory/run-entity-store.js";
 
 export function buildScanSourceTasks(
   processors: readonly { readonly id: ProcessorId }[],
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
   progressStepId: string,
 ): ParallelTask<ScanProcessorTaskInput>[] {
   const repositories = snapshot.listEntities("Repository");
@@ -42,7 +42,7 @@ export function buildScanSourceTasks(
 
 export function buildScanRepositoryBatchTasks(
   processors: readonly { readonly id: ProcessorId }[],
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
   progressStepId: string,
   phaseScope: SnapshotRepositoryFilterScope,
   continueOnError: boolean,
@@ -63,7 +63,7 @@ export function buildScanRepositoryBatchTasks(
 
 export function buildScanLinkTasks(
   processors: readonly { readonly id: ProcessorId }[],
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
 ): ParallelTask<ScanProcessorTaskInput>[] {
   const serialized = serializeDiscoverySnapshot(snapshot);
 

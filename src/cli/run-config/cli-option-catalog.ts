@@ -25,7 +25,7 @@ const COMMAND_ALIASES: Record<string, RunConfigCommandName> = {
 
 const COMMAND_POSITIONALS: Record<RunConfigCommandName, readonly string[]> = {
   scan: ["source-dir"],
-  generate: ["output-file", "discovery-model"],
+  generate: ["output-file", "code-inventory"],
   list: ["group-pattern"],
 };
 

@@ -1,6 +1,6 @@
-import type { CreateIntents } from "../../../../discovery-model/entities/create-intents.js";
-import type { HttpClientApiRecord } from "../../../../discovery-model/entities/http-client-api.js";
-import type { HttpServerApiRecord } from "../../../../discovery-model/entities/http-server-api.js";
+import type { CreateIntents } from "../../../../code-inventory/entities/create-intents.js";
+import type { HttpClientApiRecord } from "../../../../code-inventory/entities/http-client-api.js";
+import type { HttpServerApiRecord } from "../../../../code-inventory/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type ProcessorId,

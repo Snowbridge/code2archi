@@ -1,8 +1,8 @@
 import path from "node:path";
 import { performance } from "node:perf_hooks";
-import type { CreateIntents } from "../../../discovery-model/entities/create-intents.js";
-import type { DiscoveryModelSnapshot } from "../../../discovery-model/run-entity-store.js";
-import type { Repository } from "../../../discovery-model/entities/repository.js";
+import type { CreateIntents } from "../../../code-inventory/entities/create-intents.js";
+import type { CodeInventorySnapshot } from "../../../code-inventory/run-entity-store.js";
+import type { Repository } from "../../../code-inventory/entities/repository.js";
 import { processorRegistry } from "../../processors/processor-registry.js";
 import type { ProcessorId, ScanAppInput, ScanScopeInput } from "../../processors/processor.js";
 import { runProcessorWithMetrics } from "../../profiling/flow-metrics.js";
@@ -61,7 +61,7 @@ function countCreateIntents(output: CreateIntents): number {
 }
 
 function withScanProgress(
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
   progress?: StepProgressHandle,
 ): ScanAppInput {
   if (!progress) {
@@ -81,7 +81,7 @@ function withScanProgress(
 
 function processScanProcessorOnSnapshot(
   processorId: ProcessorId,
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
   progress?: StepProgressHandle,
 ): CreateIntents {
   const processor = processorRegistry.get(processorId.groupId, processorId.artifactId);

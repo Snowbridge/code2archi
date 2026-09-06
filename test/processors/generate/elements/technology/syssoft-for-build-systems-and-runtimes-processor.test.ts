@@ -11,9 +11,9 @@ import {
   MavenModuleArtifactProfile,
   RunsOnProfile,
 } from "../../../../../src/archimate-model/profiles/profile.js";
-import { buildDiscoveryModelSnapshot } from "../../../../../src/discovery-model/discovery-model-snapshot.js";
-import { ApplicationModule } from "../../../../../src/discovery-model/entities/application-module.js";
-import { Repository } from "../../../../../src/discovery-model/entities/repository.js";
+import { buildCodeInventorySnapshot } from "../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { ApplicationModule } from "../../../../../src/code-inventory/entities/application-module.js";
+import { Repository } from "../../../../../src/code-inventory/entities/repository.js";
 import { packageVersion } from "../../../../../src/package-version.js";
 import { UNKNOWN_VERSION } from "../../../../../src/parsers/build-tool-versions.js";
 import { CODE_REPOSITORIES_FOLDER } from "../../../../../src/processors/generate/elements/technology/code-repositories-processor.js";
@@ -48,7 +48,7 @@ function discoverySnapshot(
   repositories: ReturnType<typeof repositoryRecord>[],
   modules: ReturnType<typeof moduleRecord>[],
 ) {
-  return buildDiscoveryModelSnapshot({
+  return buildCodeInventorySnapshot({
     scanId: "scan-1",
     sourceRoot: "/workspace",
     runStartedAt: new Date("2026-08-27T12:00:00.000Z"),

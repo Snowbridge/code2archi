@@ -6,9 +6,9 @@ import {
   MavenModuleProfile,
   ProcessesRestRequestsProfile,
 } from "../../../../../../src/archimate-model/profiles/profile.js";
-import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
-import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { HttpClientToServerApiLink } from "../../../../../../src/discovery-model/links/http-client-to-server-api-link.js";
+import { buildCodeInventorySnapshot } from "../../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { ApplicationModule } from "../../../../../../src/code-inventory/entities/application-module.js";
+import { HttpClientToServerApiLink } from "../../../../../../src/code-inventory/links/http-client-to-server-api-link.js";
 import { applicationComponentIdForModule } from "../../../../../../src/generate/application-module-components.js";
 import {
   directRestServingLogicalId,
@@ -99,7 +99,7 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       matchedValues: ["com.example.FooDto"],
     }).toCreateIntent();
 
-    const discovery = buildDiscoveryModelSnapshot({
+    const discovery = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/workspace",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
@@ -179,7 +179,7 @@ describe("DirectRestRequestsServingProcessor (generate)", () => {
       confidence: 1,
     }).toCreateIntent();
 
-    const discovery = buildDiscoveryModelSnapshot({
+    const discovery = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/workspace",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),

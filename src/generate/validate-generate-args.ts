@@ -3,11 +3,11 @@ import path from "node:path";
 import { CliError } from "../cli/cli-error.js";
 import { ExitCode } from "../cli/exit-codes.js";
 import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
-import { resolveLatestDiscoveryModelDir } from "./resolve-discovery-model-dir.js";
+import { resolveLatestCodeInventoryDir } from "./resolve-code-inventory-dir.js";
 
 export interface GenerateArgs {
   outputFile: string;
-  discoveryModelDir: string;
+  codeInventoryDir: string;
   force: boolean;
   noDecorate: boolean;
   modelName: string;
@@ -16,7 +16,7 @@ export interface GenerateArgs {
 
 export interface ValidateGenerateArgsInput {
   outputFile: string;
-  discoveryModelDir?: string;
+  codeInventoryDir?: string;
   force: boolean;
   noDecorate: boolean;
 }
@@ -29,34 +29,34 @@ export function validateGenerateArgs(input: ValidateGenerateArgsInput): Generate
   const outputFile = ensureArchimateExtension(path.resolve(input.outputFile));
   prepareOutputFile(outputFile, input.force);
 
-  const discoveryModelDir = input.discoveryModelDir
-    ? path.resolve(input.discoveryModelDir)
-    : resolveLatestDiscoveryModelDir();
+  const codeInventoryDir = input.codeInventoryDir
+    ? path.resolve(input.codeInventoryDir)
+    : resolveLatestCodeInventoryDir();
 
-  if (!existsSync(discoveryModelDir)) {
+  if (!existsSync(codeInventoryDir)) {
     throw new CliError(
-      `Discovery-model directory does not exist: ${discoveryModelDir}`,
+      `Discovery-model directory does not exist: ${codeInventoryDir}`,
       ExitCode.ARGV,
     );
   }
 
-  if (!statSync(discoveryModelDir).isDirectory()) {
+  if (!statSync(codeInventoryDir).isDirectory()) {
     throw new CliError(
-      `Discovery-model path is not a directory: ${discoveryModelDir}`,
+      `Discovery-model path is not a directory: ${codeInventoryDir}`,
       ExitCode.ARGV,
     );
   }
 
-  if (!existsSync(path.join(discoveryModelDir, "manifest.json"))) {
+  if (!existsSync(path.join(codeInventoryDir, "manifest.json"))) {
     throw new CliError(
-      `Discovery-model manifest not found in: ${discoveryModelDir}`,
+      `Discovery-model manifest not found in: ${codeInventoryDir}`,
       ExitCode.ARGV,
     );
   }
 
   return {
     outputFile,
-    discoveryModelDir,
+    codeInventoryDir,
     force: input.force,
     noDecorate: input.noDecorate,
     modelName: path.basename(outputFile, ".archimate"),

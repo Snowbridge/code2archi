@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildDiscoveryModelSnapshot } from "../../../../../src/discovery-model/discovery-model-snapshot.js";
-import { ApplicationModule } from "../../../../../src/discovery-model/entities/application-module.js";
-import { HttpClientApi } from "../../../../../src/discovery-model/entities/http-client-api.js";
-import { HttpServerApi } from "../../../../../src/discovery-model/entities/http-server-api.js";
-import { toTypeReferenceFromQualifiedName } from "../../../../../src/discovery-model/entities/type-reference.js";
+import { buildCodeInventorySnapshot } from "../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { ApplicationModule } from "../../../../../src/code-inventory/entities/application-module.js";
+import { HttpClientApi } from "../../../../../src/code-inventory/entities/http-client-api.js";
+import { HttpServerApi } from "../../../../../src/code-inventory/entities/http-server-api.js";
+import { toTypeReferenceFromQualifiedName } from "../../../../../src/code-inventory/entities/type-reference.js";
 import { ClientsToControllersLinksProcessor } from "../../../../../src/processors/scan/transform/rest/clients-to-controllers-links-processor.js";
 
 describe("ClientsToControllersLinksProcessor (scan)", () => {
@@ -62,7 +62,7 @@ describe("ClientsToControllersLinksProcessor (scan)", () => {
       sourceFile: "LotsClient.java",
     }).toCreateIntent();
 
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/workspace",
       runStartedAt: new Date("2026-08-27T12:00:00.000Z"),

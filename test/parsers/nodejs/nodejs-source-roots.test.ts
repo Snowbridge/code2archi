@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { ApplicationModule } from "../../../src/discovery-model/entities/application-module.js";
-import { Repository } from "../../../src/discovery-model/entities/repository.js";
+import { ApplicationModule } from "../../../src/code-inventory/entities/application-module.js";
+import { Repository } from "../../../src/code-inventory/entities/repository.js";
 import { isEligibleNpmModule } from "../../../src/parsers/nodejs/nodejs-source-roots.js";
 import {
   hasFrameworkPackage,

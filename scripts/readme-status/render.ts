@@ -153,7 +153,7 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
     lines.push(`| \`${command}\` | ${commandStatusLabel(status, command)} |`);
   }
 
-  lines.push("", "### `scan` — discovery-model", "", "Built-in processors discover:", "");
+  lines.push("", "### `scan` — code-inventory", "", "Built-in processors discover:", "");
 
   if (scopeProcessors.length > 0) {
     const scopeNames = scopeProcessors.map((processor) => `\`${processor.artifactId}\``).join(", ");
@@ -196,7 +196,7 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
     "",
     "### `generate` — ArchiMate model",
     "",
-    "From discovery-model, built-in processors currently materialise these **element slots** (see [generated-element-slots](../documentation/specifications/archimate-model/generated-element-slots.md)):",
+    "From code-inventory, built-in processors currently materialise these **element slots** (see [generated-element-slots](../documentation/specifications/archimate-model/generated-element-slots.md)):",
     "",
   );
 

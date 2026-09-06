@@ -1,4 +1,4 @@
-import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
+import type { CodeInventorySnapshot } from "../../code-inventory/run-entity-store.js";
 import {
   deserializeDiscoverySnapshot,
   filterSerializableDiscoverySnapshotToRepository,
@@ -6,13 +6,13 @@ import {
 } from "./snapshot-serialization.js";
 import { getWorkerPhase } from "./worker-phase-context.js";
 
-const cache = new Map<string, DiscoveryModelSnapshot>();
+const cache = new Map<string, CodeInventorySnapshot>();
 
 function cacheKey(repositoryId: string, scope: SnapshotRepositoryFilterScope): string {
   return `${repositoryId}:${scope}`;
 }
 
-export function getOrBuildRepositorySnapshot(repositoryId: string): DiscoveryModelSnapshot {
+export function getOrBuildRepositorySnapshot(repositoryId: string): CodeInventorySnapshot {
   const phase = getWorkerPhase();
   const key = cacheKey(repositoryId, phase.snapshotFilterScope);
   const cached = cache.get(key);

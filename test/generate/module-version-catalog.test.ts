@@ -10,7 +10,7 @@ import {
   systemSoftwareStableKey,
 } from "../../src/generate/module-version-catalog.js";
 import { UNKNOWN_VERSION } from "../../src/parsers/build-tool-versions.js";
-import type { DiscoveryEntityRecord } from "../../src/discovery-model/entities/entity-types.js";
+import type { DiscoveryEntityRecord } from "../../src/code-inventory/entities/entity-types.js";
 
 function eligibilityRecord(
   fields: Record<string, unknown>,

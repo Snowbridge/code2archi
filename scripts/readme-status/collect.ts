@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ENTITY_TYPES } from "../../src/discovery-model/entities/entity-types.js";
+import { ENTITY_TYPES } from "../../src/code-inventory/entities/entity-types.js";
 import { processorRegistry } from "../../src/platform/processors/processor-registry.js";
 import "../../src/platform/processors/builtin-processors.js";
 import { ELEMENT_SLOT_EN_LABELS } from "./element-slot-labels.js";

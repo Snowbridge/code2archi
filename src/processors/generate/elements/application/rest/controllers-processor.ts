@@ -22,9 +22,9 @@ import {
   restControllerRealizationRelationshipId,
   restControllerServiceLogicalId,
 } from "../../../../../generate/rest-controller-services.js";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import type { DiscoveryEntityRecord } from "../../../../../discovery-model/entities/entity-types.js";
-import type { HttpServerApiRecord } from "../../../../../discovery-model/entities/http-server-api.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import type { DiscoveryEntityRecord } from "../../../../../code-inventory/entities/entity-types.js";
+import type { HttpServerApiRecord } from "../../../../../code-inventory/entities/http-server-api.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,

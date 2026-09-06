@@ -1,4 +1,4 @@
-import type { RepositoryRecord } from "../../discovery-model/entities/repository.js";
+import type { RepositoryRecord } from "../../code-inventory/entities/repository.js";
 import type { ScanAppInput } from "../processors/processor.js";
 
 export function forEachRepository(

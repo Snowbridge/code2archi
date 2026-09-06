@@ -1,6 +1,6 @@
 import type { ArchiProperty } from "../archimate-model/elements/archi-element.js";
 import type { ArchiElementCreateIntent } from "../archimate-model/elements/archi-element.js";
-import type { DiscoveryEntityRecord, EntityType } from "../discovery-model/entities/entity-types.js";
+import type { DiscoveryEntityRecord, EntityType } from "../code-inventory/entities/entity-types.js";
 import { isDebugEnabled } from "../platform/logging/index.js";
 
 export interface EntityDebugSource {

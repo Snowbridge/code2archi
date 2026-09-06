@@ -8,7 +8,7 @@ import {
   APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   APPLICATION_MODULE_SCHEMA_ID,
   REPOSITORY_SCHEMA_ID,
-} from "../../src/discovery-model/discovery-model-writer.js";
+} from "../../src/code-inventory/code-inventory-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { runScanFlow } from "../../src/scan/run-scan-flow.js";
 import { finalizeProfiling, initProfiling } from "../../src/platform/profiling/index.js";
@@ -21,7 +21,7 @@ function createGitRepo(dir: string): void {
 }
 
 describe("runScanFlow", async () => {
-  it("writes discovery-model after scan.scope", async () => {
+  it("writes code-inventory after scan.scope", async () => {
     const root = createTestTempDir("c2a-scan-flow-");
     const sourceDir = path.join(root, "src");
     const outputDir = path.join(root, "out");

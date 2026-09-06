@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ApplicationModule } from "../../src/discovery-model/entities/application-module.js";
-import { ApplicationModuleDependency } from "../../src/discovery-model/entities/application-module-dependency.js";
+import { ApplicationModule } from "../../src/code-inventory/entities/application-module.js";
+import { ApplicationModuleDependency } from "../../src/code-inventory/entities/application-module-dependency.js";
 import {
   applicationComponentIdForModule,
   buildModulesByCoordinates,

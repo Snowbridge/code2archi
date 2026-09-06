@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
-import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
+import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
+import { RunEntityStore } from "../../../src/code-inventory/run-entity-store.js";
 import {
   collectRepositoryBatchProcessorErrors,
   mergeRepositoryBatchResults,
@@ -12,7 +12,7 @@ import { formatProcessorTaskKey } from "../../../src/platform/parallelism/task-i
 describe("mergeRepositoryBatchResults", () => {
   it("routes batch outputs to the correct processor in the store", () => {
     const store = new RunEntityStore(
-      buildDiscoveryModelSnapshot({
+      buildCodeInventorySnapshot({
         scanId: "scan-1",
         sourceRoot: "/src",
         sourceDirs: ["/src"],

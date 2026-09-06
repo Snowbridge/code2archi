@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { archiModelDomOutputPath } from "../../src/archimate-model/archi-model-dom-writer.js";
-import { Repository } from "../../src/discovery-model/entities/repository.js";
-import { REPOSITORY_SCHEMA_ID } from "../../src/discovery-model/discovery-model-writer.js";
+import { Repository } from "../../src/code-inventory/entities/repository.js";
+import { REPOSITORY_SCHEMA_ID } from "../../src/code-inventory/code-inventory-writer.js";
 import { runGenerateFlow } from "../../src/generate/run-generate-flow.js";
 import { validateGenerateArgs } from "../../src/generate/validate-generate-args.js";
 import type { GlobalArgv } from "../../src/cli/processor-groups.js";
@@ -70,7 +70,7 @@ function writeDiscoveryManifest(
 }
 
 describe("runGenerateFlow", async () => {
-  it("writes bootstrap archimate model from discovery-model", async () => {
+  it("writes bootstrap archimate model from code-inventory", async () => {
     const tempDir = createTestTempDir("c2a-generate-flow-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir, { recursive: true });
@@ -82,7 +82,7 @@ describe("runGenerateFlow", async () => {
     try {
       const generateArgs = validateGenerateArgs({
         outputFile,
-        discoveryModelDir: discoveryDir,
+        codeInventoryDir: discoveryDir,
         ...defaultValidateArgs,
       });
 
@@ -121,7 +121,7 @@ describe("runGenerateFlow", async () => {
     try {
       const generateArgs = validateGenerateArgs({
         outputFile,
-        discoveryModelDir: discoveryDir,
+        codeInventoryDir: discoveryDir,
         ...defaultValidateArgs,
       });
 
@@ -153,7 +153,7 @@ describe("runGenerateFlow", async () => {
     assert.ok(Array.isArray(dom.relations));
   });
 
-  it("writes repository artifacts from discovery-model repositories", async () => {
+  it("writes repository artifacts from code-inventory repositories", async () => {
     const tempDir = createTestTempDir("c2a-generate-flow-repos-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir, { recursive: true });
@@ -177,7 +177,7 @@ describe("runGenerateFlow", async () => {
     try {
       const generateArgs = validateGenerateArgs({
         outputFile,
-        discoveryModelDir: discoveryDir,
+        codeInventoryDir: discoveryDir,
         ...defaultValidateArgs,
       });
 
@@ -227,7 +227,7 @@ describe("runGenerateFlow", async () => {
     try {
       const generateArgs = validateGenerateArgs({
         outputFile,
-        discoveryModelDir: discoveryDir,
+        codeInventoryDir: discoveryDir,
         force: false,
         noDecorate: true,
       });

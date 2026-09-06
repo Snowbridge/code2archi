@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { DiscoveryModelReader } from "../../src/discovery-model/discovery-model-reader.js";
+import { CodeInventoryReader } from "../../src/code-inventory/code-inventory-reader.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
-describe("DiscoveryModelReader", () => {
+describe("CodeInventoryReader", () => {
   it("loads manifest and entity collections", () => {
     const tempDir = createTestTempDir("c2a-discovery-reader-");
     writeFileSync(
@@ -48,7 +48,7 @@ describe("DiscoveryModelReader", () => {
       "utf8",
     );
 
-    const snapshot = new DiscoveryModelReader().read(tempDir);
+    const snapshot = new CodeInventoryReader().read(tempDir);
 
     assert.equal(snapshot.scanId, "scan-1");
     assert.equal(snapshot.sourceRoot, "/repo");
@@ -123,7 +123,7 @@ describe("DiscoveryModelReader", () => {
       "utf8",
     );
 
-    const snapshot = new DiscoveryModelReader().read(tempDir);
+    const snapshot = new CodeInventoryReader().read(tempDir);
 
     assert.deepEqual(
       snapshot.listEntitiesByRef("ApplicationModuleDependency", "parentId", "module-a").map(
@@ -141,6 +141,6 @@ describe("DiscoveryModelReader", () => {
 
   it("throws when manifest is missing", () => {
     const tempDir = createTestTempDir("c2a-discovery-reader-missing-");
-    assert.throws(() => new DiscoveryModelReader().read(tempDir), /manifest not found/);
+    assert.throws(() => new CodeInventoryReader().read(tempDir), /manifest not found/);
   });
 });

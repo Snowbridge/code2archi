@@ -12,7 +12,7 @@ import { runGenerateProcessorGroup } from "../platform/processors/run-generate-p
 import { ArchiModelStore } from "../archimate-model/archi-model-store.js";
 import { ArchiModelWriter } from "../archimate-model/archi-model-writer.js";
 import { ArchiModelDomWriter } from "../archimate-model/archi-model-dom-writer.js";
-import { DiscoveryModelReader } from "../discovery-model/discovery-model-reader.js";
+import { CodeInventoryReader } from "../code-inventory/code-inventory-reader.js";
 import {
   createFlowProgress,
   createFlowParallelContext,
@@ -52,7 +52,7 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
   const logger = getLogger("generate.flow");
   logger.info("flow start", {
     outputFile: input.outputFile,
-    discoveryModelDir: input.discoveryModelDir,
+    codeInventoryDir: input.codeInventoryDir,
     threads: input.parallelism.threads,
     sync: input.parallelism.sync,
     continueOnError: input.parallelism.continueOnError,
@@ -85,7 +85,7 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
 
   let activeStep = "1";
 
-  const discovery = new DiscoveryModelReader().read(input.discoveryModelDir);
+  const discovery = new CodeInventoryReader().read(input.codeInventoryDir);
   const archiStore = new ArchiModelStore({
     modelName: input.modelName,
     modelId: input.modelId,

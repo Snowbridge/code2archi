@@ -7,12 +7,12 @@ import { ExitCode } from "../../src/cli/exit-codes.js";
 import {
   parseRunTimestamp,
   parseScanDirTimestamp,
-  resolveLatestDiscoveryModelDir,
-} from "../../src/generate/resolve-discovery-model-dir.js";
+  resolveLatestCodeInventoryDir,
+} from "../../src/generate/resolve-code-inventory-dir.js";
 import { formatRunTimestamp } from "../../src/platform/timestamp.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
-describe("resolveLatestDiscoveryModelDir", () => {
+describe("resolveLatestCodeInventoryDir", () => {
   it("selects the newest code2archi-scan-* directory", () => {
     const tempDir = createTestTempDir("c2a-resolve-discovery-");
     const olderTimestamp = "2026-08-30T10-00-00.0000+0300";
@@ -20,15 +20,15 @@ describe("resolveLatestDiscoveryModelDir", () => {
     mkdirSync(path.join(tempDir, `code2archi-scan-${olderTimestamp}`));
     mkdirSync(path.join(tempDir, `code2archi-scan-${newerTimestamp}`));
 
-    const resolved = resolveLatestDiscoveryModelDir(tempDir);
+    const resolved = resolveLatestCodeInventoryDir(tempDir);
 
     assert.equal(resolved, path.join(tempDir, `code2archi-scan-${newerTimestamp}`));
   });
 
-  it("throws when no discovery-model directories exist", () => {
+  it("throws when no code-inventory directories exist", () => {
     const tempDir = createTestTempDir("c2a-resolve-discovery-empty-");
     assert.throws(
-      () => resolveLatestDiscoveryModelDir(tempDir),
+      () => resolveLatestCodeInventoryDir(tempDir),
       (error: unknown) => {
         assert.ok(error instanceof CliError);
         assert.equal(error.exitCode, ExitCode.ARGV);

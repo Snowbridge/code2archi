@@ -39,9 +39,9 @@ import {
 import { withEntityDebugProperties } from "../../../../generate/generate-debug.js";
 import { decorateElementName } from "../../../../generate/element-name-decoration.js";
 import { isEligibleApplicationModule } from "../../../../generate/module-version-catalog.js";
-import type { ApplicationModuleRecord } from "../../../../discovery-model/entities/application-module.js";
-import type { ApplicationModuleDependencyRecord } from "../../../../discovery-model/entities/application-module-dependency.js";
-import type { DiscoveryEntityRecord } from "../../../../discovery-model/entities/entity-types.js";
+import type { ApplicationModuleRecord } from "../../../../code-inventory/entities/application-module.js";
+import type { ApplicationModuleDependencyRecord } from "../../../../code-inventory/entities/application-module-dependency.js";
+import type { DiscoveryEntityRecord } from "../../../../code-inventory/entities/entity-types.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,

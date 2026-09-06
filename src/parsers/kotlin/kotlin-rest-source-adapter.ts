@@ -12,6 +12,7 @@ function adaptMethod(method: KotlinTypeDeclaration["methods"][number]): JavaMeth
       annotations: parameter.annotations,
     })),
     annotations: method.annotations,
+    visibility: method.visibility === "public" ? "public" : "private",
     isSuspend: method.isSuspend,
   };
 }

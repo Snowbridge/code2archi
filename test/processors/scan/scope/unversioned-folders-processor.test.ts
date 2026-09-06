@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { UnversionedFoldersProcessor } from "../../../../src/processors/scan/scope/unversioned-folders-processor.js";
-import { Repository } from "../../../../src/discovery-model/entities/repository.js";
+import { Repository } from "../../../../src/code-inventory/entities/repository.js";
 import { createTestTempDir } from "../../../test-temp-dir.js";
 
 describe("UnversionedFoldersProcessor", () => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildDiscoveryModelSnapshot } from "../../src/discovery-model/discovery-model-snapshot.js";
-import type { DiscoveryEntityRecord } from "../../src/discovery-model/entities/entity-types.js";
+import { buildCodeInventorySnapshot } from "../../src/code-inventory/code-inventory-snapshot.js";
+import type { DiscoveryEntityRecord } from "../../src/code-inventory/entities/entity-types.js";
 
 const RUN_STARTED_AT = new Date("2026-08-30T12:00:00.000Z");
 
@@ -14,16 +14,16 @@ function baseInit(
     runStartedAt: RUN_STARTED_AT,
     entityArrays: entityArrays as Partial<
       Record<
-        import("../../src/discovery-model/entities/entity-types.js").EntityType,
+        import("../../src/code-inventory/entities/entity-types.js").EntityType,
         readonly DiscoveryEntityRecord[]
       >
     >,
   };
 }
 
-describe("buildDiscoveryModelSnapshot", () => {
+describe("buildCodeInventorySnapshot", () => {
   it("builds id and ref indexes from entity arrays", () => {
-    const snapshot = buildDiscoveryModelSnapshot(
+    const snapshot = buildCodeInventorySnapshot(
       baseInit({
         Repository: [{ id: "repo-1", name: "repo" }],
         ApplicationModule: [
@@ -81,7 +81,7 @@ describe("buildDiscoveryModelSnapshot", () => {
       ["repo-1", { id: "repo-1", name: "repo" }],
     ]);
 
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/repo",
       runStartedAt: RUN_STARTED_AT,
@@ -93,7 +93,7 @@ describe("buildDiscoveryModelSnapshot", () => {
   });
 
   it("returns empty arrays for unknown ref fields and unindexed entity types", () => {
-    const snapshot = buildDiscoveryModelSnapshot(
+    const snapshot = buildCodeInventorySnapshot(
       baseInit({
         Repository: [{ id: "repo-1", name: "repo" }],
       }),
@@ -107,7 +107,7 @@ describe("buildDiscoveryModelSnapshot", () => {
   });
 
   it("omits optional ref field values from the index", () => {
-    const snapshot = buildDiscoveryModelSnapshot(
+    const snapshot = buildCodeInventorySnapshot(
       baseInit({
         ApplicationModule: [
           {
@@ -123,7 +123,7 @@ describe("buildDiscoveryModelSnapshot", () => {
   });
 
   it("returns a deep-frozen snapshot", () => {
-    const snapshot = buildDiscoveryModelSnapshot(
+    const snapshot = buildCodeInventorySnapshot(
       baseInit({
         Repository: [{ id: "repo-1", name: "repo" }],
       }),
@@ -137,7 +137,7 @@ describe("buildDiscoveryModelSnapshot", () => {
   it("requires entityMaps or entityArrays", () => {
     assert.throws(
       () =>
-        buildDiscoveryModelSnapshot({
+        buildCodeInventorySnapshot({
           scanId: "scan-1",
           sourceRoot: "/repo",
           runStartedAt: RUN_STARTED_AT,

@@ -5,8 +5,8 @@ import {
   GROUP_ENTITY_ALLOWLIST,
   GROUP_LINK_ALLOWLIST,
   RunEntityStore,
-} from "../../src/discovery-model/run-entity-store.js";
-import { HttpClientToServerApiLink } from "../../src/discovery-model/links/http-client-to-server-api-link.js";
+} from "../../src/code-inventory/run-entity-store.js";
+import { HttpClientToServerApiLink } from "../../src/code-inventory/links/http-client-to-server-api-link.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 

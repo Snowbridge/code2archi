@@ -3,10 +3,10 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { RunEntityStore } from "../../../../../../src/discovery-model/run-entity-store.js";
+import { ApplicationModule } from "../../../../../../src/code-inventory/entities/application-module.js";
+import { RunEntityStore } from "../../../../../../src/code-inventory/run-entity-store.js";
 import { JavaRestControllerAnnotationBasedProcessor } from "../../../../../../src/processors/scan/extract/java/rest/controller-annotation-based-processor.js";
-import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
+import { Repository } from "../../../../../../src/code-inventory/entities/repository.js";
 import { UNKNOWN_VERSION } from "../../../../../../src/parsers/build-tool-versions.js";
 import { createTestTempDir } from "../../../../../test-temp-dir.js";
 

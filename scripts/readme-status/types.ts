@@ -1,4 +1,4 @@
-import type { EntityType } from "../../src/discovery-model/entities/entity-types.js";
+import type { EntityType } from "../../src/code-inventory/entities/entity-types.js";
 
 export interface ProcessorInfo {
   readonly coordinate: string;

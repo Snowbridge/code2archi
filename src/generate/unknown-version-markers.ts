@@ -1,4 +1,4 @@
-import type { BuildSystem } from "../discovery-model/entities/application-module.js";
+import type { BuildSystem } from "../code-inventory/entities/application-module.js";
 import {
   MODULE_VERSION_FIELDS,
   UNKNOWN_VERSION,

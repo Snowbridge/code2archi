@@ -1,7 +1,7 @@
 import { SCAN_EXTRACT_GROUP_ID, type BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
-import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
-import type { DiscoveryModelSnapshot, RunEntityStore } from "../../discovery-model/run-entity-store.js";
+import type { CreateIntents } from "../../code-inventory/entities/create-intents.js";
+import type { CodeInventorySnapshot, RunEntityStore } from "../../code-inventory/run-entity-store.js";
 import type { MainThreadBridge } from "../parallelism/main-thread-bridge.js";
 import { resetScanIoCache } from "../scan-io/index.js";
 import {
@@ -193,7 +193,7 @@ async function runParallelScanSourceGroup(
 
 async function runParallelScanLinkGroup(
   processors: ReturnType<typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>>,
-  snapshot: DiscoveryModelSnapshot,
+  snapshot: CodeInventorySnapshot,
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progress?: StepProgressHandle,

@@ -17,7 +17,7 @@ import {
 
 export const scanCommand: CommandModule = {
   command: "scan <source-dir..>",
-  describe: "Scan source repositories and produce discovery-model",
+  describe: "Scan source repositories and produce code-inventory",
   builder: (yargs) =>
     yargs
       .positional("source-dir", {
@@ -29,7 +29,7 @@ export const scanCommand: CommandModule = {
       })
       .option("output", {
         type: "string",
-        describe: "Output directory for discovery-model",
+        describe: "Output directory for code-inventory",
       })
       .option("force", {
         type: "boolean",

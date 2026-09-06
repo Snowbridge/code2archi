@@ -1,10 +1,10 @@
-import type { ConcurrencyModel } from "../../../discovery-model/entities/http-api-concurrency-model.js";
-import { HttpClientApi } from "../../../discovery-model/entities/http-client-api.js";
-import { HttpServerApi } from "../../../discovery-model/entities/http-server-api.js";
+import type { ConcurrencyModel } from "../../../code-inventory/entities/http-api-concurrency-model.js";
+import { HttpClientApi } from "../../../code-inventory/entities/http-client-api.js";
+import { HttpServerApi } from "../../../code-inventory/entities/http-server-api.js";
 import {
   toTypeReferencesFromQualifiedNames,
   toTypeReferencesFromSimpleNames,
-} from "../../../discovery-model/entities/type-reference.js";
+} from "../../../code-inventory/entities/type-reference.js";
 
 export interface HttpServerApiMappingInput {
   readonly applicationModuleId: string;

@@ -1,6 +1,6 @@
-export type { ConcurrencyModel, TcpStackType } from "../../../discovery-model/entities/http-api-concurrency-model.js";
+export type { ConcurrencyModel, TcpStackType } from "../../../code-inventory/entities/http-api-concurrency-model.js";
 
-import type { ConcurrencyModel } from "../../../discovery-model/entities/http-api-concurrency-model.js";
+import type { ConcurrencyModel } from "../../../code-inventory/entities/http-api-concurrency-model.js";
 import type { JavaMethodDeclaration, JavaTypeRef } from "../java-ast-model.js";
 
 const NON_BLOCKING_RETURN_TYPES = new Set(["Mono", "Flux", "Uni", "Multi"]);

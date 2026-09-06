@@ -1,8 +1,8 @@
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelSnapshot } from "../../archimate-model/archi-model-store.js";
-import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
-import type { Repository } from "../../discovery-model/entities/repository.js";
-import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
+import type { CreateIntents } from "../../code-inventory/entities/create-intents.js";
+import type { Repository } from "../../code-inventory/entities/repository.js";
+import type { CodeInventorySnapshot } from "../../code-inventory/run-entity-store.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
 import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
 
@@ -23,7 +23,7 @@ export type ScanScopeInput = {
 };
 export type ScanScopeOutput = readonly Repository[];
 
-export type ScanAppInput = DiscoveryModelSnapshot & {
+export type ScanAppInput = CodeInventorySnapshot & {
   readonly progress?: StepProgressHandle;
 };
 export type ScanAppOutput = CreateIntents;
@@ -33,7 +33,7 @@ export interface GenerateOptions {
 }
 
 export interface GenerateProcessorInput {
-  readonly discovery: DiscoveryModelSnapshot;
+  readonly discovery: CodeInventorySnapshot;
   readonly archi: ArchiModelSnapshot;
   readonly options: GenerateOptions;
 }
@@ -43,7 +43,7 @@ export type GenerateProcessorOutput = ArchiCreateIntents;
 /**
  * Base class for processor implementations.
  *
- * Processors that emit discovery-model entities or links must follow create-only
+ * Processors that emit code-inventory entities or links must follow create-only
  * semantics: only new records (create-intents), no updates to existing records.
  * After acceptance into the run entity store, records are immutable for the run.
  * Duplicate `id` on create is a runtime error. See ADR-26082702 and ADR-26083001.

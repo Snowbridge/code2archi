@@ -2,7 +2,7 @@ import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
 import type { ArchiCreateIntents } from "../../archimate-model/archi-create-intents.js";
 import type { ArchiModelStore } from "../../archimate-model/archi-model-store.js";
-import type { DiscoveryModelSnapshot } from "../../discovery-model/run-entity-store.js";
+import type { CodeInventorySnapshot } from "../../code-inventory/run-entity-store.js";
 import { WORKER_HANDLER_GENERATE_PROCESSOR } from "../parallelism/worker-handler-id.js";
 import {
   buildGenerateProcessorTasks,
@@ -28,7 +28,7 @@ function countArchiCreateIntents(output: ArchiCreateIntents): number {
 
 export async function runGenerateProcessorGroup(
   builtInGroupId: BuiltInProcessorGroupId,
-  discovery: DiscoveryModelSnapshot,
+  discovery: CodeInventorySnapshot,
   archiStore: ArchiModelStore,
   filters: ProcessorFilters,
   options: GenerateOptions,

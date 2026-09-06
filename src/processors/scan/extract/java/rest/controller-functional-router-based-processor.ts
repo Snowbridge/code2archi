@@ -1,6 +1,6 @@
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import { HttpServerApi } from "../../../../../discovery-model/entities/http-server-api.js";
-import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import { HttpServerApi } from "../../../../../code-inventory/entities/http-server-api.js";
+import type { RepositoryRecord } from "../../../../../code-inventory/entities/repository.js";
 import {
   AbstractProcessor,
   type ProcessorId,

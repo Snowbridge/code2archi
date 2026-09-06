@@ -8,22 +8,22 @@ import type { LinkType } from "./links/link-types.js";
 import type { RunEntityStore } from "./run-entity-store.js";
 
 export const REPOSITORY_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/Repository.schema.json";
+  "https://code2archi.dev/specifications/code-inventory/schemas/Repository.schema.json";
 
 export const APPLICATION_MODULE_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/ApplicationModule.schema.json";
+  "https://code2archi.dev/specifications/code-inventory/schemas/ApplicationModule.schema.json";
 
 export const APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/ApplicationModuleDependency.schema.json";
+  "https://code2archi.dev/specifications/code-inventory/schemas/ApplicationModuleDependency.schema.json";
 
 export const HTTP_SERVER_API_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/HttpServerApi.schema.json";
+  "https://code2archi.dev/specifications/code-inventory/schemas/HttpServerApi.schema.json";
 
 export const HTTP_CLIENT_API_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/HttpClientApi.schema.json";
+  "https://code2archi.dev/specifications/code-inventory/schemas/HttpClientApi.schema.json";
 
 export const HTTP_CLIENT_TO_SERVER_API_LINK_SCHEMA_ID =
-  "https://code2archi.dev/specifications/discovery-model/schemas/HttpClientToServerApiLink.schema.json";
+  "https://code2archi.dev/specifications/code-inventory/schemas/HttpClientToServerApiLink.schema.json";
 
 interface ManifestCollectionEntry {
   readonly path: string;
@@ -60,7 +60,7 @@ interface LinkCollectionDef {
   readonly toIdField: string;
 }
 
-/** Mirror of documentation/specifications/discovery-model/entity-types.md */
+/** Mirror of documentation/specifications/code-inventory/entity-types.md */
 const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
   Repository: {
     collectionPath: "repositories.json",
@@ -107,17 +107,17 @@ function getLinkCollectionDef(linkType: LinkType): LinkCollectionDef {
   return LINK_COLLECTION_REGISTRY[linkType];
 }
 
-export interface DiscoveryModelWriteInput {
+export interface CodeInventoryWriteInput {
   readonly outputDir: string;
   readonly store: RunEntityStore;
   readonly scannedAt: Date;
   readonly runConfigPath?: string;
 }
 
-export class DiscoveryModelWriter {
-  write(input: DiscoveryModelWriteInput): void {
+export class CodeInventoryWriter {
+  write(input: CodeInventoryWriteInput): void {
     const logger = getLogger("scan.writer");
-    logger.info("writing discovery-model", { path: input.outputDir });
+    logger.info("writing code-inventory", { path: input.outputDir });
 
     const collections: NonNullable<Manifest["collections"]>[number][] = [];
 
@@ -178,7 +178,7 @@ export class DiscoveryModelWriter {
       "utf8",
     );
 
-    logger.info("discovery-model written", {
+    logger.info("code-inventory written", {
       path: input.outputDir,
       collectionCount: collections.length,
     });

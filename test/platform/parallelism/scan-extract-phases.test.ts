@@ -9,7 +9,7 @@ import {
   serializeDiscoverySnapshot,
 } from "../../../src/platform/parallelism/snapshot-serialization.js";
 import { buildScanRepositoryBatchTasks, buildScanSourceTasks } from "../../../src/platform/parallelism/task-planner.js";
-import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
+import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
 
 describe("scan source phases", () => {
   it("classifies assembly processors by groupId prefix", () => {
@@ -37,7 +37,7 @@ describe("scan source phases", () => {
 });
 
 describe("filterSerializableDiscoverySnapshotToRepository", () => {
-  const snapshot = buildDiscoveryModelSnapshot({
+  const snapshot = buildCodeInventorySnapshot({
     scanId: "scan-1",
     sourceRoot: "/src",
     sourceDirs: ["/src"],
@@ -124,7 +124,7 @@ describe("filterSerializableDiscoverySnapshotToRepository", () => {
 
 describe("buildScanSourceTasks", () => {
   it("builds processor x repository tasks for all processors in one call", () => {
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/src",
       sourceDirs: ["/src"],
@@ -177,7 +177,7 @@ describe("buildScanSourceTasks", () => {
 
 describe("buildScanRepositoryBatchTasks", () => {
   it("builds one task per repository with all processors in order", () => {
-    const snapshot = buildDiscoveryModelSnapshot({
+    const snapshot = buildCodeInventorySnapshot({
       scanId: "scan-1",
       sourceRoot: "/src",
       sourceDirs: ["/src"],

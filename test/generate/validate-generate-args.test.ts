@@ -18,7 +18,7 @@ describe("validateGenerateArgs", () => {
 
     const args = validateGenerateArgs({
       outputFile: path.join(tempDir, "model"),
-      discoveryModelDir: discoveryDir,
+      codeInventoryDir: discoveryDir,
       ...defaultValidateArgs,
     });
 
@@ -37,7 +37,7 @@ describe("validateGenerateArgs", () => {
       () =>
         validateGenerateArgs({
           outputFile,
-          discoveryModelDir: discoveryDir,
+          codeInventoryDir: discoveryDir,
           ...defaultValidateArgs,
         }),
       (error: unknown) => {
@@ -48,7 +48,7 @@ describe("validateGenerateArgs", () => {
     );
   });
 
-  it("requires manifest in discovery-model directory", () => {
+  it("requires manifest in code-inventory directory", () => {
     const tempDir = createTestTempDir("c2a-generate-args-manifest-");
     const discoveryDir = path.join(tempDir, "discovery");
     mkdirSync(discoveryDir);
@@ -57,7 +57,7 @@ describe("validateGenerateArgs", () => {
       () =>
         validateGenerateArgs({
           outputFile: path.join(tempDir, "model.archimate"),
-          discoveryModelDir: discoveryDir,
+          codeInventoryDir: discoveryDir,
           ...defaultValidateArgs,
         }),
       /manifest not found/,
@@ -72,7 +72,7 @@ describe("validateGenerateArgs", () => {
 
     const args = validateGenerateArgs({
       outputFile: path.join(tempDir, "model.archimate"),
-      discoveryModelDir: discoveryDir,
+      codeInventoryDir: discoveryDir,
       force: false,
       noDecorate: true,
     });

@@ -3,7 +3,7 @@ import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { GitRepositoriesProcessor } from "../../../../src/processors/scan/scope/git-repositories-processor.js";
-import { Repository } from "../../../../src/discovery-model/entities/repository.js";
+import { Repository } from "../../../../src/code-inventory/entities/repository.js";
 import { createTestTempDir } from "../../../test-temp-dir.js";
 
 function createGitRepo(dir: string): void {

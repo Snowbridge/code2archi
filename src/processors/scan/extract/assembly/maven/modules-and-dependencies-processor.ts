@@ -7,7 +7,7 @@ import {
   type ScanAppOutput,
 } from "../../../../../platform/processors/processor.js";
 import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
-import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
+import type { RepositoryRecord } from "../../../../../code-inventory/entities/repository.js";
 import { parseMavenRepository } from "../../../../../parsers/maven-pom-parser.js";
 import {
   buildModuleDiscoveryIntents,

@@ -1,6 +1,6 @@
 import type { BuiltInProcessorGroupId } from "../../cli/processor-groups.js";
-import type { CreateIntents } from "../../discovery-model/entities/create-intents.js";
-import type { RunEntityStore } from "../../discovery-model/run-entity-store.js";
+import type { CreateIntents } from "../../code-inventory/entities/create-intents.js";
+import type { RunEntityStore } from "../../code-inventory/run-entity-store.js";
 import type { MainThreadBridge } from "../parallelism/main-thread-bridge.js";
 import type { WorkerPool } from "../parallelism/worker-pool.js";
 import {

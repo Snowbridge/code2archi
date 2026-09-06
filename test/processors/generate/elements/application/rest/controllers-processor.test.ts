@@ -4,10 +4,10 @@ import { ArchiModelStore } from "../../../../../../src/archimate-model/archi-mod
 import { ArchiFolderIds } from "../../../../../../src/archimate-model/folders/archi-folder.js";
 import { ApplicationComponent, ApplicationService } from "../../../../../../src/archimate-model/elements/archi-element.js";
 import { MavenModuleProfile, RestControllerProfile } from "../../../../../../src/archimate-model/profiles/profile.js";
-import { buildDiscoveryModelSnapshot } from "../../../../../../src/discovery-model/discovery-model-snapshot.js";
-import { ApplicationModule } from "../../../../../../src/discovery-model/entities/application-module.js";
-import { Repository } from "../../../../../../src/discovery-model/entities/repository.js";
-import { HttpServerApi } from "../../../../../../src/discovery-model/entities/http-server-api.js";
+import { buildCodeInventorySnapshot } from "../../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { ApplicationModule } from "../../../../../../src/code-inventory/entities/application-module.js";
+import { Repository } from "../../../../../../src/code-inventory/entities/repository.js";
+import { HttpServerApi } from "../../../../../../src/code-inventory/entities/http-server-api.js";
 import { applicationComponentIdForModule } from "../../../../../../src/generate/application-module-components.js";
 import {
   restControllerRealizationRelationshipId,
@@ -41,7 +41,7 @@ function discoverySnapshot(
   modules: ReturnType<typeof moduleRecord>[],
   controllers: ReturnType<typeof restControllerRecord>[],
 ) {
-  return buildDiscoveryModelSnapshot({
+  return buildCodeInventorySnapshot({
     scanId: "scan-1",
     sourceRoot: "/workspace",
     runStartedAt: new Date("2026-08-27T12:00:00.000Z"),

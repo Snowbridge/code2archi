@@ -1,7 +1,7 @@
 import { readScanUtf8File } from "../../../../../platform/scan-io/index.js";
 import type { ScanAppInput } from "../../../../../platform/processors/processor.js";
-import type { ApplicationModuleRecord } from "../../../../../discovery-model/entities/application-module.js";
-import type { RepositoryRecord } from "../../../../../discovery-model/entities/repository.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import type { RepositoryRecord } from "../../../../../code-inventory/entities/repository.js";
 import { hasFrameworkPackage } from "../../../../../parsers/nodejs/package-json-framework-deps.js";
 import type { NodejsFrameworkPackage } from "../../../../../parsers/nodejs/package-json-framework-deps.js";
 import {

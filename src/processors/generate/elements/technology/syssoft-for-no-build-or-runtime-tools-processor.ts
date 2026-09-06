@@ -6,7 +6,7 @@ import {
 import type { ArchiFolderCreateIntent } from "../../../../archimate-model/folders/archi-folder.js";
 import { AssignmentRelationship } from "../../../../archimate-model/relationships/archi-relationship.js";
 import type { ArchiRelationshipCreateIntent } from "../../../../archimate-model/relationships/archi-relationship.js";
-import type { ApplicationModuleRecord } from "../../../../discovery-model/entities/application-module.js";
+import type { ApplicationModuleRecord } from "../../../../code-inventory/entities/application-module.js";
 import { standardGenerateElementProperties } from "../../../../generate/archi-element-properties.js";
 import { ensureChildFolder } from "../../../../generate/archi-folder-path.js";
 import {

@@ -14,7 +14,7 @@ import {
 import { standardGenerateElementProperties } from "../../../../generate/archi-element-properties.js";
 import { withEntityDebugProperties } from "../../../../generate/generate-debug.js";
 import { decorateElementName } from "../../../../generate/element-name-decoration.js";
-import type { DiscoveryEntityRecord } from "../../../../discovery-model/entities/entity-types.js";
+import type { DiscoveryEntityRecord } from "../../../../code-inventory/entities/entity-types.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildDiscoveryModelSnapshot } from "../../../src/discovery-model/discovery-model-snapshot.js";
+import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
 import { createMainThreadBridge } from "../../../src/platform/parallelism/main-thread-bridge.js";
 import { runScanRepositoryBatchTask } from "../../../src/platform/parallelism/handlers/scan-handlers.js";
 import { serializeDiscoverySnapshot } from "../../../src/platform/parallelism/snapshot-serialization.js";
@@ -42,7 +42,7 @@ function setupMavenRepo(): { root: string; repositoryId: string; serialized: Ret
 </project>`,
   );
 
-  const snapshot = buildDiscoveryModelSnapshot({
+  const snapshot = buildCodeInventorySnapshot({
     scanId: "scan-1",
     sourceRoot: root,
     sourceDirs: [root],

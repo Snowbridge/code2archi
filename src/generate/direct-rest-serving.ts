@@ -1,6 +1,6 @@
 import { computeArchiId } from "../archimate-model/archi-id.js";
 import { applicationComponentIdForModule } from "./application-module-components.js";
-import type { HttpClientToServerApiLinkMethod } from "../discovery-model/links/http-client-to-server-api-link.js";
+import type { HttpClientToServerApiLinkMethod } from "../code-inventory/links/http-client-to-server-api-link.js";
 
 const DIRECT_REST_SERVING_ID_SUFFIX = "direct-rest";
 

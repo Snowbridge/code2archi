@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { Repository } from "../discovery-model/entities/repository.js";
+import { Repository } from "../code-inventory/entities/repository.js";
 
 export class RepositoryBuilder {
   private static readonly BUILD_SYSTEM_ORDER = ["maven", "gradle", "npm"] as const;

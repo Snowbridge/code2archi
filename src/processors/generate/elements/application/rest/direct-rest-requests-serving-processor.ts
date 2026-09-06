@@ -12,7 +12,7 @@ import {
   type DirectRestServingMatchLike,
 } from "../../../../../generate/direct-rest-serving.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
-import type { HttpClientToServerApiLinkRecord } from "../../../../../discovery-model/links/http-client-to-server-api-link.js";
+import type { HttpClientToServerApiLinkRecord } from "../../../../../code-inventory/links/http-client-to-server-api-link.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,

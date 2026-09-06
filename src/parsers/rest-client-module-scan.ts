@@ -1,5 +1,5 @@
-import type { ApplicationModuleRecord } from "../discovery-model/entities/application-module.js";
-import type { RepositoryRecord } from "../discovery-model/entities/repository.js";
+import type { ApplicationModuleRecord } from "../code-inventory/entities/application-module.js";
+import type { RepositoryRecord } from "../code-inventory/entities/repository.js";
 import { listScanSourceFiles, readScanUtf8File } from "../platform/scan-io/index.js";
 import { UNKNOWN_VERSION } from "./build-tool-versions.js";
 import {

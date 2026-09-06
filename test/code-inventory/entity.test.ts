@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { ApplicationModule } from "../../src/discovery-model/entities/application-module.js";
-import { ApplicationModuleDependency } from "../../src/discovery-model/entities/application-module-dependency.js";
-import { Repository } from "../../src/discovery-model/entities/repository.js";
+import { ApplicationModule } from "../../src/code-inventory/entities/application-module.js";
+import { ApplicationModuleDependency } from "../../src/code-inventory/entities/application-module-dependency.js";
+import { Repository } from "../../src/code-inventory/entities/repository.js";
 import { withTestLogging } from "../platform/logging/test-logging.js";
 
 function readSingleLogFile(dir: string): string {

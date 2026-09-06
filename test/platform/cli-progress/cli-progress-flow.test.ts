@@ -6,8 +6,8 @@ import { createFlowProgress } from "../../../src/platform/cli-progress/create-fl
 import { forEachRepository } from "../../../src/platform/cli-progress/for-each-repository.js";
 import { noopFlowProgress } from "../../../src/platform/cli-progress/noop-flow-progress.js";
 import type { StepProgressHandle } from "../../../src/platform/cli-progress/types.js";
-import { RunEntityStore } from "../../../src/discovery-model/run-entity-store.js";
-import { Repository } from "../../../src/discovery-model/entities/repository.js";
+import { RunEntityStore } from "../../../src/code-inventory/run-entity-store.js";
+import { Repository } from "../../../src/code-inventory/entities/repository.js";
 import type { ScanAppInput } from "../../../src/platform/processors/processor.js";
 
 describe("createFlowProgress", () => {

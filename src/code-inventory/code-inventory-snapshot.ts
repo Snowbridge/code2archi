@@ -6,7 +6,7 @@ import type { DiscoveryLinkRecord } from "./links/link-records.js";
 import type { LinkType } from "./links/link-types.js";
 import { LINK_TYPES } from "./links/link-types.js";
 
-export interface DiscoveryModelSnapshot {
+export interface CodeInventorySnapshot {
   readonly scanId: string;
   readonly sourceRoot: string;
   readonly sourceDirs: readonly string[];
@@ -29,7 +29,7 @@ export interface DiscoveryModelSnapshot {
   ): readonly DiscoveryLinkRecord[];
 }
 
-export interface BuildDiscoveryModelSnapshotInit {
+export interface BuildCodeInventorySnapshotInit {
   readonly scanId: string;
   readonly sourceRoot: string;
   readonly sourceDirs?: readonly string[];
@@ -83,7 +83,7 @@ function deepFreeze<T>(value: T): T {
 }
 
 function normalizeEntityMaps(
-  init: BuildDiscoveryModelSnapshotInit,
+  init: BuildCodeInventorySnapshotInit,
 ): Map<EntityType, Map<string, DiscoveryEntityRecord>> {
   if (init.entityMaps) {
     const normalized = new Map<EntityType, Map<string, DiscoveryEntityRecord>>();
@@ -111,7 +111,7 @@ function normalizeEntityMaps(
 }
 
 function normalizeLinkMaps(
-  init: BuildDiscoveryModelSnapshotInit,
+  init: BuildCodeInventorySnapshotInit,
 ): Map<LinkType, Map<string, DiscoveryLinkRecord>> {
   if (init.linkMaps) {
     const normalized = new Map<LinkType, Map<string, DiscoveryLinkRecord>>();
@@ -281,7 +281,7 @@ function buildLinkIndexes(linkMaps: Map<LinkType, Map<string, DiscoveryLinkRecor
   };
 }
 
-class IndexedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
+class IndexedCodeInventorySnapshot implements CodeInventorySnapshot {
   private readonly entitiesByType: EntitiesByType;
   private readonly globalIdIndex: GlobalIdIndex;
   private readonly refIndex: RefIndex;
@@ -368,11 +368,11 @@ class IndexedDiscoveryModelSnapshot implements DiscoveryModelSnapshot {
   }
 }
 
-export function buildDiscoveryModelSnapshot(
-  init: BuildDiscoveryModelSnapshotInit,
-): DiscoveryModelSnapshot {
+export function buildCodeInventorySnapshot(
+  init: BuildCodeInventorySnapshotInit,
+): CodeInventorySnapshot {
   if (!init.entityMaps && !init.entityArrays) {
-    throw new Error("buildDiscoveryModelSnapshot requires entityMaps or entityArrays");
+    throw new Error("buildCodeInventorySnapshot requires entityMaps or entityArrays");
   }
 
   const entityMaps = normalizeEntityMaps(init);
@@ -381,7 +381,7 @@ export function buildDiscoveryModelSnapshot(
   const linkIndexes = buildLinkIndexes(linkMaps);
 
   return deepFreeze(
-    new IndexedDiscoveryModelSnapshot(
+    new IndexedCodeInventorySnapshot(
       init.scanId,
       init.sourceRoot,
       init.sourceDirs ?? [],
