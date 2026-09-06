@@ -1,5 +1,6 @@
 import { CliError } from "./cli-error.js";
 import type { GlobalArgv } from "./processor-groups.js";
+import { normalizeProcessorFilterValue } from "./run-config/normalize-processor-filter-value.js";
 import { parseCoordinate, validateFilterPattern } from "../platform/processors/processor-coordinate.js";
 import { processorRegistry } from "../platform/processors/processor-registry.js";
 
@@ -13,6 +14,13 @@ function asStringArray(value: unknown): string[] {
   return [String(value)];
 }
 
+function normalizeFilterArgv(
+  value: unknown,
+  optionLabel: string,
+): string[] {
+  return normalizeProcessorFilterValue(asStringArray(value), optionLabel);
+}
+
 function collectExactCoordinates(patterns: readonly string[]): string[] {
   return patterns.filter((pattern) => !pattern.endsWith(".*"));
 }
@@ -20,9 +28,13 @@ function collectExactCoordinates(patterns: readonly string[]): string[] {
 export function validateGlobalArgv(
   argv: Record<string, unknown>,
 ): asserts argv is GlobalArgv & Record<string, unknown> {
-  const withRequested = asStringArray(argv.with);
-  const without = asStringArray(argv.without);
-  const withOnly = asStringArray(argv.withOnly);
+  const withRequested = normalizeFilterArgv(argv.with, "--with");
+  const without = normalizeFilterArgv(argv.without, "--without");
+  const withOnly = normalizeFilterArgv(argv.withOnly, "--with-only");
+
+  argv.with = withRequested;
+  argv.without = without;
+  argv.withOnly = withOnly;
 
   for (const pattern of [...withRequested, ...without, ...withOnly]) {
     try {

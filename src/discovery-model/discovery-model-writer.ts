@@ -111,6 +111,7 @@ export interface DiscoveryModelWriteInput {
   readonly outputDir: string;
   readonly store: RunEntityStore;
   readonly scannedAt: Date;
+  readonly runConfigPath?: string;
 }
 
 export class DiscoveryModelWriter {
@@ -166,6 +167,7 @@ export class DiscoveryModelWriter {
       formatVersion: packageVersion,
       scanId: input.store.scanId,
       scannedAt: formatIso8601WithOffset(input.scannedAt),
+      runConfigPath: input.runConfigPath,
       sourceRoot: input.store.sourceRoot,
       collections,
     };

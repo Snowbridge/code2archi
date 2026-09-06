@@ -27,6 +27,7 @@ import { initScanIoCache, type ScanIoCacheOptions } from "../platform/scan-io/in
 import type { ScanArgs } from "./validate-scan-args.js";
 import type { ScanCommandCacheArgv } from "../cli/scan-cache-options.js";
 import { cacheArgvToScanIoOptions } from "../cli/scan-cache-options.js";
+import { getRunConfigResolution } from "../cli/run-config/run-config-context.js";
 
 export interface RunScanFlowInput extends ScanArgs {
   readonly processorFilters: ProcessorFilters;
@@ -167,6 +168,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
         outputDir: input.outputDir,
         store,
         scannedAt: new Date(),
+        runConfigPath: resolveRunConfigPathForManifest(),
       });
       progress.step("4").tick(1);
     });
@@ -180,4 +182,9 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     shutdownPool();
     progress.stop();
   }
+}
+
+function resolveRunConfigPathForManifest(): string | undefined {
+  const resolution = getRunConfigResolution();
+  return resolution.loaded ? resolution.path : undefined;
 }

@@ -76,6 +76,10 @@ export const globalOptions: Record<string, Options> = {
     "Exclude processors by coordinate (groupId.artifactId) or wildcard prefix.*",
   ),
   "with-only": processorFilterOption(
-    "Global allow-list: run only processors matching coordinate or wildcard prefix.*",
+    "Global allow-list: run only processors matching coordinate or wildcard prefix.*; use 'none' to disable",
   ),
+  config: {
+    type: "string",
+    describe: "Path to run-config YAML, or 'none' to disable file discovery",
+  },
 };

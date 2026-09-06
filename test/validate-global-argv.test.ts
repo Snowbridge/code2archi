@@ -94,6 +94,26 @@ describe("validateGlobalArgv", () => {
       }),
     );
   });
+
+  it("normalizes --without none to empty array", () => {
+    const argv = {
+      ...baseArgv(),
+      without: ["none"],
+    };
+    validateGlobalArgv(argv);
+    assert.deepEqual(argv.without, []);
+  });
+
+  it("rejects none mixed with coordinates", () => {
+    expectCliError(
+      () =>
+        validateGlobalArgv({
+          ...baseArgv(),
+          without: ["scan.extract.*", "none"],
+        }),
+      '"none" cannot be combined with other values',
+    );
+  });
 });
 
 describe("global option coercion", () => {
