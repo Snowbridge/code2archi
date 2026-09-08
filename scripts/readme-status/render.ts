@@ -1,4 +1,3 @@
-import { REST_PROCESSOR_HIGHLIGHTS } from "./rest-highlights.js";
 import { buildGapRows, buildGapSummary } from "./gap-manifest.js";
 import type { GapRow, ImplementationStatus, ProcessorInfo } from "./types.js";
 
@@ -21,24 +20,6 @@ function listScopeProcessors(processors: readonly ProcessorInfo[]): ProcessorInf
 
 function listAssemblyProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
   return processors.filter((processor) => processor.groupId.startsWith("scan.extract.assembly"));
-}
-
-function listRestProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
-  return processors.filter(
-    (processor) =>
-      (processor.groupId === "scan.extract.java.rest" ||
-        processor.groupId === "scan.extract.kotlin.rest") &&
-      processor.artifactId.startsWith("controller-"),
-  );
-}
-
-function listRestClientProcessors(processors: readonly ProcessorInfo[]): ProcessorInfo[] {
-  return processors.filter(
-    (processor) =>
-      (processor.groupId === "scan.extract.java.rest" ||
-        processor.groupId === "scan.extract.kotlin.rest") &&
-      processor.artifactId.startsWith("client-"),
-  );
 }
 
 function slotLayer(kind: string): "technology" | "application" | "other" {
@@ -71,44 +52,6 @@ function uniqueSlotLabels(
   return [...labels.values()].sort();
 }
 
-function renderRestSection(processors: readonly ProcessorInfo[]): string[] {
-  const lines = [
-    "- **REST controllers (Java/Kotlin)** — annotation-based and functional routing:",
-  ];
-
-  for (const processor of processors) {
-    const highlights = REST_PROCESSOR_HIGHLIGHTS[processor.coordinate];
-    if (highlights) {
-      for (const highlight of highlights) {
-        lines.push(`  - ${highlight}`);
-      }
-      continue;
-    }
-    lines.push(`  - ${processor.description}`);
-  }
-
-  return [...new Set(lines)];
-}
-
-function renderRestClientSection(processors: readonly ProcessorInfo[]): string[] {
-  const lines = [
-    "- **REST clients (Java/Kotlin)** — declarative and programmatic HTTP clients:",
-  ];
-
-  for (const processor of processors) {
-    const highlights = REST_PROCESSOR_HIGHLIGHTS[processor.coordinate];
-    if (highlights) {
-      for (const highlight of highlights) {
-        lines.push(`  - ${highlight}`);
-      }
-      continue;
-    }
-    lines.push(`  - ${processor.description}`);
-  }
-
-  return [...new Set(lines)];
-}
-
 function renderDiscoveryOutputFiles(status: ImplementationStatus): string {
   const files = ["manifest.json", "repositories.json"];
   if (status.scanEntityTypes.has("ApplicationModule")) {
@@ -116,12 +59,6 @@ function renderDiscoveryOutputFiles(status: ImplementationStatus): string {
   }
   if (status.scanEntityTypes.has("ApplicationModuleDependency")) {
     files.push("application-module-dependencies.json");
-  }
-  if (status.scanEntityTypes.has("RestController")) {
-    files.push("rest-controllers.json");
-  }
-  if (status.scanEntityTypes.has("RestClient")) {
-    files.push("rest-clients.json");
   }
   return files.join(", ");
 }
@@ -133,8 +70,6 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
 
   const scopeProcessors = listScopeProcessors(status.processors);
   const assemblyProcessors = listAssemblyProcessors(status.processors);
-  const restProcessors = listRestProcessors(status.processors);
-  const restClientProcessors = listRestClientProcessors(status.processors);
   const technologySlots = uniqueSlotLabels(status, "technology");
   const applicationSlots = uniqueSlotLabels(status, "application");
 
@@ -182,17 +117,9 @@ export function renderWhatWorksToday(status: ImplementationStatus): string {
     );
   }
 
-  if (restProcessors.length > 0) {
-    lines.push(...renderRestSection(restProcessors));
-  }
-
-  if (restClientProcessors.length > 0) {
-    lines.push(...renderRestClientSection(restClientProcessors));
-  }
-
   lines.push(
     "",
-    `Output is a directory of JSON files (${renderDiscoveryOutputFiles(status)}, …) validated against JSON Schema in the specifications repo.`,
+    `Output is a directory of JSON files (${renderDiscoveryOutputFiles(status)}, …) validated against the OpenAPI contract in the specifications repo.`,
     "",
     "### `generate` — ArchiMate model",
     "",

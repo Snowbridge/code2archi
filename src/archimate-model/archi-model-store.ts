@@ -461,7 +461,7 @@ export class ArchiModelStore {
     this.assertElementFolderMatchesConcept(intent.conceptType, folder);
 
     if (this.globalIds.has(intent.id)) {
-      throw new Error(`Duplicate id: ${intent.id} (element: ${intent.conceptType})`);
+      return;
     }
 
     const element = Object.freeze({ ...intent });
@@ -475,7 +475,7 @@ export class ArchiModelStore {
     }
 
     if (this.globalIds.has(intent.id)) {
-      throw new Error(`Duplicate profile id: ${intent.id}`);
+      return;
     }
 
     const existing = this.findProfileByNameAndType(intent.name, intent.conceptType);
@@ -509,7 +509,7 @@ export class ArchiModelStore {
     }
 
     if (this.globalIds.has(intent.id)) {
-      throw new Error(`Duplicate id: ${intent.id} (relationship: ${intent.relationType})`);
+      return;
     }
 
     const relation = Object.freeze({ ...intent });

@@ -46,27 +46,9 @@ abstract class ApplicationComponentProfile extends ArchiProfile {
   }
 }
 
-abstract class ApplicationServiceProfile extends ArchiProfile {
-  protected constructor(name: string) {
-    super("ApplicationService", name);
-  }
-}
-
-abstract class ApplicationInterfaceProfile extends ArchiProfile {
-  protected constructor(name: string) {
-    super("ApplicationInterface", name);
-  }
-}
-
 abstract class AssignmentRelationshipProfile extends ArchiProfile {
   protected constructor(name: string) {
     super("AssignmentRelationship", name);
-  }
-}
-
-abstract class ServingRelationshipProfile extends ArchiProfile {
-  protected constructor(name: string) {
-    super("ServingRelationship", name);
   }
 }
 
@@ -74,23 +56,6 @@ abstract class AggregationRelationshipProfile extends ArchiProfile {
   protected constructor(name: string) {
     super("AggregationRelationship", name);
   }
-}
-
-function defineServingRelationshipProfile(profileName: string) {
-  class NamedProfile extends ServingRelationshipProfile {
-    static readonly CONCEPT_TYPE = "ServingRelationship" as const;
-    static readonly PROFILE_NAME = profileName;
-
-    constructor() {
-      super(profileName);
-    }
-
-    static create(): NamedProfile {
-      return new NamedProfile();
-    }
-  }
-
-  return NamedProfile;
 }
 
 function defineArtifactProfile(profileName: string) {
@@ -113,40 +78,6 @@ function defineArtifactProfile(profileName: string) {
 function defineApplicationComponentProfile(profileName: string) {
   class NamedProfile extends ApplicationComponentProfile {
     static readonly CONCEPT_TYPE = "ApplicationComponent" as const;
-    static readonly PROFILE_NAME = profileName;
-
-    constructor() {
-      super(profileName);
-    }
-
-    static create(): NamedProfile {
-      return new NamedProfile();
-    }
-  }
-
-  return NamedProfile;
-}
-
-function defineApplicationServiceProfile(profileName: string) {
-  class NamedProfile extends ApplicationServiceProfile {
-    static readonly CONCEPT_TYPE = "ApplicationService" as const;
-    static readonly PROFILE_NAME = profileName;
-
-    constructor() {
-      super(profileName);
-    }
-
-    static create(): NamedProfile {
-      return new NamedProfile();
-    }
-  }
-
-  return NamedProfile;
-}
-
-function defineApplicationInterfaceProfile(profileName: string) {
-  class NamedProfile extends ApplicationInterfaceProfile {
-    static readonly CONCEPT_TYPE = "ApplicationInterface" as const;
     static readonly PROFILE_NAME = profileName;
 
     constructor() {
@@ -204,13 +135,8 @@ export const NpmModuleProfile = defineApplicationComponentProfile("NPM module");
 export const MavenModuleProfile = defineApplicationComponentProfile("Maven module");
 export const GradleModuleProfile = defineApplicationComponentProfile("Gradle module");
 export const LibraryModuleProfile = defineApplicationComponentProfile("Library module");
-export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
-export const RestClientProfile = defineApplicationServiceProfile("REST Client");
-export const RestApiContractProfile = defineApplicationInterfaceProfile("REST API Contract");
 export const RunsOnProfile = defineAssignmentRelationshipProfile("Runs on");
 export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with");
 export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");
-export const ProcessesRestRequestsProfile =
-  defineServingRelationshipProfile("Processes REST requests");
 export const BuildTimeDependencyProfile =
   defineAggregationRelationshipProfile("Build-time dependency");

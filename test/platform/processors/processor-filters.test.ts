@@ -32,7 +32,7 @@ class StubProcessor extends AbstractProcessor<string, string[]> {
 
 function emptyGlobalArgv(overrides: Partial<GlobalArgv> = {}): GlobalArgv {
   return {
-    logLevel: "INFO",
+    debug: false,
     verbose: false,
     profile: false,
     threads: 1,
@@ -150,20 +150,20 @@ describe("ProcessorRegistry.listForBuiltInStep", () => {
 
   it("includes processors that share artifactId under different subgroup groupIds", () => {
     const registry = new ProcessorRegistry();
-    const java = new StubProcessor({
-      groupId: "scan.extract.java.rest",
-      artifactId: "controller-annotation-based",
+    const maven = new StubProcessor({
+      groupId: "scan.extract.assembly.maven",
+      artifactId: "modules-and-dependencies",
     });
-    const kotlin = new StubProcessor({
-      groupId: "scan.extract.kotlin.rest",
-      artifactId: "controller-annotation-based",
+    const gradle = new StubProcessor({
+      groupId: "scan.extract.assembly.gradle",
+      artifactId: "modules-and-dependencies",
     });
-    registry.register(java);
-    registry.register(kotlin);
+    registry.register(maven);
+    registry.register(gradle);
 
     const result = registry.listForBuiltInStep("scan.extract", emptyFilters());
 
-    assert.deepEqual(result, [java, kotlin]);
+    assert.deepEqual(result, [maven, gradle]);
   });
 
   it("rejects invalid groupId on register", () => {

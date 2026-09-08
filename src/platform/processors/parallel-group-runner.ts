@@ -81,14 +81,26 @@ export function throwOnPoolErrors(
     for (const [taskId, error] of errors) {
       logger.info("task failed", { pool: poolLabel, taskId, message: error.message });
     }
-    throw new AggregateError(
-      [...errors.values()],
-      `${poolLabel}: ${errors.size} task(s) failed`,
-    );
+    return;
   }
 
   const firstError = [...errors.values()][0];
   throw firstError ?? new Error(`${poolLabel}: task failed`);
+}
+
+export function finalizePoolErrorsAfterMerge(
+  poolLabel: string,
+  errors: ReadonlyMap<string, Error>,
+  continueOnError: boolean,
+): void {
+  if (errors.size === 0 || !continueOnError) {
+    return;
+  }
+
+  throw new AggregateError(
+    [...errors.values()],
+    `${poolLabel}: ${errors.size} task(s) failed`,
+  );
 }
 
 export async function runScanProcessorPool(

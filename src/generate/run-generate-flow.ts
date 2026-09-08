@@ -1,3 +1,5 @@
+import { CliError } from "../cli/cli-error.js";
+import { ExitCode } from "../cli/exit-codes.js";
 import {
   GENERATE_ELEMENTS_GROUP_ID,
   GENERATE_VIEWS_GROUP_ID,
@@ -19,7 +21,7 @@ import {
   defineFlowSteps,
   processorGroupFlowStep,
 } from "../platform/cli-progress/index.js";
-import { getLogger, isDebugEnabled } from "../platform/logging/index.js";
+import { getLogger, isDebugEnabled, logError } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
 import type { ParallelismOptions } from "../platform/parallelism/parallelism-options.js";
 import type { GenerateArgs } from "./validate-generate-args.js";
@@ -76,14 +78,14 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
     ),
   });
 
-  const { shutdown: shutdownPool } = createFlowParallelContext(
+  const { context: parallelContext, shutdown: shutdownPool } = createFlowParallelContext(
     input.parallelism,
     progress,
-    [],
+    ["1", "2"],
     input.profile,
   );
 
-  let activeStep = "1";
+  const deferredErrors: Error[] = [];
 
   const discovery = new CodeInventoryReader().read(input.codeInventoryDir);
   const archiStore = new ArchiModelStore({
@@ -91,10 +93,24 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
     modelId: input.modelId,
   });
 
+  const runStep = async (stepId: string, action: () => Promise<void>): Promise<void> => {
+    try {
+      await measureFlowStep(stepId, action);
+    } catch (error) {
+      if (input.parallelism.continueOnError) {
+        logError(logger, error, { step: stepId });
+        progress.fail(stepId);
+        deferredErrors.push(error instanceof Error ? error : new Error(String(error)));
+        return;
+      }
+      progress.fail(stepId);
+      throw error;
+    }
+  };
+
   try {
     logger.info("step start", { step: 1, action: "elements generation", groupId: GENERATE_ELEMENTS_GROUP_ID });
-    activeStep = "1";
-    await measureFlowStep("1", async () => {
+    await runStep("1", async () => {
       await runGenerateProcessorGroup(
         GENERATE_ELEMENTS_GROUP_ID,
         discovery,
@@ -102,13 +118,13 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
         input.processorFilters,
         { decorate: !input.noDecorate },
         progress.step("1"),
+        parallelContext,
       );
     });
     logger.info("step completed", { step: 1 });
 
     logger.info("step start", { step: 2, action: "views generation", groupId: GENERATE_VIEWS_GROUP_ID });
-    activeStep = "2";
-    await measureFlowStep("2", async () => {
+    await runStep("2", async () => {
       await runGenerateProcessorGroup(
         GENERATE_VIEWS_GROUP_ID,
         discovery,
@@ -116,13 +132,13 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
         input.processorFilters,
         { decorate: !input.noDecorate },
         progress.step("2"),
+        parallelContext,
       );
     });
     logger.info("step completed", { step: 2 });
 
     logger.info("step start", { step: 3, action: "writing archimate-model", outputFile: input.outputFile });
-    activeStep = "3";
-    await measureFlowStep("3", async () => {
+    await runStep("3", async () => {
       new ArchiModelWriter().write({
         outputFile: input.outputFile,
         store: archiStore,
@@ -138,11 +154,16 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
     logger.info("step completed", { step: 3, outputFile: input.outputFile });
 
     logger.info("flow completed", { outputFile: input.outputFile });
-  } catch (error) {
-    progress.fail(activeStep);
-    throw error;
   } finally {
     shutdownPool();
     progress.stop();
+  }
+
+  if (deferredErrors.length > 0) {
+    const summary = deferredErrors.map((error) => error.message).join("; ");
+    throw new CliError(
+      `Generate completed with ${deferredErrors.length} error(s): ${summary}`,
+      ExitCode.RUNTIME,
+    );
   }
 }

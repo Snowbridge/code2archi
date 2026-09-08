@@ -6,7 +6,6 @@ import {
   GROUP_LINK_ALLOWLIST,
   RunEntityStore,
 } from "../../src/code-inventory/run-entity-store.js";
-import { HttpClientToServerApiLink } from "../../src/code-inventory/links/http-client-to-server-api-link.js";
 import { packageVersion } from "../../src/package-version.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 
@@ -18,11 +17,6 @@ const SCAN_SCOPE_PROCESSOR = {
 const SCAN_SOURCE_PROCESSOR = {
   groupId: "scan.extract",
   artifactId: "test-processor",
-};
-
-const SCAN_LINK_PROCESSOR = {
-  groupId: "scan.transform.rest",
-  artifactId: "clients-to-controllers-links",
 };
 
 describe("RunEntityStore", () => {
@@ -282,51 +276,9 @@ describe("RunEntityStore", () => {
       "RuntimeEnvironment",
       "ApplicationModule",
       "ApplicationModuleDependency",
-      "HttpServerApi",
-      "HttpClientApi",
       "MessageConsumer",
       "MessageProducer",
     ]);
-    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], ["HttpClientToServerApiLink"]);
-  });
-
-  it("adds links allowed for scan.transform with platform metadata", () => {
-    const store = new RunEntityStore({
-      sourceDirs: ["/tmp/src"],
-      scanId: "scan-1",
-      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
-    });
-
-    const link = new HttpClientToServerApiLink({
-      httpServerApiId: "ctrl-1",
-      httpClientApiId: "client-1",
-      sourceApplicationModuleId: "mod-server",
-      targetApplicationModuleId: "mod-client",
-      matchMethod: "CONTRACT_TYPE",
-      basis: "extract",
-      confidence: 1,
-    });
-
-    store.addCreateIntents("scan.transform", SCAN_LINK_PROCESSOR, {
-      links: {
-        HttpClientToServerApiLink: [link],
-      },
-    });
-
-    const stored = store.getLinks("HttpClientToServerApiLink")[0];
-    assert.equal(stored?.matchMethod, "CONTRACT_TYPE");
-    assert.equal(stored?.transformProcessor, "scan.transform.rest:clients-to-controllers-links");
-    assert.equal(stored?.transformSchema, packageVersion);
-
-    const snapshot = store.snapshot();
-    assert.equal(snapshot.listLinks("HttpClientToServerApiLink").length, 1);
-    assert.deepEqual(
-      snapshot.listLinksByRef(
-        "HttpClientToServerApiLink",
-        "sourceApplicationModuleId",
-        "mod-server",
-      ).map((record) => record.id),
-      [stored?.id],
-    );
+    assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], undefined);
   });
 });

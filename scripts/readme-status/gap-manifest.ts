@@ -18,25 +18,13 @@ function missingEntityTypes(status: ImplementationStatus, entityTypes: readonly 
 }
 
 function interServiceEntityTypes(): readonly string[] {
-  return ["HttpClientApi", "MessageConsumer", "MessageProducer"];
-}
-
-function hasJsTsRestScan(status: ImplementationStatus): boolean {
-  return status.processors.some(
-    (processor) =>
-      processor.groupId.includes("javascript") ||
-      processor.groupId.includes("typescript") ||
-      processor.artifactId.includes("javascript") ||
-      processor.artifactId.includes("typescript"),
-  );
+  return ["MessageConsumer", "MessageProducer"];
 }
 
 function hasNpmAssemblyOnly(status: ImplementationStatus): boolean {
-  const hasNpmAssembly = status.processors.some((processor) =>
+  return status.processors.some((processor) =>
     processor.coordinate.startsWith("scan.extract.assembly.npm/"),
   );
-  const hasJsTsRest = hasJsTsRestScan(status);
-  return hasNpmAssembly && !hasJsTsRest;
 }
 
 function hasCamundaOrBpmnScan(status: ImplementationStatus): boolean {
@@ -107,12 +95,10 @@ export function buildGapRows(status: ImplementationStatus): GapRow[] {
     {
       area: "JavaScript / TypeScript",
       intent: "Source-level discovery alongside JVM languages",
-      currentState: hasJsTsRestScan(status)
-        ? "JS/TS REST and application parsing processors registered"
-        : hasNpmAssemblyOnly(status)
-          ? "npm **module assembly** only; no JS/TS REST or application parsing"
-          : "No npm or JS/TS source processors yet",
-      complete: hasJsTsRestScan(status),
+      currentState: hasNpmAssemblyOnly(status)
+        ? "npm **module assembly** only; no JS/TS source parsing yet"
+        : "No npm or JS/TS source processors yet",
+      complete: false,
     },
     {
       area: "Technology inventory",
@@ -174,15 +160,11 @@ export function buildGapRows(status: ImplementationStatus): GapRow[] {
 
 export function buildGapSummary(status: ImplementationStatus, rows: readonly GapRow[]): string {
   const openAreas = rows.filter((row) => !row.complete).map((row) => row.area.toLowerCase());
-  const hasRestScan = status.scanEntityTypes.has("HttpServerApi");
   const highlights: string[] = [
     "repositories",
     "modules",
     "build/runtime facts",
   ];
-  if (hasRestScan) {
-    highlights.push("Java/Kotlin REST surface");
-  }
 
   const strengths = `a solid **first-pass AS-IS map** of ${highlights.join(", ")}`;
   const gaps =

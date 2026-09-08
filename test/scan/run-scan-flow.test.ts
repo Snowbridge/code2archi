@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import "../../src/platform/processors/builtin-processors.js";
+import { CliError } from "../../src/cli/cli-error.js";
+import { ExitCode } from "../../src/cli/exit-codes.js";
 import {
   APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   APPLICATION_MODULE_SCHEMA_ID,
@@ -11,10 +13,29 @@ import {
 } from "../../src/code-inventory/code-inventory-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { runScanFlow } from "../../src/scan/run-scan-flow.js";
+import {
+  AbstractProcessor,
+  type ScanScopeInput,
+  type ScanScopeOutput,
+} from "../../src/platform/processors/processor.js";
+import { processorRegistry } from "../../src/platform/processors/processor-registry.js";
 import { finalizeProfiling, initProfiling } from "../../src/platform/profiling/index.js";
 import { resetProfilingState } from "../../src/platform/profiling/profiling-state.js";
 import { createTestTempDir } from "../test-temp-dir.js";
-import { testParallelismOptions } from "../parallelism-test-defaults.js";
+import { testParallelismOptions, testParallelismContinueOnError } from "../parallelism-test-defaults.js";
+
+const FAILING_SCOPE_ARTIFACT = "test-flow-failing";
+
+class FailingScopeProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
+  readonly id = { groupId: "scan.scope", artifactId: FAILING_SCOPE_ARTIFACT };
+  readonly version = "0.0.0";
+  readonly executionPolicy = "ALWAYS" as const;
+  readonly description = "Failing processor for continue-on-error tests.";
+
+  protected doProcess(): ScanScopeOutput {
+    throw new Error("deliberate scope failure");
+  }
+}
 
 function createGitRepo(dir: string): void {
   mkdirSync(path.join(dir, ".git"), { recursive: true });
@@ -190,190 +211,6 @@ describe("runScanFlow", async () => {
     assert.equal(dependencies[0]?.artifactId, "shared");
   });
 
-  it("discovers RestController entities after maven modules are scanned in scan.extract", async () => {
-    const root = createTestTempDir("c2a-scan-flow-rest-");
-    const sourceDir = path.join(root, "src");
-    const javaDir = path.join(sourceDir, "src", "main", "java", "com", "flow");
-    const outputDir = path.join(root, "out");
-    mkdirSync(javaDir, { recursive: true });
-    mkdirSync(outputDir);
-    writeFileSync(
-      path.join(sourceDir, "pom.xml"),
-      `<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.flow</groupId>
-  <artifactId>flow-app</artifactId>
-  <version>1.0.0</version>
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-  </properties>
-</project>`,
-    );
-    writeFileSync(
-      path.join(javaDir, "FlowController.java"),
-      `package com.flow;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-@RestController
-public class FlowController {
-    @GetMapping("/flow")
-    public String flow() { return "ok"; }
-}
-`,
-    );
-
-    await runScanFlow({
-      sourceDirs: [sourceDir],
-      outputDir,
-      force: false,
-      scanId: "test-scan-rest-controllers",
-      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
-      verbose: false,
-      profile: false,
-      parallelism: testParallelismOptions,
-      processorFilters: {
-        with: ["scan.scope.unversioned-folders"],
-        without: [],
-        withOnly: [],
-      },
-    });
-
-    const controllersPath = path.join(outputDir, "http-server-apis.json");
-    assert.ok(existsSync(controllersPath));
-
-    const controllers = JSON.parse(readFileSync(controllersPath, "utf8")) as Array<{
-      name: string;
-      endpoints: string[];
-      bindingStyle: string;
-    }>;
-    assert.equal(controllers.length, 1);
-    assert.equal(controllers[0]?.name, "FlowController");
-    assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
-    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
-  });
-
-  it("discovers Kotlin RestController entities from maven kotlin sources in scan.extract", async () => {
-    const root = createTestTempDir("c2a-scan-flow-kotlin-");
-    const sourceDir = path.join(root, "src");
-    const kotlinDir = path.join(sourceDir, "src", "main", "kotlin", "com", "flow");
-    const outputDir = path.join(root, "out");
-    mkdirSync(kotlinDir, { recursive: true });
-    mkdirSync(outputDir);
-    writeFileSync(
-      path.join(sourceDir, "pom.xml"),
-      `<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.flow</groupId>
-  <artifactId>flow-app</artifactId>
-  <version>1.0.0</version>
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-  </properties>
-</project>`,
-    );
-    writeFileSync(
-      path.join(kotlinDir, "FlowController.kt"),
-      `package com.flow
-
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RestController
-
-@RestController
-class FlowController {
-    @GetMapping("/flow")
-    fun flow(): String = "ok"
-}
-`,
-    );
-
-    await runScanFlow({
-      sourceDirs: [sourceDir],
-      outputDir,
-      force: false,
-      scanId: "test-scan-kotlin-rest-controllers",
-      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
-      verbose: false,
-      profile: false,
-      parallelism: testParallelismOptions,
-      processorFilters: {
-        with: ["scan.scope.unversioned-folders"],
-        without: [],
-        withOnly: [],
-      },
-    });
-
-    const controllers = JSON.parse(
-      readFileSync(path.join(outputDir, "http-server-apis.json"), "utf8"),
-    ) as Array<{ name: string; endpoints: string[]; bindingStyle: string; sourceFile: string }>;
-
-    assert.equal(controllers.length, 1);
-    assert.equal(controllers[0]?.name, "FlowController");
-    assert.deepEqual(controllers[0]?.endpoints, ["GET /flow"]);
-    assert.equal(controllers[0]?.bindingStyle, "ANNOTATION");
-    assert.equal(controllers[0]?.sourceFile, "src/main/kotlin/com/flow/FlowController.kt");
-  });
-
-  it("discovers functional RouterFunction controllers in scan.extract", async () => {
-    const root = createTestTempDir("c2a-scan-flow-functional-");
-    const sourceDir = path.join(root, "src");
-    const javaDir = path.join(sourceDir, "src", "main", "java", "com", "example");
-    const outputDir = path.join(root, "out");
-    mkdirSync(javaDir, { recursive: true });
-    mkdirSync(outputDir);
-    writeFileSync(
-      path.join(sourceDir, "pom.xml"),
-      `<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example</groupId>
-  <artifactId>app</artifactId>
-  <version>1.0.0</version>
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-  </properties>
-</project>`,
-    );
-    writeFileSync(
-      path.join(javaDir, "UserRouterConfig.java"),
-      readFileSync(
-        path.join(
-          path.dirname(fileURLToPath(import.meta.url)),
-          "../fixtures/java-rest-controllers/functional/user-router-config.java",
-        ),
-        "utf8",
-      ),
-    );
-
-    await runScanFlow({
-      sourceDirs: [sourceDir],
-      outputDir,
-      force: false,
-      scanId: "test-scan-functional-router",
-      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
-      verbose: false,
-      profile: false,
-      parallelism: testParallelismOptions,
-      processorFilters: {
-        with: ["scan.scope.unversioned-folders"],
-        without: [],
-        withOnly: [],
-      },
-    });
-
-    const controllers = JSON.parse(
-      readFileSync(path.join(outputDir, "http-server-apis.json"), "utf8"),
-    ) as Array<{ name: string; bindingStyle: string; symbolKey: string }>;
-
-    assert.equal(controllers.length, 1);
-    assert.equal(controllers[0]?.name, "userRoutes");
-    assert.equal(controllers[0]?.bindingStyle, "ROUTER");
-    assert.equal(controllers[0]?.symbolKey, "com.example.UserRouterConfig#userRoutes");
-  });
-
   it("records profiling metrics when profiling is enabled", async () => {
     const root = createTestTempDir("c2a-scan-flow-profile-");
     const sourceDir = path.join(root, "src");
@@ -410,6 +247,42 @@ class FlowController {
       assert.ok(typeof report.metrics['run.step.duration{step="1"}'] === "number");
     } finally {
       resetProfilingState();
+    }
+  });
+
+  it("writes code-inventory and exits with runtime error when continue-on-error is enabled", async () => {
+    processorRegistry.register(new FailingScopeProcessor());
+    try {
+      const root = createTestTempDir("c2a-scan-flow-coe-");
+      const sourceDir = path.join(root, "src");
+      const outputDir = path.join(root, "out");
+      mkdirSync(sourceDir);
+      mkdirSync(outputDir);
+
+      await assert.rejects(
+        async () => {
+          await runScanFlow({
+            sourceDirs: [sourceDir],
+            outputDir,
+            force: false,
+            scanId: "test-scan-coe",
+            runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+            verbose: false,
+            profile: false,
+            parallelism: testParallelismContinueOnError,
+            processorFilters: {
+              with: [],
+              without: [],
+              withOnly: [`scan.scope.${FAILING_SCOPE_ARTIFACT}`],
+            },
+          });
+        },
+        (error: unknown) => error instanceof CliError && error.exitCode === ExitCode.RUNTIME,
+      );
+
+      assert.ok(existsSync(path.join(outputDir, "manifest.json")));
+    } finally {
+      processorRegistry.unregister("scan.scope", FAILING_SCOPE_ARTIFACT);
     }
   });
 });

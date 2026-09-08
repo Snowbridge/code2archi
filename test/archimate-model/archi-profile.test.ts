@@ -10,7 +10,6 @@ import {
   GradleModuleArtifactProfile,
   LibraryModuleProfile,
   MavenModuleArtifactProfile,
-  RestControllerProfile,
   RunsOnProfile,
 } from "../../src/archimate-model/profiles/profile.js";
 
@@ -54,7 +53,6 @@ describe("ArchiProfile", () => {
     assert.equal(BuildScriptProfile.create().conceptType, "Artifact");
     assert.equal(MavenModuleArtifactProfile.create().conceptType, "Artifact");
     assert.equal(LibraryModuleProfile.create().conceptType, "ApplicationComponent");
-    assert.equal(RestControllerProfile.create().conceptType, "ApplicationService");
     assert.equal(RunsOnProfile.create().conceptType, "AssignmentRelationship");
     assert.equal(BuiltWithProfile.create().conceptType, "AssignmentRelationship");
     assert.equal(CompiledWithProfile.create().conceptType, "AssignmentRelationship");

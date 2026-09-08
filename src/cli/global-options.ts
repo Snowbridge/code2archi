@@ -1,20 +1,9 @@
 import os from "node:os";
 import type { Options } from "yargs";
 import { CliError } from "./cli-error.js";
-import type { LogLevel } from "./processor-groups.js";
 
 export function defaultThreadCount(): number {
   return Math.max(1, Math.floor(os.cpus().length / 2));
-}
-
-export function coerceLogLevel(value: unknown): LogLevel {
-  const normalized = String(value).toUpperCase();
-  if (normalized === "INFO" || normalized === "DEBUG") {
-    return normalized;
-  }
-  throw new CliError(
-    `Invalid --log-level: expected INFO or DEBUG, got "${String(value)}"`,
-  );
 }
 
 export function coerceThreads(value: unknown): number {
@@ -35,12 +24,10 @@ function processorFilterOption(description: string): Options {
 }
 
 export const globalOptions: Record<string, Options> = {
-  "log-level": {
-    alias: "L",
-    type: "string",
-    default: "INFO",
-    coerce: coerceLogLevel,
-    describe: "Logging level (INFO or DEBUG)",
+  debug: {
+    type: "boolean",
+    default: false,
+    describe: "Enable DEBUG logging and debug artifacts",
   },
   verbose: {
     alias: "V",

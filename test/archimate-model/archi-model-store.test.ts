@@ -53,7 +53,7 @@ describe("ArchiModelStore", () => {
     assert.equal(store.listElements().length, 1);
   });
 
-  it("rejects duplicate ids", () => {
+  it("skips duplicate element ids on find-or-create merge", () => {
     const store = new ArchiModelStore({
       modelName: "Example",
       modelId: "model-id",
@@ -70,15 +70,13 @@ describe("ArchiModelStore", () => {
       { elements: [element] },
     );
 
-    assert.throws(
-      () =>
-        store.addCreateIntents(
-          "generate.elements",
-          { groupId: "generate.elements", artifactId: "demo" },
-          { elements: [element] },
-        ),
-      /Duplicate id: duplicate-id/,
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
+      { elements: [element] },
     );
+
+    assert.equal(store.listElements().length, 1);
   });
 
   it("creates nested folders and finds them by parent and name", () => {

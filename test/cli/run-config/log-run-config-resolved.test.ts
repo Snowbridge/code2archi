@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { logRunConfigResolved } from "../../../src/cli/run-config/log-run-config-resolved.js";
+import { logBootstrapStartup } from "../../../src/cli/run-config/log-run-config-resolved.js";
 import { withTestLogging } from "../../platform/logging/test-logging.js";
 
 function readSingleLogFile(dir: string): string {
@@ -14,11 +14,14 @@ function readSingleLogFile(dir: string): string {
 describe("logRunConfigResolved", () => {
   it("writes INFO run-config resolved with path and name", async () => {
     const dir = await withTestLogging({ logLevel: "INFO", verbose: false }, () => {
-      logRunConfigResolved({
-        path: "/tmp/custom/code2archi.yaml",
-        name: "code2archi.yaml",
-        loaded: true,
-      });
+      logBootstrapStartup(
+        {
+          path: "/tmp/custom/code2archi.yaml",
+          name: "code2archi.yaml",
+          loaded: true,
+        },
+        ["scan", "/src"],
+      );
     });
 
     const content = readSingleLogFile(dir);
@@ -30,11 +33,25 @@ describe("logRunConfigResolved", () => {
 
   it("logs none when config is not loaded", async () => {
     const dir = await withTestLogging({ logLevel: "INFO", verbose: false }, () => {
-      logRunConfigResolved({ path: "none", name: "none", loaded: false });
+      logBootstrapStartup({ path: "none", name: "none", loaded: false }, [
+        "generate",
+        "out.archimate",
+      ]);
     });
 
     const content = readSingleLogFile(dir);
     assert.match(content, /path=none/);
     assert.match(content, /name=none/);
+  });
+
+  it("logs full command line for bootstrap identification", async () => {
+    const argv = ["scan", "/src", "--continue-on-error"];
+    const dir = await withTestLogging({ logLevel: "INFO", verbose: false }, () => {
+      logBootstrapStartup({ path: "none", name: "none", loaded: false }, argv);
+    });
+
+    const content = readSingleLogFile(dir);
+    assert.match(content, /command line/);
+    assert.match(content, /commandLine=code2archi scan \/src --continue-on-error/);
   });
 });

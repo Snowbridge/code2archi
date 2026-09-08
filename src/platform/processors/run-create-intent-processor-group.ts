@@ -8,9 +8,7 @@ import {
   buildScanLinkTasks,
   buildScanRepositoryBatchTasks,
 } from "../parallelism/task-planner.js";
-import { partitionScanSourceProcessors } from "../parallelism/scan-extract-phases.js";
 import { serializeDiscoverySnapshot } from "../parallelism/snapshot-serialization.js";
-import type { SnapshotRepositoryFilterScope } from "../parallelism/snapshot-serialization.js";
 import type { WorkerPool } from "../parallelism/worker-pool.js";
 import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
@@ -20,6 +18,7 @@ import type { ProcessorId } from "./processor.js";
 import { getLogger } from "../logging/index.js";
 import {
   collectRepositoryBatchProcessorErrors,
+  finalizePoolErrorsAfterMerge,
   mergeRepositoryBatchResults,
   mergeParallelCreateIntentResults,
   runScanProcessorPool,
@@ -42,7 +41,9 @@ function countCreateIntents(output: CreateIntents): number {
     }
   }
   if (output.links) {
-    for (const links of Object.values(output.links)) {
+    for (const links of Object.values(output.links) as Array<
+      readonly import("../../code-inventory/entities/create-intents.js").LinkCreateIntentRecord[] | undefined
+    >) {
       if (links) {
         count += links.length;
       }
@@ -115,7 +116,6 @@ async function runParallelScanSourcePhase(
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
-  snapshotFilterScope: SnapshotRepositoryFilterScope,
 ): Promise<void> {
   if (processors.length === 0) {
     return;
@@ -123,12 +123,12 @@ async function runParallelScanSourcePhase(
 
   const snapshot = store.snapshot();
   const serialized = serializeDiscoverySnapshot(snapshot);
-  const phaseId = `scan.extract.${snapshotFilterScope}`;
+  const phaseId = "scan.extract.assembly";
   await parallel.pool.setupPhase(
     {
       phaseId,
       snapshot: serialized,
-      snapshotFilterScope,
+      snapshotFilterScope: "assembly",
     },
     parallel.bridge,
   );
@@ -137,7 +137,7 @@ async function runParallelScanSourcePhase(
     processors,
     snapshot,
     progressStepId,
-    snapshotFilterScope,
+    "assembly",
     parallel.continueOnError,
   );
   if (tasks.length === 0) {
@@ -163,13 +163,13 @@ async function runParallelScanSourcePhase(
         message: error.message,
       });
     }
-    if (parallel.continueOnError) {
-      throw new AggregateError(
-        [...processorErrors.values()],
-        `${SCAN_EXTRACT_GROUP_ID}: ${processorErrors.size} processor(s) failed in batch`,
-      );
+    if (!parallel.continueOnError) {
+      throw [...processorErrors.values()][0];
     }
-    throw [...processorErrors.values()][0];
+    throw new AggregateError(
+      [...processorErrors.values()],
+      `${SCAN_EXTRACT_GROUP_ID}: ${processorErrors.size} processor(s) failed in batch`,
+    );
   }
 }
 
@@ -179,16 +179,7 @@ async function runParallelScanSourceGroup(
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
 ): Promise<void> {
-  const { assembly, rest } = partitionScanSourceProcessors(processors);
-
-  await runParallelScanSourcePhase(
-    assembly,
-    store,
-    parallel,
-    progressStepId,
-    "assembly",
-  );
-  await runParallelScanSourcePhase(rest, store, parallel, progressStepId, "rest");
+  await runParallelScanSourcePhase(processors, store, parallel, progressStepId);
 }
 
 async function runParallelScanLinkGroup(
@@ -203,7 +194,7 @@ async function runParallelScanLinkGroup(
     tasks.map((task) => [task.taskId, task.input.processor]),
   );
 
-  const { results } = await runScanProcessorPool(
+  const { results, errors } = await runScanProcessorPool(
     parallel.pool,
     parallel.bridge,
     tasks,
@@ -212,6 +203,7 @@ async function runParallelScanLinkGroup(
   );
 
   mergeParallelCreateIntentResults("scan.transform", store, processorByTaskId, results);
+  finalizePoolErrorsAfterMerge("scan.transform", errors, parallel.continueOnError);
 
   for (const processor of processors) {
     progress?.tick(1);

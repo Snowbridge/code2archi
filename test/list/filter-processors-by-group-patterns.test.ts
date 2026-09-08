@@ -27,7 +27,7 @@ class StubProcessor extends AbstractProcessor<string, string[]> {
 describe("filterProcessorsByGroupPatterns", () => {
   it("returns all builtin processors sorted when patterns are empty", () => {
     const processors = filterProcessorsByGroupPatterns([]);
-    assert.ok(processors.length >= 20);
+    assert.ok(processors.length >= 9);
 
     for (let index = 1; index < processors.length; index += 1) {
       const previous = processors[index - 1]!;
@@ -67,12 +67,12 @@ describe("filterProcessorsByGroupPatterns", () => {
     registry.register(new StubProcessor({ groupId: "scan.scope", artifactId: "b" }));
     registry.register(new StubProcessor({ groupId: "scan.scope", artifactId: "a" }));
     registry.register(
-      new StubProcessor({ groupId: "scan.extract.java.rest", artifactId: "x" }),
+      new StubProcessor({ groupId: "scan.extract.assembly.maven", artifactId: "x" }),
     );
 
     const processors = registry.listAll();
     assert.deepEqual(listDistinctGroupIds(processors), [
-      "scan.extract.java.rest",
+      "scan.extract.assembly.maven",
       "scan.scope",
     ]);
   });

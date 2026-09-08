@@ -63,7 +63,9 @@ export class CodeInventoryReader {
           continue;
         }
 
-        links[collection.linkType] = parsed as DiscoveryLinkRecord[];
+        const linkType = collection.linkType;
+        (links as Record<string, DiscoveryLinkRecord[]>)[linkType] =
+          parsed as DiscoveryLinkRecord[];
       }
     }
 

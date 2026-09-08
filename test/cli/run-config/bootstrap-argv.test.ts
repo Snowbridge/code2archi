@@ -119,7 +119,7 @@ describe("bootstrapArgv", () => {
         "  profile: true",
         "scan:",
         "  without:",
-        "    - scan.extract.java.rest.controller-annotation-based",
+        "    - scan.extract.assembly.maven.modules-and-dependencies",
       ].join("\n"),
       "utf8",
     );
@@ -166,7 +166,55 @@ describe("bootstrapArgv", () => {
     );
 
     const { argv, runConfig } = bootstrapArgv(["node", "script", "scan", "--help"], cwd);
-    assert.deepEqual(argv, ["node", "script", "scan", "--help"]);
+    assert.deepEqual(argv, ["scan", "--help"]);
     assert.equal(runConfig.path, "none");
+  });
+
+  it("injects source-dir from explicit --config when CLI omits positionals", () => {
+    const cwd = createTestTempDir("c2a-bootstrap-scan-config-pos-");
+    const configPath = path.join(cwd, "custom.yaml");
+    writeFileSync(
+      configPath,
+      [
+        "scan:",
+        "  source-dir:",
+        "    - ../repos/demo",
+        "  output: ./scan-out/",
+        "  force: true",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const { argv } = bootstrapArgv(["scan", "--config", configPath], cwd);
+
+    const scanIndex = argv.indexOf("scan");
+    assert.ok(scanIndex >= 0);
+    assert.equal(argv[scanIndex + 1], "../repos/demo");
+    assert.ok(argv.includes("--output"));
+    assert.ok(argv.includes("./scan-out/"));
+    assert.ok(argv.includes("--force"));
+  });
+
+  it("injects generate positionals from explicit --config when CLI omits them", () => {
+    const cwd = createTestTempDir("c2a-bootstrap-generate-config-pos-");
+    const configPath = path.join(cwd, "custom.yaml");
+    writeFileSync(
+      configPath,
+      [
+        "generate:",
+        "  output-file: model.archimate",
+        "  code-inventory: ./scan-out/",
+        "  force: true",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const { argv } = bootstrapArgv(["generate", "--config", configPath], cwd);
+
+    const generateIndex = argv.indexOf("generate");
+    assert.ok(generateIndex >= 0);
+    assert.equal(argv[generateIndex + 1], "model.archimate");
+    assert.equal(argv[generateIndex + 2], "./scan-out/");
+    assert.ok(argv.includes("--force"));
   });
 });

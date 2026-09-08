@@ -10,8 +10,8 @@ import { CliError } from "./cli/cli-error.js";
 import { ExitCode } from "./cli/exit-codes.js";
 import { globalOptions } from "./cli/global-options.js";
 import { validateGlobalArgv } from "./cli/validate-global-argv.js";
+import { logBootstrapStartup } from "./cli/run-config/log-run-config-resolved.js";
 import { bootstrapArgv } from "./cli/run-config/bootstrap-argv.js";
-import { logRunConfigResolved } from "./cli/run-config/log-run-config-resolved.js";
 import { setRunConfigResolution } from "./cli/run-config/run-config-context.js";
 import { initLogging } from "./platform/logging/index.js";
 import { initProfiling } from "./platform/profiling/index.js";
@@ -53,11 +53,11 @@ yargs(bootstrappedArgv)
 
     const globalArgv = argv as unknown as GlobalArgv;
     initLogging({
-      logLevel: globalArgv.logLevel,
+      logLevel: globalArgv.debug ? "DEBUG" : "INFO",
       verbose: globalArgv.verbose,
     });
     if (!argv.help && !argv.version) {
-      logRunConfigResolved(runConfigResolution);
+      logBootstrapStartup(runConfigResolution, bootstrappedArgv);
     }
     initProfiling({
       enabled: globalArgv.profile,

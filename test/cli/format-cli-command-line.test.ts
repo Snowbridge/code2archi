@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   formatCliCommandLine,
+  formatUserCliCommandLine,
   shellQuoteCliArg,
 } from "../../src/cli/format-cli-command-line.js";
 
@@ -29,6 +30,15 @@ describe("formatCliCommandLine", () => {
 
   it("returns code2archi when no user args are present", () => {
     assert.equal(formatCliCommandLine(["node", "dist/index.js"]), "code2archi");
+  });
+});
+
+describe("formatUserCliCommandLine", () => {
+  it("formats hideBin-style argv without slicing node and script path", () => {
+    assert.equal(
+      formatUserCliCommandLine(["generate", "bg-api-limit", "--force"]),
+      "code2archi generate bg-api-limit --force",
+    );
   });
 });
 

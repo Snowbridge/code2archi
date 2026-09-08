@@ -40,7 +40,7 @@ export function serializeDiscoverySnapshot(
   for (const linkType of LINK_TYPES) {
     const records = snapshot.listLinks(linkType);
     if (records.length > 0) {
-      links[linkType] = records;
+      (links as Record<string, readonly DiscoveryLinkRecord[]>)[linkType as string] = records;
     }
   }
 
@@ -69,12 +69,11 @@ export function deserializeDiscoverySnapshot(
   });
 }
 
-export type SnapshotRepositoryFilterScope = "assembly" | "rest";
+export type SnapshotRepositoryFilterScope = "assembly";
 
 export function filterSerializableDiscoverySnapshotToRepository(
   data: SerializableDiscoverySnapshot,
   repositoryId: string,
-  scope: SnapshotRepositoryFilterScope = "rest",
 ): SerializableDiscoverySnapshot {
   const repositories = data.entities.Repository ?? [];
   const repository = repositories.find((record) => record.id === repositoryId);
@@ -82,72 +81,11 @@ export function filterSerializableDiscoverySnapshotToRepository(
     throw new Error(`Repository not found in snapshot: ${repositoryId}`);
   }
 
-  if (scope === "assembly") {
-    return {
-      ...data,
-      entities: {
-        Repository: [repository],
-      },
-      links: {},
-    };
-  }
-
-  const modules = (data.entities.ApplicationModule ?? []).filter(
-    (record) => record.repositoryId === repositoryId,
-  );
-  const moduleIds = new Set(modules.map((record) => record.id));
-
-  const entities: Partial<Record<EntityType, readonly DiscoveryEntityRecord[]>> = {
-    Repository: [repository],
-  };
-
-  if (modules.length > 0) {
-    entities.ApplicationModule = modules;
-  }
-
-  const dependencies = (data.entities.ApplicationModuleDependency ?? []).filter((record) =>
-    moduleIds.has(String(record.parentId)),
-  );
-  if (dependencies.length > 0) {
-    entities.ApplicationModuleDependency = dependencies;
-  }
-
-  for (const entityType of ENTITY_TYPES) {
-    if (
-      entityType === "Repository" ||
-      entityType === "ApplicationModule" ||
-      entityType === "ApplicationModuleDependency"
-    ) {
-      continue;
-    }
-
-    const records = data.entities[entityType];
-    if (!records || records.length === 0) {
-      continue;
-    }
-
-    const filtered = records.filter((record) => {
-      const applicationModuleId = (record as { applicationModuleId?: string }).applicationModuleId;
-      if (applicationModuleId !== undefined) {
-        return moduleIds.has(applicationModuleId);
-      }
-
-      const recordRepositoryId = (record as { repositoryId?: string }).repositoryId;
-      if (recordRepositoryId !== undefined) {
-        return recordRepositoryId === repositoryId;
-      }
-
-      return false;
-    });
-
-    if (filtered.length > 0) {
-      entities[entityType] = filtered;
-    }
-  }
-
   return {
     ...data,
-    entities,
+    entities: {
+      Repository: [repository],
+    },
     links: {},
   };
 }

@@ -3,12 +3,12 @@ import { describe, it } from "node:test";
 import "../src/platform/processors/builtin-processors.js";
 import { CliError } from "../src/cli/cli-error.js";
 import { ExitCode } from "../src/cli/exit-codes.js";
-import { coerceLogLevel, coerceThreads } from "../src/cli/global-options.js";
+import { coerceThreads } from "../src/cli/global-options.js";
 import { validateGlobalArgv } from "../src/cli/validate-global-argv.js";
 
 function baseArgv(): Record<string, unknown> {
   return {
-    logLevel: "INFO",
+    debug: false,
     verbose: false,
     profile: false,
     threads: 2,
@@ -117,15 +117,6 @@ describe("validateGlobalArgv", () => {
 });
 
 describe("global option coercion", () => {
-  it("coerces log level case-insensitively", () => {
-    assert.equal(coerceLogLevel("debug"), "DEBUG");
-    assert.equal(coerceLogLevel("Info"), "INFO");
-  });
-
-  it("rejects invalid log level", () => {
-    expectCliError(() => coerceLogLevel("trace"), "Invalid --log-level");
-  });
-
   it("rejects invalid threads", () => {
     expectCliError(() => coerceThreads(0), "Invalid --threads");
     expectCliError(() => coerceThreads(1.5), "Invalid --threads");

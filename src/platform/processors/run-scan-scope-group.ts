@@ -10,7 +10,7 @@ import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanScopeInput, ScanScopeOutput } from "./processor.js";
 import { getLogger } from "../logging/index.js";
-import { throwOnPoolErrors } from "./parallel-group-runner.js";
+import { finalizePoolErrorsAfterMerge, throwOnPoolErrors } from "./parallel-group-runner.js";
 import type { Repository } from "../../code-inventory/entities/repository.js";
 
 export async function runScanScopeGroup(
@@ -82,6 +82,8 @@ export async function runScanScopeGroup(
         });
         processor.logCompleted(repositories.length);
       }
+
+      finalizePoolErrorsAfterMerge(SCAN_SCOPE_GROUP_ID, errors, parallel.continueOnError);
     }
   } else {
     const input: ScanScopeInput = { sourceDirs, progress };

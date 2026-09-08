@@ -15,7 +15,7 @@ import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import { getLogger } from "../logging/index.js";
 import type { ProcessorGroupParallelContext } from "./run-create-intent-processor-group.js";
-import { throwOnPoolErrors } from "./parallel-group-runner.js";
+import { finalizePoolErrorsAfterMerge, throwOnPoolErrors } from "./parallel-group-runner.js";
 
 function countArchiCreateIntents(output: ArchiCreateIntents): number {
   return (
@@ -124,6 +124,8 @@ export async function runGenerateProcessorGroup(
     processor.logCompleted(count);
     progress?.tick(1);
   }
+
+  finalizePoolErrorsAfterMerge(builtInGroupId, errors, parallel.continueOnError);
 
   logger.info("group completed", { groupId: builtInGroupId });
 }

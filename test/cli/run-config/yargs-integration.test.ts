@@ -3,24 +3,28 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
 import "../../../src/platform/processors/builtin-processors.js";
 import { bootstrapArgv } from "../../../src/cli/run-config/bootstrap-argv.js";
 import { globalOptions } from "../../../src/cli/global-options.js";
+import { generateCommand } from "../../../src/cli/commands/generate.js";
 import { scanCommand } from "../../../src/cli/commands/scan.js";
 import { validateGlobalArgv } from "../../../src/cli/validate-global-argv.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 import { resolveLocalRunConfigPath } from "../../../src/cli/run-config/resolve-run-config-path.js";
 
-async function parseBootstrappedScanArgv(rawArgv: string[], cwd: string) {
+async function parseBootstrappedArgv(
+  rawArgv: string[],
+  cwd: string,
+  commandModule: typeof scanCommand | typeof generateCommand,
+) {
   const previousCwd = process.cwd();
   process.chdir(cwd);
   try {
     const { argv: merged } = bootstrapArgv(rawArgv, cwd);
-    const parsed = await yargs(hideBin(merged))
+    const parsed = await yargs(merged)
       .options(globalOptions)
       .command({
-        ...scanCommand,
+        ...commandModule,
         handler: () => undefined,
       })
       .parse();
@@ -30,6 +34,14 @@ async function parseBootstrappedScanArgv(rawArgv: string[], cwd: string) {
   } finally {
     process.chdir(previousCwd);
   }
+}
+
+async function parseBootstrappedScanArgv(rawArgv: string[], cwd: string) {
+  return parseBootstrappedArgv(rawArgv, cwd, scanCommand);
+}
+
+async function parseBootstrappedGenerateArgv(rawArgv: string[], cwd: string) {
+  return parseBootstrappedArgv(rawArgv, cwd, generateCommand);
 }
 
 describe("bootstrapArgv + yargs integration", () => {
@@ -62,12 +74,12 @@ describe("bootstrapArgv + yargs integration", () => {
     assert.deepEqual(parsed["source-dir"], ["./src-b"]);
   });
 
-  it("ignores log-level from config", async () => {
-    const cwd = createTestTempDir("c2a-yargs-log-level-");
+  it("ignores debug from config", async () => {
+    const cwd = createTestTempDir("c2a-yargs-debug-");
     mkdirSync(path.join(cwd, "src"), { recursive: true });
     writeFileSync(
       resolveLocalRunConfigPath(cwd),
-      "root:\n  log-level: DEBUG\nscan:\n  source-dir:\n    - ./src\n",
+      "root:\n  debug: true\nscan:\n  source-dir:\n    - ./src\n",
       "utf8",
     );
 
@@ -76,6 +88,65 @@ describe("bootstrapArgv + yargs integration", () => {
       cwd,
     );
 
-    assert.equal(parsed.logLevel, "INFO");
+    assert.equal(parsed.debug, false);
+  });
+
+  it("parses --debug flag", async () => {
+    const cwd = createTestTempDir("c2a-yargs-debug-flag-");
+    mkdirSync(path.join(cwd, "src"), { recursive: true });
+
+    const parsed = await parseBootstrappedScanArgv(
+      ["node", "script", "--debug", "scan", "./src"],
+      cwd,
+    );
+
+    assert.equal(parsed.debug, true);
+  });
+
+  it("applies source-dir from explicit --config when CLI omits positionals", async () => {
+    const cwd = createTestTempDir("c2a-yargs-config-pos-");
+    const configPath = path.join(cwd, "custom.yaml");
+    mkdirSync(path.join(cwd, "src"), { recursive: true });
+    writeFileSync(
+      configPath,
+      [
+        "scan:",
+        "  source-dir:",
+        "    - ./src",
+        "  output: ./out",
+        "  force: true",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const parsed = await parseBootstrappedScanArgv(["scan", "--config", configPath], cwd);
+
+    assert.deepEqual(parsed["source-dir"], ["./src"]);
+    assert.equal(parsed.output, "./out");
+    assert.equal(parsed.force, true);
+  });
+
+  it("applies generate positionals from explicit --config when CLI omits them", async () => {
+    const cwd = createTestTempDir("c2a-yargs-generate-config-pos-");
+    const configPath = path.join(cwd, "custom.yaml");
+    writeFileSync(
+      configPath,
+      [
+        "generate:",
+        "  output-file: model.archimate",
+        "  code-inventory: ./scan-out/",
+        "  force: true",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const parsed = await parseBootstrappedGenerateArgv(
+      ["generate", "--config", configPath],
+      cwd,
+    );
+
+    assert.equal(parsed["output-file"], "model.archimate");
+    assert.equal(parsed["code-inventory"], "./scan-out/");
+    assert.equal(parsed.force, true);
   });
 });

@@ -7,23 +7,17 @@ import type { EntityType } from "./entities/entity-types.js";
 import type { LinkType } from "./links/link-types.js";
 import type { RunEntityStore } from "./run-entity-store.js";
 
+const CODE_INVENTORY_OPENAPI_ID =
+  "https://code2archi.dev/specifications/code-inventory/openapi.yaml";
+
 export const REPOSITORY_SCHEMA_ID =
-  "https://code2archi.dev/specifications/code-inventory/schemas/Repository.schema.json";
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/Repository`;
 
 export const APPLICATION_MODULE_SCHEMA_ID =
-  "https://code2archi.dev/specifications/code-inventory/schemas/ApplicationModule.schema.json";
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/ApplicationModule`;
 
 export const APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID =
-  "https://code2archi.dev/specifications/code-inventory/schemas/ApplicationModuleDependency.schema.json";
-
-export const HTTP_SERVER_API_SCHEMA_ID =
-  "https://code2archi.dev/specifications/code-inventory/schemas/HttpServerApi.schema.json";
-
-export const HTTP_CLIENT_API_SCHEMA_ID =
-  "https://code2archi.dev/specifications/code-inventory/schemas/HttpClientApi.schema.json";
-
-export const HTTP_CLIENT_TO_SERVER_API_LINK_SCHEMA_ID =
-  "https://code2archi.dev/specifications/code-inventory/schemas/HttpClientToServerApiLink.schema.json";
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/ApplicationModuleDependency`;
 
 interface ManifestCollectionEntry {
   readonly path: string;
@@ -76,28 +70,11 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
     collectionPath: "application-module-dependencies.json",
     schemaId: APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   },
-  HttpServerApi: {
-    collectionPath: "http-server-apis.json",
-    schemaId: HTTP_SERVER_API_SCHEMA_ID,
-  },
-  HttpClientApi: {
-    collectionPath: "http-client-apis.json",
-    schemaId: HTTP_CLIENT_API_SCHEMA_ID,
-  },
   MessageConsumer: { collectionPath: "message-consumers.json" },
   MessageProducer: { collectionPath: "message-producers.json" },
 };
 
-const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
-  HttpClientToServerApiLink: {
-    collectionPath: "http-client-to-server-api-links.json",
-    schemaId: HTTP_CLIENT_TO_SERVER_API_LINK_SCHEMA_ID,
-    fromEntityType: "HttpServerApi",
-    toEntityType: "HttpClientApi",
-    fromIdField: "httpServerApiId",
-    toIdField: "httpClientApiId",
-  },
-};
+const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {};
 
 function getEntityCollectionDef(entityType: EntityType): EntityCollectionDef {
   return ENTITY_COLLECTION_REGISTRY[entityType];

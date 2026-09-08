@@ -6,7 +6,7 @@ export const RUN_CONFIG_EXCLUDED_KEYS = new Set([
   "version",
   "help",
   "config",
-  "log-level",
+  "debug",
 ]);
 
 export const PROCESSOR_FILTER_KEYS = new Set(["with", "without", "with-only"]);
@@ -36,7 +36,6 @@ const COMMAND_OPTION_KEYS: Record<RunConfigCommandName, readonly string[]> = {
 };
 
 const OPTION_ALIASES: Record<string, string> = {
-  L: "log-level",
   V: "verbose",
   h: "help",
   v: "version",

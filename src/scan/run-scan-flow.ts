@@ -1,3 +1,5 @@
+import { CliError } from "../cli/cli-error.js";
+import { ExitCode } from "../cli/exit-codes.js";
 import {
   SCAN_TRANSFORM_GROUP_ID,
   SCAN_SCOPE_GROUP_ID,
@@ -20,7 +22,7 @@ import {
   scopeDiscoveryFlowStep,
   processorGroupFlowStep,
 } from "../platform/cli-progress/index.js";
-import { getLogger } from "../platform/logging/index.js";
+import { getLogger, logError } from "../platform/logging/index.js";
 import { measureFlowStep } from "../platform/profiling/flow-metrics.js";
 import type { ParallelismOptions } from "../platform/parallelism/parallelism-options.js";
 import { initScanIoCache, type ScanIoCacheOptions } from "../platform/scan-io/index.js";
@@ -100,7 +102,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     input.scanIoCache,
   );
 
-  let activeStep = "1";
+  const deferredErrors: Error[] = [];
 
   const store = new RunEntityStore({
     sourceDirs: input.sourceDirs,
@@ -108,10 +110,24 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     runStartedAt: input.runStartedAt,
   });
 
+  const runStep = async (stepId: string, action: () => Promise<void>): Promise<void> => {
+    try {
+      await measureFlowStep(stepId, action);
+    } catch (error) {
+      if (input.parallelism.continueOnError) {
+        logError(logger, error, { step: stepId });
+        progress.fail(stepId);
+        deferredErrors.push(error instanceof Error ? error : new Error(String(error)));
+        return;
+      }
+      progress.fail(stepId);
+      throw error;
+    }
+  };
+
   try {
     logger.info("step start", { step: 1, action: "repository discovery", groupId: SCAN_SCOPE_GROUP_ID });
-    activeStep = "1";
-    await measureFlowStep("1", async () => {
+    await runStep("1", async () => {
       await runScanScopeGroup(
         input.sourceDirs,
         input.processorFilters,
@@ -126,16 +142,14 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     progress.step("2").setTotal(sourceProcessorCount * repositoryCount);
 
     logger.info("step start", { step: "1b", action: "repository common root" });
-    activeStep = "1b";
-    await measureFlowStep("1b", async () => {
+    await runStep("1b", async () => {
       const repositoryCommonRoot = store.finalizeRepositoryNamespaces();
       logger.info("repository common root computed", { repositoryCommonRoot });
       progress.step("1b").tick(1);
     });
 
     logger.info("step start", { step: 2, action: "source discovery", groupId: SCAN_EXTRACT_GROUP_ID });
-    activeStep = "2";
-    await measureFlowStep("2", async () => {
+    await runStep("2", async () => {
       await runCreateIntentProcessorGroup(
         SCAN_EXTRACT_GROUP_ID,
         input.processorFilters,
@@ -148,8 +162,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     logger.info("step completed", { step: 2 });
 
     logger.info("step start", { step: 3, action: "link discovery", groupId: SCAN_TRANSFORM_GROUP_ID });
-    activeStep = "3";
-    await measureFlowStep("3", async () => {
+    await runStep("3", async () => {
       await runCreateIntentProcessorGroup(
         SCAN_TRANSFORM_GROUP_ID,
         input.processorFilters,
@@ -162,8 +175,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     logger.info("step completed", { step: 3 });
 
     logger.info("step start", { step: 4, action: "writing code-inventory", outputDir: input.outputDir });
-    activeStep = "4";
-    await measureFlowStep("4", async () => {
+    await runStep("4", async () => {
       new CodeInventoryWriter().write({
         outputDir: input.outputDir,
         store,
@@ -175,12 +187,17 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     logger.info("step completed", { step: 4, outputDir: input.outputDir });
 
     logger.info("flow completed", { outputDir: input.outputDir, repositoryCount });
-  } catch (error) {
-    progress.fail(activeStep);
-    throw error;
   } finally {
     shutdownPool();
     progress.stop();
+  }
+
+  if (deferredErrors.length > 0) {
+    const summary = deferredErrors.map((error) => error.message).join("; ");
+    throw new CliError(
+      `Scan completed with ${deferredErrors.length} error(s): ${summary}`,
+      ExitCode.RUNTIME,
+    );
   }
 }
 

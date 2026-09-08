@@ -36,7 +36,7 @@ export const GENERATE_VIEWS_GROUP_ID: GenerateProcessorGroupId = "generate.views
 export type LogLevel = "INFO" | "DEBUG";
 
 export interface GlobalArgv {
-  logLevel: LogLevel;
+  debug: boolean;
   verbose: boolean;
   profile: boolean;
   threads: number;

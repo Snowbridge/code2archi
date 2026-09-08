@@ -96,7 +96,7 @@ Open `landscape.archimate` in Archi: **File → Open Model**.
 
 | Option | Description |
 | ------ | ----------- |
-| `-L, --log-level` | `INFO` (default) or `DEBUG` |
+| `--debug` | Enable DEBUG logging and debug artifacts |
 | `-V, --verbose` | Mirror TSV log to stderr |
 | `--profile` | Write JSON metrics report to `$TMP` |
 | `--threads` / `--sync` | Parallel or single-threaded processor execution |
@@ -133,32 +133,8 @@ Built-in processors discover:
 
 - **Repositories** — `git-repositories`, `unversioned-folders` (`scan.scope`)
 - **Application modules** — Gradle, Maven, npm (including workspaces where applicable) with inter-module dependencies (`scan.extract.assembly`)
-- **REST controllers (Java/Kotlin)** — annotation-based and functional routing:
-  - Spring Web / WebFlux (MVC annotations)
-  - JAX-RS (Quarkus)
-  - Micronaut (`@Controller`)
-  - Spring `RouterFunction` / `CoRouterFunction`
-  - Micronaut `RouteBuilder`
-  - Quarkus Vert.x / reactive routes
-  - Ktor routing
-- **REST clients (Java/Kotlin)** — declarative and programmatic HTTP clients:
-  - Spring `@Bean` WebClient / RestClient factories
-  - Spring OpenFeign
-  - Spring HTTP Interface (`@HttpExchange`)
-  - MicroProfile REST Client
-  - Micronaut `@Client`
-  - Retrofit
-  - Spring WebClient
-  - Spring RestTemplate / HttpClientApi
-  - Apache HttpClient (incl. `UriComponentsBuilder` + path constants)
-  - OkHttp
-  - `java.net.http.HttpClient`
-  - Spring WebClient wrappers
-  - Ktor `HttpClient`
-  - Top-level Ktor `HttpClient` functions
-  - Top-level WebClient helpers
 
-Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, …) validated against JSON Schema in the specifications repo.
+Output is a directory of JSON files (manifest.json, repositories.json, application-modules.json, application-module-dependencies.json, …) validated against the OpenAPI contract in the specifications repo.
 
 ### `generate` — ArchiMate model
 
@@ -175,9 +151,6 @@ From code-inventory, built-in processors currently materialise these **element s
 **Application layer**
 
 - Application components per module (including library aggregation)
-- REST API contract application interfaces
-- REST client application services
-- REST controller application services
 
 The result is a plain XML `.archimate` file compatible with Archi 5.x.
 
@@ -204,15 +177,15 @@ The README above describes the **current slice** of the vision. The table below 
 | **Reconciliation** | Compare code, ArchiMate model, and declared contracts (OpenAPI, schemas); surface gaps explicitly | Not implemented (capability: [reconciliation](../documentation/product-intent/capability/reconciliation.md)) |
 | **Business layer** | Camunda / BPMN process inventory and links | Not implemented (capability: [business-process-inventory](../documentation/product-intent/capability/business-process-inventory.md)) |
 | **Inter-service links** | HTTP clients, message producers/consumers, cross-service dependencies in the model | Entity types (MessageConsumer, MessageProducer) reserved; no scan/generate processors yet |
-| **JavaScript / TypeScript** | Source-level discovery alongside JVM languages | npm **module assembly** only; no JS/TS REST or application parsing |
+| **JavaScript / TypeScript** | Source-level discovery alongside JVM languages | npm **module assembly** only; no JS/TS source parsing yet |
 | **Technology inventory** | Broad runtime, framework, and infra-pattern coverage (databases, messaging, deployment) | Limited to repo/module structure, versions from build files, runtime catalog |
 | **Diagrams** | `generate.views` — layout diagrams in Archi | Processor group exists; **no view processors** registered |
 | **Plugins** | Extend scan/generate without forking core | Processor registry is internal; **plugin host API not shipped** |
 | **Run configuration** | `config` command, merged CLI + file defaults | Not specified |
-| **Element slot coverage** | All documented `generate.elements` slots materialised in `.archimate` | 17/17 documented element slots implemented |
+| **Element slot coverage** | All documented `generate.elements` slots materialised in `.archimate` | 10/10 documented element slots implemented |
 | **Model refresh at scale** | Repeatable refresh every release cycle in hours | Mechanically possible via re-run; automation, diff, and reconcile reporting still missing |
 
-In practice today, `c2a` gives a solid **first-pass AS-IS map** of repositories, modules, build/runtime facts, Java/Kotlin REST surface — enough to open in Archi and review structure. It does **not** yet replace modelling pipeline, reconciliation, business layer, inter-service links.
+In practice today, `c2a` gives a solid **first-pass AS-IS map** of repositories, modules, build/runtime facts — enough to open in Archi and review structure. It does **not** yet replace modelling pipeline, reconciliation, business layer, inter-service links.
 
 <!-- readme-status:end:gap -->
 

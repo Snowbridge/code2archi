@@ -37,7 +37,6 @@ function resolveScanProcessorSnapshot(input: ScanProcessorTaskInput): ScanAppInp
     const snapshotData = filterSerializableDiscoverySnapshotToRepository(
       input.snapshot,
       input.repositoryId,
-      input.snapshotFilterScope ?? "rest",
     );
     return deserializeDiscoverySnapshot(snapshotData);
   }
@@ -55,7 +54,10 @@ function countCreateIntents(output: CreateIntents): number {
       ? Object.values(output.entities).reduce((sum, records) => sum + (records?.length ?? 0), 0)
       : 0) +
     (output.links
-      ? Object.values(output.links).reduce((sum, records) => sum + (records?.length ?? 0), 0)
+      ? (Object.values(output.links) as Array<{ length: number } | undefined>).reduce(
+          (sum, records) => sum + (records?.length ?? 0),
+          0,
+        )
       : 0)
   );
 }

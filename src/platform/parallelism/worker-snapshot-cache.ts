@@ -23,7 +23,6 @@ export function getOrBuildRepositorySnapshot(repositoryId: string): CodeInventor
   const filtered = filterSerializableDiscoverySnapshotToRepository(
     phase.snapshot,
     repositoryId,
-    phase.snapshotFilterScope,
   );
   const snapshot = deserializeDiscoverySnapshot(filtered);
   cache.set(key, snapshot);

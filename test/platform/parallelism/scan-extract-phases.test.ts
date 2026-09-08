@@ -1,40 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  classifyScanSourcePhase,
-  partitionScanSourceProcessors,
-} from "../../../src/platform/parallelism/scan-extract-phases.js";
-import {
   filterSerializableDiscoverySnapshotToRepository,
   serializeDiscoverySnapshot,
 } from "../../../src/platform/parallelism/snapshot-serialization.js";
 import { buildScanRepositoryBatchTasks, buildScanSourceTasks } from "../../../src/platform/parallelism/task-planner.js";
 import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
-
-describe("scan source phases", () => {
-  it("classifies assembly processors by groupId prefix", () => {
-    assert.equal(
-      classifyScanSourcePhase("scan.extract.assembly.maven"),
-      "assembly",
-    );
-    assert.equal(
-      classifyScanSourcePhase("scan.extract.java.rest"),
-      "rest",
-    );
-  });
-
-  it("partitions processors into assembly and rest groups", () => {
-    const processors = [
-      { id: { groupId: "scan.extract.assembly.maven", artifactId: "modules-and-dependencies" } },
-      { id: { groupId: "scan.extract.assembly.gradle", artifactId: "modules-and-dependencies" } },
-      { id: { groupId: "scan.extract.java.rest", artifactId: "client-declarative" } },
-    ];
-
-    const { assembly, rest } = partitionScanSourceProcessors(processors);
-    assert.equal(assembly.length, 2);
-    assert.equal(rest.length, 1);
-  });
-});
 
 describe("filterSerializableDiscoverySnapshotToRepository", () => {
   const snapshot = buildCodeInventorySnapshot({
@@ -95,30 +66,11 @@ describe("filterSerializableDiscoverySnapshotToRepository", () => {
   const serialized = serializeDiscoverySnapshot(snapshot);
 
   it("keeps only target repository in assembly scope", () => {
-    const filtered = filterSerializableDiscoverySnapshotToRepository(
-      serialized,
-      "repo-a",
-      "assembly",
-    );
+    const filtered = filterSerializableDiscoverySnapshotToRepository(serialized, "repo-a");
 
     assert.deepEqual(filtered.entities.Repository?.map((record) => record.id), ["repo-a"]);
     assert.equal(filtered.entities.ApplicationModule, undefined);
     assert.deepEqual(filtered.links, {});
-  });
-
-  it("keeps repository modules and dependencies in rest scope", () => {
-    const filtered = filterSerializableDiscoverySnapshotToRepository(
-      serialized,
-      "repo-a",
-      "rest",
-    );
-
-    assert.deepEqual(filtered.entities.Repository?.map((record) => record.id), ["repo-a"]);
-    assert.deepEqual(filtered.entities.ApplicationModule?.map((record) => record.id), ["mod-a"]);
-    assert.deepEqual(filtered.entities.ApplicationModuleDependency?.map((record) => record.id), [
-      "dep-a",
-    ]);
-    assert.equal(filtered.entities.ApplicationModule?.[0]?.repositoryId, "repo-a");
   });
 });
 

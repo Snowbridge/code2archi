@@ -40,8 +40,6 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
     "RuntimeEnvironment",
     "ApplicationModule",
     "ApplicationModuleDependency",
-    "HttpServerApi",
-    "HttpClientApi",
     "MessageConsumer",
     "MessageProducer",
   ],
@@ -50,9 +48,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 /** Mirror of documentation/specifications/code-inventory/entity-types.md § link types */
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
-> = {
-  "scan.transform": ["HttpClientToServerApiLink"],
-};
+> = {};
 
 function isEntityTypeAllowedForGroup(
   builtInGroupId: BuiltInProcessorGroupId,
@@ -213,7 +209,9 @@ export class RunEntityStore {
     }
 
     if (intents.links) {
-      for (const [linkTypeKey, records] of Object.entries(intents.links)) {
+      for (const [linkTypeKey, records] of Object.entries(intents.links) as Array<
+        [string, readonly import("./entities/create-intents.js").LinkCreateIntentRecord[] | undefined]
+      >) {
         if (!records || records.length === 0) {
           continue;
         }
@@ -284,18 +282,19 @@ export class RunEntityStore {
       throw new Error(`Entity record of type ${entityType} is missing id`);
     }
 
-    if (this.globalIds.has(record.id)) {
-      throw new Error(`Duplicate id: ${record.id} (entityType: ${entityType})`);
-    }
-
     let bucket = this.entities.get(entityType);
     if (!bucket) {
       bucket = new Map();
       this.entities.set(entityType, bucket);
     }
 
-    if (bucket.has(record.id)) {
-      throw new Error(`Duplicate ${entityType} id: ${record.id}`);
+    const existing = bucket.get(record.id);
+    if (existing !== undefined) {
+      throw new Error(`Duplicate id: ${record.id} (entityType: ${entityType})`);
+    }
+
+    if (this.globalIds.has(record.id)) {
+      throw new Error(`Duplicate id: ${record.id} (entityType: ${entityType})`);
     }
 
     this.globalIds.add(record.id);

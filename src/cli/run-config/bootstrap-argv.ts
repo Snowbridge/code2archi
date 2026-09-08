@@ -6,7 +6,7 @@ import {
   readConfigFlagValue,
   shouldSkipRunConfigLoad,
 } from "./detect-explicit-cli-keys.js";
-import { resolveCommandName } from "./cli-option-catalog.js";
+import { positionalKeysForCommand, resolveCommandName } from "./cli-option-catalog.js";
 import { loadRunConfigFile } from "./load-run-config.js";
 import { resolveRunConfigPath } from "./resolve-run-config-path.js";
 import { runConfigToArgvParts } from "./run-config-to-argv.js";
@@ -21,69 +21,107 @@ export interface BootstrapArgvResult {
   readonly runConfig: RunConfigResolution;
 }
 
-function isOptionToken(token: string): boolean {
-  return token.startsWith("-");
+function normalizeBootstrapArgv(argv: string[]): string[] {
+  if (
+    argv.length >= 3 &&
+    resolveCommandName(argv[0]) === undefined &&
+    resolveCommandName(argv[2]) !== undefined
+  ) {
+    return argv.slice(2);
+  }
+
+  return argv;
+}
+
+function splitLeadingCommandPositionals(
+  tokens: readonly string[],
+  command: RunConfigCommandName,
+): { readonly cliPositionals: string[]; readonly cliOptions: string[] } {
+  const positionalKeys = positionalKeysForCommand(command);
+  const cliPositionals: string[] = [];
+  let index = 0;
+
+  if (command === "scan") {
+    while (index < tokens.length && !tokens[index]!.startsWith("-")) {
+      cliPositionals.push(tokens[index]!);
+      index += 1;
+    }
+
+    return { cliPositionals, cliOptions: [...tokens.slice(index)] };
+  }
+
+  while (
+    index < tokens.length &&
+    !tokens[index]!.startsWith("-") &&
+    cliPositionals.length < positionalKeys.length
+  ) {
+    cliPositionals.push(tokens[index]!);
+    index += 1;
+  }
+
+  return { cliPositionals, cliOptions: [...tokens.slice(index)] };
 }
 
 function mergeArgvWithConfigParts(
-  argv: string[],
+  userArgs: string[],
   optionTokens: readonly string[],
   positionalValues: readonly string[],
   command: RunConfigCommandName,
 ): string[] {
-  const head = [argv[0]!, argv[1]!];
-  const rest = argv.slice(2);
-
   if (optionTokens.length === 0 && positionalValues.length === 0) {
-    return argv;
+    return userArgs;
   }
 
-  const commandIndex = rest.findIndex((token) => resolveCommandName(token) === command);
-  if (commandIndex >= 0 && positionalValues.length > 0) {
-    return [
-      ...head,
-      ...optionTokens,
-      ...rest.slice(0, commandIndex + 1),
-      ...positionalValues,
-      ...rest.slice(commandIndex + 1),
-    ];
+  const commandIndex = userArgs.findIndex((token) => resolveCommandName(token) === command);
+
+  if (commandIndex < 0) {
+    if (positionalValues.length > 0) {
+      return [command, ...positionalValues, ...optionTokens, ...userArgs];
+    }
+
+    return [command, ...optionTokens, ...userArgs];
   }
 
-  if (commandIndex >= 0) {
-    return [...head, ...optionTokens, ...rest];
-  }
+  const beforeCommand = userArgs.slice(0, commandIndex);
+  const afterCommand = userArgs.slice(commandIndex + 1);
+  const { cliPositionals, cliOptions } = splitLeadingCommandPositionals(afterCommand, command);
+  const mergedPositionals = positionalValues.length > 0 ? positionalValues : cliPositionals;
 
-  if (positionalValues.length > 0) {
-    return [...head, ...optionTokens, command, ...positionalValues, ...rest];
-  }
-
-  return [...head, ...optionTokens, ...rest];
+  return [
+    ...beforeCommand,
+    command,
+    ...mergedPositionals,
+    ...optionTokens,
+    ...cliOptions,
+  ];
 }
 
 export function bootstrapArgv(
   argv: string[],
   cwd: string = process.cwd(),
 ): BootstrapArgvResult {
-  if (argv.length < 2) {
+  const userArgs = normalizeBootstrapArgv(argv);
+
+  if (userArgs.length === 0) {
     return { argv, runConfig: EMPTY_RUN_CONFIG_RESOLUTION };
   }
 
-  if (shouldSkipRunConfigLoad(argv)) {
-    return { argv, runConfig: EMPTY_RUN_CONFIG_RESOLUTION };
+  if (shouldSkipRunConfigLoad(userArgs)) {
+    return { argv: userArgs, runConfig: EMPTY_RUN_CONFIG_RESOLUTION };
   }
 
   let configFlagValue: string | undefined;
   try {
-    configFlagValue = readConfigFlagValue(argv);
+    configFlagValue = readConfigFlagValue(userArgs);
   } catch {
     throw new CliError("Missing value for --config");
   }
 
-  const command = detectCommandName(argv);
+  const command = detectCommandName(userArgs);
   const configPath = resolveRunConfigPath({ cwd, configFlagValue });
 
   if (configPath === undefined) {
-    return { argv, runConfig: EMPTY_RUN_CONFIG_RESOLUTION };
+    return { argv: userArgs, runConfig: EMPTY_RUN_CONFIG_RESOLUTION };
   }
 
   const resolution: RunConfigResolution = {
@@ -93,17 +131,22 @@ export function bootstrapArgv(
   };
 
   if (command === undefined) {
-    return { argv, runConfig: resolution };
+    return { argv: userArgs, runConfig: resolution };
   }
 
   const effective = loadRunConfigFile(configPath, command);
-  const explicitKeys = detectExplicitCliKeys(argv);
+  const explicitKeys = detectExplicitCliKeys(userArgs);
   const { optionTokens, positionalValues } = runConfigToArgvParts(
     effective,
     command,
     explicitKeys,
   );
-  const mergedArgv = mergeArgvWithConfigParts(argv, optionTokens, positionalValues, command);
+  const mergedArgv = mergeArgvWithConfigParts(
+    userArgs,
+    optionTokens,
+    positionalValues,
+    command,
+  );
 
   return {
     argv: mergedArgv,

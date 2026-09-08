@@ -122,7 +122,9 @@ function normalizeLinkMaps(
   }
 
   const normalized = new Map<LinkType, Map<string, DiscoveryLinkRecord>>();
-  for (const [linkTypeKey, records] of Object.entries(init.linkArrays ?? {})) {
+  for (const [linkTypeKey, records] of Object.entries(init.linkArrays ?? {}) as Array<
+    [string, readonly DiscoveryLinkRecord[] | undefined]
+  >) {
     if (!records || records.length === 0) {
       continue;
     }
@@ -235,7 +237,7 @@ function buildLinkIndexes(linkMaps: Map<LinkType, Map<string, DiscoveryLinkRecor
     );
     frozenLinksByType.set(linkType, frozenBucket);
 
-    const refFields = LINK_REF_INDEX_FIELDS[linkType];
+    const refFields = (LINK_REF_INDEX_FIELDS as Record<string, readonly string[]>)[linkType];
     if (!refFields) {
       continue;
     }
@@ -359,7 +361,9 @@ class IndexedCodeInventorySnapshot implements CodeInventorySnapshot {
     field: string,
     value: string,
   ): readonly DiscoveryLinkRecord[] {
-    const indexedFields = LINK_REF_INDEX_FIELDS[linkType];
+    const indexedFields = (LINK_REF_INDEX_FIELDS as Record<string, readonly string[]>)[
+      linkType as string
+    ];
     if (!indexedFields || !indexedFields.includes(field)) {
       return [];
     }

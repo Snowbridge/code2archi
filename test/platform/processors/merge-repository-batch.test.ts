@@ -89,11 +89,11 @@ describe("collectRepositoryBatchProcessorErrors", () => {
     const errors = collectRepositoryBatchProcessorErrors(
       new Map([
         [
-          "scan.extract:rest:repo-a",
+          "scan.extract:assembly:repo-a",
           {
             outputs: {},
             errors: {
-              "scan.extract.java.rest/client-declarative": { message: "boom" },
+              "scan.extract.assembly.maven/modules-and-dependencies": { message: "boom" },
             },
           },
         ],
@@ -101,9 +101,15 @@ describe("collectRepositoryBatchProcessorErrors", () => {
     );
 
     assert.equal(errors.size, 1);
-    assert.ok(errors.has("scan.extract:rest:repo-a:scan.extract.java.rest/client-declarative"));
+    assert.ok(
+      errors.has(
+        "scan.extract:assembly:repo-a:scan.extract.assembly.maven/modules-and-dependencies",
+      ),
+    );
     assert.equal(
-      errors.get("scan.extract:rest:repo-a:scan.extract.java.rest/client-declarative")?.message,
+      errors.get(
+        "scan.extract:assembly:repo-a:scan.extract.assembly.maven/modules-and-dependencies",
+      )?.message,
       "boom",
     );
   });

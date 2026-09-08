@@ -11,6 +11,8 @@ import type {
   BuildSystem,
 } from "../code-inventory/entities/application-module.js";
 import type { ApplicationModuleDependencyRecord } from "../code-inventory/entities/application-module-dependency.js";
+import type { DiscoveryEntityRecord } from "../code-inventory/entities/entity-types.js";
+import { isEligibleApplicationModule } from "./module-version-catalog.js";
 
 export const APPLICATION_MODULE_COMPONENT_ID_PREFIX = "appmodule:";
 
@@ -30,6 +32,10 @@ export function applicationComponentIdForModule(moduleId: string): string {
 
 export function applicationComponentLogicalId(moduleId: string): string {
   return `${APPLICATION_MODULE_COMPONENT_ID_PREFIX}${moduleId}`;
+}
+
+export function shouldEmitAppModuleRealization(module: ApplicationModuleRecord): boolean {
+  return isEligibleApplicationModule(module as unknown as DiscoveryEntityRecord);
 }
 
 export function moduleCoordinateKey(groupId: string, artifactId: string): string {
