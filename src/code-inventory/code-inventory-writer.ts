@@ -19,6 +19,15 @@ export const APPLICATION_MODULE_SCHEMA_ID =
 export const APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID =
   `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/ApplicationModuleDependency`;
 
+export const REST_CONTROLLER_SCHEMA_ID =
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/RestController`;
+
+export const HTTP_API_DATA_TYPE_SCHEMA_ID =
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/HttpApiDataType`;
+
+export const HTTP_API_CONTRACT_SCHEMA_ID =
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/HttpApiContract`;
+
 interface ManifestCollectionEntry {
   readonly path: string;
   readonly contentType: "entities" | "many-to-many";
@@ -72,6 +81,18 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
   },
   MessageConsumer: { collectionPath: "message-consumers.json" },
   MessageProducer: { collectionPath: "message-producers.json" },
+  RestController: {
+    collectionPath: "rest-controllers.json",
+    schemaId: REST_CONTROLLER_SCHEMA_ID,
+  },
+  HttpApiDataType: {
+    collectionPath: "http-api-data-types.json",
+    schemaId: HTTP_API_DATA_TYPE_SCHEMA_ID,
+  },
+  HttpApiContract: {
+    collectionPath: "http-api-contracts.json",
+    schemaId: HTTP_API_CONTRACT_SCHEMA_ID,
+  },
 };
 
 const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {};

@@ -8,7 +8,7 @@ import {
   buildScanLinkTasks,
   buildScanRepositoryBatchTasks,
 } from "../parallelism/task-planner.js";
-import { serializeDiscoverySnapshot } from "../parallelism/snapshot-serialization.js";
+import { serializeDiscoverySnapshot, type SnapshotRepositoryFilterScope } from "../parallelism/snapshot-serialization.js";
 import type { WorkerPool } from "../parallelism/worker-pool.js";
 import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
@@ -24,6 +24,7 @@ import {
   runScanProcessorPool,
   runScanRepositoryBatchPool,
 } from "./parallel-group-runner.js";
+import { isAssemblyExtractProcessor } from "./scan-extract-phases.js";
 
 export interface ProcessorGroupParallelContext {
   readonly pool: WorkerPool;
@@ -109,6 +110,11 @@ function runSequentialCreateIntentGroup(
   }
 }
 
+interface ScanExtractParallelPhaseConfig {
+  readonly phaseId: string;
+  readonly snapshotFilterScope: SnapshotRepositoryFilterScope;
+}
+
 async function runParallelScanSourcePhase(
   processors: readonly ReturnType<
     typeof processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>
@@ -116,6 +122,7 @@ async function runParallelScanSourcePhase(
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
+  phase: ScanExtractParallelPhaseConfig,
 ): Promise<void> {
   if (processors.length === 0) {
     return;
@@ -123,12 +130,11 @@ async function runParallelScanSourcePhase(
 
   const snapshot = store.snapshot();
   const serialized = serializeDiscoverySnapshot(snapshot);
-  const phaseId = "scan.extract.assembly";
   await parallel.pool.setupPhase(
     {
-      phaseId,
+      phaseId: phase.phaseId,
       snapshot: serialized,
-      snapshotFilterScope: "assembly",
+      snapshotFilterScope: phase.snapshotFilterScope,
     },
     parallel.bridge,
   );
@@ -137,7 +143,7 @@ async function runParallelScanSourcePhase(
     processors,
     snapshot,
     progressStepId,
-    "assembly",
+    phase.snapshotFilterScope,
     parallel.continueOnError,
   );
   if (tasks.length === 0) {
@@ -179,7 +185,22 @@ async function runParallelScanSourceGroup(
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
 ): Promise<void> {
-  await runParallelScanSourcePhase(processors, store, parallel, progressStepId);
+  const assemblyProcessors = processors.filter((processor) =>
+    isAssemblyExtractProcessor(processor.id.groupId),
+  );
+  const moduleSourceProcessors = processors.filter(
+    (processor) => !isAssemblyExtractProcessor(processor.id.groupId),
+  );
+
+  await runParallelScanSourcePhase(assemblyProcessors, store, parallel, progressStepId, {
+    phaseId: "scan.extract.assembly",
+    snapshotFilterScope: "assembly",
+  });
+
+  await runParallelScanSourcePhase(moduleSourceProcessors, store, parallel, progressStepId, {
+    phaseId: "scan.extract.module-source",
+    snapshotFilterScope: "module-source",
+  });
 }
 
 async function runParallelScanLinkGroup(

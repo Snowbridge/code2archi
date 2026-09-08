@@ -58,6 +58,18 @@ abstract class AggregationRelationshipProfile extends ArchiProfile {
   }
 }
 
+abstract class ApplicationServiceProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ApplicationService", name);
+  }
+}
+
+abstract class ApplicationInterfaceProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ApplicationInterface", name);
+  }
+}
+
 function defineArtifactProfile(profileName: string) {
   class NamedProfile extends ArtifactProfile {
     static readonly CONCEPT_TYPE = "Artifact" as const;
@@ -126,6 +138,40 @@ function defineAggregationRelationshipProfile(profileName: string) {
   return NamedProfile;
 }
 
+function defineApplicationServiceProfile(profileName: string) {
+  class NamedProfile extends ApplicationServiceProfile {
+    static readonly CONCEPT_TYPE = "ApplicationService" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
+function defineApplicationInterfaceProfile(profileName: string) {
+  class NamedProfile extends ApplicationInterfaceProfile {
+    static readonly CONCEPT_TYPE = "ApplicationInterface" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
 export const GitRepoProfile = defineArtifactProfile("Source code repo");
 export const BuildScriptProfile = defineArtifactProfile("Build script");
 export const MavenModuleArtifactProfile = defineArtifactProfile("Maven module");
@@ -140,3 +186,8 @@ export const BuiltWithProfile = defineAssignmentRelationshipProfile("Built with"
 export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled with");
 export const BuildTimeDependencyProfile =
   defineAggregationRelationshipProfile("Build-time dependency");
+export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
+export const RestApiContractInterfaceProfile =
+  defineApplicationInterfaceProfile("REST API Contract");
+export const RestApiContractAssignmentProfile =
+  defineAssignmentRelationshipProfile("REST API Contract");

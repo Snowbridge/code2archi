@@ -4,4 +4,5 @@ import type { EntityType } from "./entities/entity-types.js";
 export const ENTITY_REF_INDEX_FIELDS: Partial<Record<EntityType, readonly string[]>> = {
   ApplicationModule: ["repositoryId", "parentId"],
   ApplicationModuleDependency: ["parentId"],
+  RestController: ["applicationModuleId"],
 };

@@ -8,6 +8,9 @@ export const ENTITY_TYPES = [
   "ApplicationModuleDependency",
   "MessageConsumer",
   "MessageProducer",
+  "RestController",
+  "HttpApiDataType",
+  "HttpApiContract",
 ] as const;
 
 export type EntityType = (typeof ENTITY_TYPES)[number];

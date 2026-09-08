@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import "../../src/platform/processors/builtin-processors.js";
@@ -10,6 +11,7 @@ import {
   APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID,
   APPLICATION_MODULE_SCHEMA_ID,
   REPOSITORY_SCHEMA_ID,
+  REST_CONTROLLER_SCHEMA_ID,
 } from "../../src/code-inventory/code-inventory-writer.js";
 import { packageVersion } from "../../src/package-version.js";
 import { runScanFlow } from "../../src/scan/run-scan-flow.js";
@@ -22,7 +24,12 @@ import { processorRegistry } from "../../src/platform/processors/processor-regis
 import { finalizeProfiling, initProfiling } from "../../src/platform/profiling/index.js";
 import { resetProfilingState } from "../../src/platform/profiling/profiling-state.js";
 import { createTestTempDir } from "../test-temp-dir.js";
-import { testParallelismOptions, testParallelismContinueOnError } from "../parallelism-test-defaults.js";
+import { testParallelismOptions, testParallelismContinueOnError, testParallelismWorkerPoolOptions } from "../parallelism-test-defaults.js";
+
+const SPRING_FIXTURES_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../fixtures/jvm/rest/spring",
+);
 
 const FAILING_SCOPE_ARTIFACT = "test-flow-failing";
 
@@ -209,6 +216,63 @@ describe("runScanFlow", async () => {
     assert.equal(modules[0]?.buildSystem, "maven");
     assert.equal(dependencies.length, 1);
     assert.equal(dependencies[0]?.artifactId, "shared");
+  });
+
+  it("writes REST controllers after parallel scan.extract module-source phase", async () => {
+    const root = createTestTempDir("c2a-scan-flow-rest-parallel-");
+    const sourceDir = path.join(root, "src");
+    const outputDir = path.join(root, "out");
+    mkdirSync(sourceDir);
+    mkdirSync(outputDir);
+    writeFileSync(path.join(sourceDir, "settings.gradle"), `rootProject.name = 'demo'`);
+    writeFileSync(
+      path.join(sourceDir, "build.gradle"),
+      `group = 'com.example'
+version = '1.0.0'`,
+    );
+    const javaDir = path.join(sourceDir, "src", "main", "java", "com", "example", "api");
+    mkdirSync(javaDir, { recursive: true });
+    for (const fileName of ["UserController.java", "UserContract.java", "UserDto.java"]) {
+      cpSync(path.join(SPRING_FIXTURES_DIR, fileName), path.join(javaDir, fileName));
+    }
+
+    await runScanFlow({
+      sourceDirs: [sourceDir],
+      outputDir,
+      force: false,
+      scanId: "test-scan-rest-parallel",
+      runStartedAt: new Date("2026-08-27T09:00:00.000Z"),
+      verbose: false,
+      profile: false,
+      parallelism: testParallelismWorkerPoolOptions,
+      processorFilters: {
+        with: ["scan.scope.unversioned-folders"],
+        without: [],
+        withOnly: [],
+      },
+    });
+
+    const restControllersPath = path.join(outputDir, "rest-controllers.json");
+    assert.ok(existsSync(restControllersPath));
+
+    const manifest = JSON.parse(readFileSync(path.join(outputDir, "manifest.json"), "utf8")) as {
+      collections: Array<{ path: string; schema: string }>;
+    };
+    assert.ok(
+      manifest.collections.some(
+        (collection) =>
+          collection.path === "rest-controllers.json" &&
+          collection.schema === REST_CONTROLLER_SCHEMA_ID,
+      ),
+    );
+
+    const controllers = JSON.parse(readFileSync(restControllersPath, "utf8")) as Array<{
+      simpleName: string;
+      fqcn: string;
+    }>;
+    assert.equal(controllers.length, 1);
+    assert.equal(controllers[0]?.simpleName, "UserController");
+    assert.equal(controllers[0]?.fqcn, "com.example.api.UserController");
   });
 
   it("records profiling metrics when profiling is enabled", async () => {

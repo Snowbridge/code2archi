@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
 import { createMainThreadBridge } from "../../../src/platform/parallelism/main-thread-bridge.js";
@@ -26,6 +27,16 @@ const mavenProcessor = {
   groupId: "scan.extract.assembly.maven",
   artifactId: "modules-and-dependencies",
 } as const;
+
+const springWebMvcProcessor = {
+  groupId: "scan.extract.rest.controllers",
+  artifactId: "spring-webmvc",
+} as const;
+
+const FIXTURES_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../fixtures/jvm/rest/spring",
+);
 
 function setupMavenRepo(): { root: string; repositoryId: string; serialized: ReturnType<typeof serializeDiscoverySnapshot> } {
   const root = createTestTempDir("c2a-repo-batch-");
@@ -57,6 +68,65 @@ function setupMavenRepo(): { root: string; repositoryId: string; serialized: Ret
           localPath: repoDir,
           url: "",
           buildSystems: ["maven"],
+        },
+      ],
+    },
+  });
+
+  return {
+    root,
+    repositoryId: "repo-app",
+    serialized: serializeDiscoverySnapshot(snapshot),
+  };
+}
+
+function setupSpringGradleRepo(): {
+  root: string;
+  repositoryId: string;
+  serialized: ReturnType<typeof serializeDiscoverySnapshot>;
+} {
+  const root = createTestTempDir("c2a-repo-batch-spring-");
+  writeFileSync(path.join(root, "settings.gradle"), `rootProject.name = 'demo'`);
+  writeFileSync(
+    path.join(root, "build.gradle"),
+    `group = 'com.example'
+version = '1.0.0'`,
+  );
+  const sourceDir = path.join(root, "src", "main", "java", "com", "example", "api");
+  mkdirSync(sourceDir, { recursive: true });
+  for (const fileName of ["UserController.java", "UserContract.java", "UserDto.java"]) {
+    cpSync(path.join(FIXTURES_DIR, fileName), path.join(sourceDir, fileName));
+  }
+
+  const snapshot = buildCodeInventorySnapshot({
+    scanId: "scan-1",
+    sourceRoot: root,
+    sourceDirs: [root],
+    repositoryCommonRoot: root,
+    runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    entityArrays: {
+      Repository: [
+        {
+          id: "repo-app",
+          name: "demo",
+          namespace: "",
+          localPath: root,
+          url: "",
+          buildSystems: ["gradle"],
+        },
+      ],
+      ApplicationModule: [
+        {
+          id: "mod-demo",
+          repositoryId: "repo-app",
+          buildSystem: "gradle",
+          groupId: "com.example",
+          artifactId: "demo",
+          version: "1.0.0",
+          name: "demo",
+          repoPath: "",
+          buildScript: "build.gradle",
+          isMultimodule: false,
         },
       ],
     },
@@ -171,6 +241,36 @@ describe("runScanRepositoryBatchTask", () => {
       );
     } finally {
       resetWorkerRuntime();
+    }
+  });
+
+  it("discovers REST controllers in module-source phase with ApplicationModule snapshot", () => {
+    const { repositoryId, serialized } = setupSpringGradleRepo();
+    initScanIoCache(DEFAULT_SCAN_IO_CACHE_OPTIONS);
+    const bridge = createMainThreadBridge(new Map());
+    setWorkerPhase("scan.extract.module-source", serialized, "module-source");
+
+    initWorkerRuntime({
+      threadId: "worker-1",
+      postEvent: (message) => bridge.dispatch(message),
+      trackWorkerTaskMetrics: false,
+    });
+
+    try {
+      const result = runScanRepositoryBatchTask({
+        repositoryId,
+        processors: [springWebMvcProcessor],
+        continueOnError: false,
+      });
+
+      const processorKey = `${springWebMvcProcessor.groupId}/${springWebMvcProcessor.artifactId}`;
+      const output = result.outputs[processorKey];
+      assert.ok(output);
+      assert.equal(output.entities?.RestController?.length, 1);
+      assert.equal(output.entities?.RestController?.[0]?.simpleName, "UserController");
+    } finally {
+      resetWorkerRuntime();
+      resetScanIoCache();
     }
   });
 });

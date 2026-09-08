@@ -17,6 +17,24 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
     "ApplicationModule",
     "ApplicationModuleDependency",
   ],
+  "scan.extract.rest.controllers/spring-webmvc": [
+    "RestController",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
+  "scan.extract.rest.controllers/jax-rs": [
+    "RestController",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
+  "scan.extract.rest.controllers/micronaut": [
+    "RestController",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
+  "scan.extract.rest.controllers/spring-webflux-router": ["RestController"],
+  "scan.extract.rest.controllers/quarkus-vertx": ["RestController"],
+  "scan.extract.rest.controllers/ktor": ["RestController"],
 };
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */

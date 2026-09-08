@@ -5,7 +5,6 @@ import { ArchiModelStore } from "../../../../../src/archimate-model/archi-model-
 import { ArchiFolderIds } from "../../../../../src/archimate-model/folders/archi-folder.js";
 import { Artifact } from "../../../../../src/archimate-model/elements/archi-element.js";
 import {
-  BuildTimeDependencyProfile,
   GradleModuleArtifactProfile,
   LibraryModuleProfile,
   MavenModuleArtifactProfile,
@@ -17,7 +16,6 @@ import { ApplicationModuleDependency } from "../../../../../src/code-inventory/e
 import { Repository } from "../../../../../src/code-inventory/entities/repository.js";
 import {
   applicationComponentIdForModule,
-  aggregationRelationshipId,
   realizationRelationshipId,
 } from "../../../../../src/generate/application-module-components.js";
 import { AppComponentsFromModulesProcessor } from "../../../../../src/processors/generate/elements/application/app-components-from-modules-processor.js";
@@ -195,7 +193,7 @@ describe("AppComponentsFromModulesProcessor", () => {
     assert.equal(output.relations?.[0]?.targetId, applicationComponentIdForModule(module.id));
   });
 
-  it("assigns Library profile and Aggregation with c2a:libraryVersion", () => {
+  it("assigns Library profile when module is a dependency target", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -246,32 +244,13 @@ describe("AppComponentsFromModulesProcessor", () => {
       (element) => element.id === applicationComponentIdForModule(library.id),
     );
     assert.deepEqual(libraryComponent?.profileIds, [LibraryModuleProfile.create().id]);
-
-    const aggregation = output.relations?.find(
-      (relation) => relation.relationType === "AggregationRelationship",
-    );
-    assert.equal(aggregation?.sourceId, applicationComponentIdForModule(consumer.id));
-    assert.equal(aggregation?.targetId, applicationComponentIdForModule(library.id));
-    assert.deepEqual(aggregation?.profileIds, [BuildTimeDependencyProfile.create().id]);
     assert.equal(
-      aggregation?.properties?.find((property) => property.key === "c2a:libraryVersion")?.value,
-      "2.0.0",
-    );
-    assert.equal(
-      aggregation?.properties?.find((property) => property.key === "c2a:slot")?.value,
-      "module-lib-aggregation",
-    );
-    assert.equal(
-      aggregation?.id,
-      aggregationRelationshipId(
-        applicationComponentIdForModule(consumer.id),
-        applicationComponentIdForModule(library.id),
-        dependency.id,
-      ),
+      output.relations?.some((relation) => relation.relationType === "AggregationRelationship"),
+      false,
     );
   });
 
-  it("assigns Library profile and Aggregation for cross-repository dependency", () => {
+  it("assigns Library profile for cross-repository dependency target", () => {
     const consumerRepository = repositoryRecord({
       url: "",
       localPath: "/workspace/consumer",
@@ -333,28 +312,13 @@ describe("AppComponentsFromModulesProcessor", () => {
       (element) => element.id === applicationComponentIdForModule(library.id),
     );
     assert.deepEqual(libraryComponent?.profileIds, [LibraryModuleProfile.create().id]);
-    const aggregation = output.relations?.find(
-      (relation) => relation.relationType === "AggregationRelationship",
-    );
-    assert.ok(aggregation);
-    assert.equal(aggregation?.sourceId, applicationComponentIdForModule(consumer.id));
-    assert.equal(aggregation?.targetId, applicationComponentIdForModule(library.id));
-    assert.deepEqual(aggregation?.profileIds, [BuildTimeDependencyProfile.create().id]);
     assert.equal(
-      aggregation?.properties?.find((property) => property.key === "c2a:libraryVersion")?.value,
-      "2.0.0",
-    );
-    assert.equal(
-      aggregation?.id,
-      aggregationRelationshipId(
-        applicationComponentIdForModule(consumer.id),
-        applicationComponentIdForModule(library.id),
-        dependency.id,
-      ),
+      output.relations?.some((relation) => relation.relationType === "AggregationRelationship"),
+      false,
     );
   });
 
-  it("skips multimodule parent and skips external dependency aggregation", () => {
+  it("skips multimodule parent module", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -403,10 +367,8 @@ describe("AppComponentsFromModulesProcessor", () => {
 
     assert.equal(output.elements?.length, 1);
     assert.equal(output.elements?.[0]?.id, applicationComponentIdForModule(consumer.id));
-    assert.equal(
-      output.relations?.some((relation) => relation.relationType === "AggregationRelationship"),
-      false,
-    );
+    assert.equal(output.relations?.length, 1);
+    assert.equal(output.relations?.[0]?.relationType, "RealizationRelationship");
   });
 
   it("creates nested application folders from repository namespace", () => {

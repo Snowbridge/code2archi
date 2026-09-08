@@ -6,29 +6,20 @@ import {
 import type { ArchiFolderCreateIntent } from "../../../../archimate-model/folders/archi-folder.js";
 import type { ArchiProfile } from "../../../../archimate-model/profiles/profile.js";
 import {
-  BuildTimeDependencyProfile,
   GradleModuleProfile,
   LibraryModuleProfile,
   MavenModuleProfile,
   NpmModuleProfile,
 } from "../../../../archimate-model/profiles/profile.js";
-import {
-  AggregationRelationship,
-  RealizationRelationship,
-} from "../../../../archimate-model/relationships/archi-relationship.js";
+import { RealizationRelationship } from "../../../../archimate-model/relationships/archi-relationship.js";
 import type { ArchiRelationshipCreateIntent } from "../../../../archimate-model/relationships/archi-relationship.js";
 import {
-  aggregationLogicalId,
-  aggregationRelationshipId,
   applicationComponentIdForModule,
   applicationComponentLogicalId,
-  buildModulesByRepositoryAndCoordinates,
-  buildModulesByCoordinates,
   collectLibraryModuleIds,
   moduleApplicationComponentProfileFor,
   realizationLogicalId,
   realizationRelationshipId,
-  resolveModuleForDependency,
 } from "../../../../generate/application-module-components.js";
 import { standardGenerateElementProperties } from "../../../../generate/archi-element-properties.js";
 import {
@@ -55,7 +46,6 @@ const REQUIRED_PROFILES: readonly ArchiProfile[] = [
   MavenModuleProfile.create(),
   GradleModuleProfile.create(),
   NpmModuleProfile.create(),
-  BuildTimeDependencyProfile.create(),
 ];
 
 export class AppComponentsFromModulesProcessor extends AbstractProcessor<
@@ -72,7 +62,7 @@ export class AppComponentsFromModulesProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps ApplicationModule entities to ApplicationComponents with Realization from module Artifacts and Aggregation library dependencies.";
+    "Maps ApplicationModule entities to ApplicationComponents with Realization from module Artifacts.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -95,10 +85,6 @@ export class AppComponentsFromModulesProcessor extends AbstractProcessor<
     const modules = allModules
       .filter((record) => isEligibleApplicationModule(record as unknown as DiscoveryEntityRecord))
       .sort((left, right) => left.id.localeCompare(right.id));
-
-    const modulesById = new Map(modules.map((module) => [module.id, module]));
-    const coordinateIndex = buildModulesByRepositoryAndCoordinates(allModules);
-    const modulesByCoordinate = buildModulesByCoordinates(allModules);
 
     const dependencies = [...input.discovery.listEntities("ApplicationModuleDependency")]
       .map((record) => record as unknown as ApplicationModuleDependencyRecord)
@@ -172,52 +158,6 @@ export class AppComponentsFromModulesProcessor extends AbstractProcessor<
       }
 
       relations.push(realizationBuilder.build().toCreateIntent());
-    }
-
-    for (const dependency of dependencies) {
-      const consumer = modulesById.get(dependency.parentId);
-      if (consumer === undefined) {
-        continue;
-      }
-
-      const targetModule = resolveModuleForDependency(
-        coordinateIndex,
-        modulesByCoordinate,
-        consumer,
-        dependency.groupId,
-        dependency.artifactId,
-      );
-      if (targetModule === undefined || !isEligibleApplicationModule(targetModule as unknown as DiscoveryEntityRecord)) {
-        continue;
-      }
-
-      const consumerApplicationComponentId = applicationComponentIdForModule(consumer.id);
-      const libraryApplicationComponentId = applicationComponentIdForModule(targetModule.id);
-      const relationId = aggregationRelationshipId(
-        consumerApplicationComponentId,
-        libraryApplicationComponentId,
-        dependency.id,
-      );
-      if (input.archi.getRelationship(relationId)) {
-        continue;
-      }
-
-      const buildTimeDependencyProfile = BuildTimeDependencyProfile.create();
-      let aggregationBuilder = AggregationRelationship.withId(relationId)
-        .source(consumerApplicationComponentId)
-        .target(libraryApplicationComponentId)
-        .profiles(buildTimeDependencyProfile.id)
-        .property("c2a:libraryVersion", String(dependency.version));
-
-      for (const property of standardGenerateElementProperties({
-        logicalId: aggregationLogicalId(dependency.id),
-        generatorCoordinate: GENERATOR_COORDINATE,
-        slot: "module-lib-aggregation",
-      })) {
-        aggregationBuilder = aggregationBuilder.property(property.key, property.value);
-      }
-
-      relations.push(aggregationBuilder.build().toCreateIntent());
     }
 
     const existingFolderIds = new Set(input.archi.listFolders().map((folder) => folder.id));

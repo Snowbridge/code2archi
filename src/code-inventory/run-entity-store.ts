@@ -16,6 +16,11 @@ import type { DiscoveryEntityCreateIntent } from "./entities/entity-base.js";
 import { Entity } from "./entities/entity.js";
 import type { DiscoveryEntityRecord, EntityType } from "./entities/entity-types.js";
 import { ENTITY_TYPES } from "./entities/entity-types.js";
+import {
+  logSkippedDuplicateEntity,
+  mergeDuplicateEntity,
+  resolveEntityDuplicatePolicy,
+} from "./entity-merge-policy.js";
 import type { DiscoveryLinkCreateIntent } from "./links/link-base.js";
 import { Link } from "./links/link.js";
 import type { DiscoveryLinkRecord } from "./links/link-records.js";
@@ -42,6 +47,9 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
     "ApplicationModuleDependency",
     "MessageConsumer",
     "MessageProducer",
+    "RestController",
+    "HttpApiDataType",
+    "HttpApiContract",
   ],
 };
 
@@ -203,6 +211,7 @@ export class RunEntityStore {
               processorId,
               extractedAt,
             ),
+            formatProcessorCoordinate(processorId),
           );
         }
       }
@@ -277,7 +286,11 @@ export class RunEntityStore {
     return [...bucket.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  private addEntity(entityType: EntityType, record: DiscoveryEntityRecord): void {
+  private addEntity(
+    entityType: EntityType,
+    record: DiscoveryEntityRecord,
+    processorCoordinate: string,
+  ): void {
     if (!record.id) {
       throw new Error(`Entity record of type ${entityType} is missing id`);
     }
@@ -290,6 +303,15 @@ export class RunEntityStore {
 
     const existing = bucket.get(record.id);
     if (existing !== undefined) {
+      const policy = resolveEntityDuplicatePolicy(entityType);
+      if (policy === "skip") {
+        logSkippedDuplicateEntity(entityType, record.id, processorCoordinate);
+        return;
+      }
+      if (policy === "merge") {
+        bucket.set(record.id, mergeDuplicateEntity(entityType, existing, record));
+        return;
+      }
       throw new Error(`Duplicate id: ${record.id} (entityType: ${entityType})`);
     }
 

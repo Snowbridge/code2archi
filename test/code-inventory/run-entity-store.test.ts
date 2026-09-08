@@ -98,6 +98,75 @@ describe("RunEntityStore", () => {
     );
   });
 
+  it("skips duplicate HttpApiDataType id with policy skip", () => {
+    const store = new RunEntityStore({
+      sourceDirs: ["/tmp/src"],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
+      entities: {
+        HttpApiDataType: [{ id: "dto-1", simpleName: "UserDto", fqcn: "com.example.UserDto" }],
+      },
+    });
+
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
+      entities: {
+        HttpApiDataType: [{ id: "dto-1", simpleName: "UserDto", fqcn: "com.example.UserDto" }],
+      },
+    });
+
+    assert.equal(store.getEntities("HttpApiDataType").length, 1);
+  });
+
+  it("merges duplicate RestController endpoints on policy merge", () => {
+    const store = new RunEntityStore({
+      sourceDirs: ["/tmp/src"],
+      scanId: "scan-1",
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+    });
+
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
+      entities: {
+        RestController: [
+          {
+            id: "rc-1",
+            simpleName: "UserController",
+            fqcn: "com.example.UserController",
+            applicationModuleId: "mod-1",
+            fileName: "src/main/java/com/example/UserController.java",
+            endpoints: ["GET /users"],
+            contractIds: [],
+            dataTypeIds: [],
+          },
+        ],
+      },
+    });
+
+    store.addCreateIntents("scan.extract", SCAN_SOURCE_PROCESSOR, {
+      entities: {
+        RestController: [
+          {
+            id: "rc-1",
+            simpleName: "UserController",
+            fqcn: "com.example.UserController",
+            applicationModuleId: "mod-1",
+            fileName: "src/main/java/com/example/UserController.java",
+            endpoints: ["POST /users"],
+            contractIds: ["contract-1"],
+            dataTypeIds: ["dto-1"],
+          },
+        ],
+      },
+    });
+
+    const controller = store.getEntities("RestController")[0];
+    assert.deepEqual(controller?.endpoints, ["GET /users", "POST /users"]);
+    assert.deepEqual(controller?.contractIds, ["contract-1"]);
+    assert.deepEqual(controller?.dataTypeIds, ["dto-1"]);
+  });
+
   it("throws on duplicate id within the same entity type", () => {
     const store = new RunEntityStore({
       sourceDirs: ["/tmp/src"],
@@ -278,6 +347,9 @@ describe("RunEntityStore", () => {
       "ApplicationModuleDependency",
       "MessageConsumer",
       "MessageProducer",
+      "RestController",
+      "HttpApiDataType",
+      "HttpApiContract",
     ]);
     assert.deepEqual(GROUP_LINK_ALLOWLIST["scan.transform"], undefined);
   });

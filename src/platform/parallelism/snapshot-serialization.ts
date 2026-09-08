@@ -69,11 +69,12 @@ export function deserializeDiscoverySnapshot(
   });
 }
 
-export type SnapshotRepositoryFilterScope = "assembly";
+export type SnapshotRepositoryFilterScope = "assembly" | "module-source";
 
 export function filterSerializableDiscoverySnapshotToRepository(
   data: SerializableDiscoverySnapshot,
   repositoryId: string,
+  scope: SnapshotRepositoryFilterScope = "assembly",
 ): SerializableDiscoverySnapshot {
   const repositories = data.entities.Repository ?? [];
   const repository = repositories.find((record) => record.id === repositoryId);
@@ -81,10 +82,25 @@ export function filterSerializableDiscoverySnapshotToRepository(
     throw new Error(`Repository not found in snapshot: ${repositoryId}`);
   }
 
+  if (scope === "assembly") {
+    return {
+      ...data,
+      entities: {
+        Repository: [repository],
+      },
+      links: {},
+    };
+  }
+
+  const modules =
+    data.entities.ApplicationModule?.filter((module) => module.repositoryId === repositoryId) ??
+    [];
+
   return {
     ...data,
     entities: {
       Repository: [repository],
+      ...(modules.length > 0 ? { ApplicationModule: modules } : {}),
     },
     links: {},
   };

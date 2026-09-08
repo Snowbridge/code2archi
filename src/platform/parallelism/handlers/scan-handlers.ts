@@ -37,6 +37,7 @@ function resolveScanProcessorSnapshot(input: ScanProcessorTaskInput): ScanAppInp
     const snapshotData = filterSerializableDiscoverySnapshotToRepository(
       input.snapshot,
       input.repositoryId,
+      phase?.snapshotFilterScope ?? "assembly",
     );
     return deserializeDiscoverySnapshot(snapshotData);
   }

@@ -11,3 +11,9 @@ export const testParallelismContinueOnError: ParallelismOptions = {
   sync: true,
   continueOnError: true,
 };
+
+export const testParallelismWorkerPoolOptions: ParallelismOptions = {
+  threads: 2,
+  sync: false,
+  continueOnError: false,
+};
