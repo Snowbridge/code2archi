@@ -7,7 +7,11 @@ import { CliError } from "../../src/cli/cli-error.js";
 import { ExitCode } from "../../src/cli/exit-codes.js";
 import { archiModelDomOutputPath } from "../../src/archimate-model/archi-model-dom-writer.js";
 import { Repository } from "../../src/code-inventory/entities/repository.js";
-import { REPOSITORY_SCHEMA_ID } from "../../src/code-inventory/code-inventory-writer.js";
+import { ApplicationModule } from "../../src/code-inventory/entities/application-module.js";
+import {
+  APPLICATION_MODULE_SCHEMA_ID,
+  REPOSITORY_SCHEMA_ID,
+} from "../../src/code-inventory/code-inventory-writer.js";
 import { runGenerateFlow } from "../../src/generate/run-generate-flow.js";
 import {
   AbstractProcessor,
@@ -20,6 +24,7 @@ import { initLogging, resetLoggingForTests } from "../../src/platform/logging/in
 import "../../src/platform/processors/builtin-processors.js";
 import { createTestTempDir } from "../test-temp-dir.js";
 import { testParallelismOptions, testParallelismContinueOnError } from "../parallelism-test-defaults.js";
+import { packageVersion } from "../../src/package-version.js";
 
 const FAILING_GENERATE_ARTIFACT = "test-flow-failing";
 
@@ -91,6 +96,61 @@ function writeDiscoveryManifest(
       "utf8",
     );
   }
+}
+
+function writeModuleDiscoveryManifest(
+  discoveryDir: string,
+  tempDir: string,
+  repositoryRecord: ReturnType<Repository["toCreateIntent"]> & {
+    extractProcessor: string;
+    extractSchema: string;
+    extractedAt: string;
+  },
+  moduleRecord: ReturnType<ApplicationModule["toCreateIntent"]> & {
+    extractProcessor: string;
+    extractSchema: string;
+    extractedAt: string;
+  },
+): void {
+  writeFileSync(
+    path.join(discoveryDir, "manifest.json"),
+    `${JSON.stringify(
+      {
+        formatVersion: "0.2.5",
+        scanId: "scan-1",
+        scannedAt: "2026-08-30T12:15:24.335+03:00",
+        sourceRoot: tempDir,
+        collections: [
+          {
+            path: "repositories.json",
+            contentType: "entities",
+            entityType: "Repository",
+            schema: REPOSITORY_SCHEMA_ID,
+          },
+          {
+            path: "application-modules.json",
+            contentType: "entities",
+            entityType: "ApplicationModule",
+            schema: APPLICATION_MODULE_SCHEMA_ID,
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+
+  writeFileSync(
+    path.join(discoveryDir, "repositories.json"),
+    `${JSON.stringify([repositoryRecord], null, 2)}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    path.join(discoveryDir, "application-modules.json"),
+    `${JSON.stringify([moduleRecord], null, 2)}\n`,
+    "utf8",
+  );
 }
 
 describe("runGenerateFlow", async () => {
@@ -274,6 +334,76 @@ describe("runGenerateFlow", async () => {
     const xml = readFileSync(outputFile, "utf8");
     assert.match(xml, /name="flow-app"/);
     assert.doesNotMatch(xml, /name="flow-app\.git"/);
+  });
+
+  it("emits cross-processor relations under parallel generate", async () => {
+    const tempDir = createTestTempDir("c2a-generate-flow-cross-proc-");
+    const discoveryDir = path.join(tempDir, "discovery");
+    mkdirSync(discoveryDir, { recursive: true });
+    const outputFile = path.join(tempDir, "model.archimate");
+    const extractedAt = "2026-08-30T12:15:24.335+03:00";
+    const repository = {
+      ...new Repository({
+        url: "https://example.com/flow-app.git",
+        localPath: path.join(tempDir, "flow-app"),
+        name: "flow-app",
+        namespace: "",
+        buildSystems: ["maven"],
+      }).toCreateIntent(),
+      extractProcessor: "scan.scope:git-repositories",
+      extractSchema: packageVersion,
+      extractedAt,
+    };
+    const module = {
+      ...new ApplicationModule({
+        repositoryId: repository.id,
+        buildSystem: "maven",
+        groupId: "com.example",
+        artifactId: "flow-app",
+        version: "1.0.0",
+        name: "flow-app",
+        repoPath: ".",
+        buildScript: "pom.xml",
+        isMultimodule: false,
+        javaVersion: "17",
+      }).toCreateIntent(),
+      extractProcessor: "scan.extract.assembly.maven:modules-and-dependencies",
+      extractSchema: packageVersion,
+      extractedAt,
+    };
+
+    writeModuleDiscoveryManifest(discoveryDir, tempDir, repository, module);
+
+    initLogging({ logLevel: "INFO", verbose: false, logDirectory: createTestTempDir("c2a-log-") });
+    try {
+      const generateArgs = validateGenerateArgs({
+        outputFile,
+        codeInventoryDir: discoveryDir,
+        ...defaultValidateArgs,
+      });
+
+      await runGenerateFlow({
+        ...generateArgs,
+        verbose: false,
+        profile: false,
+        parallelism: {
+          threads: 2,
+          sync: false,
+          continueOnError: false,
+        },
+        processorFilters: {
+          with: [],
+          without: [],
+          withOnly: [],
+        },
+      });
+    } finally {
+      resetLoggingForTests();
+    }
+
+    const xml = readFileSync(outputFile, "utf8");
+    assert.match(xml, /<property key="c2a:slot" value="repo-module-composition"\/>/);
+    assert.match(xml, /<property key="c2a:slot" value="module-artifact-realizes"\/>/);
   });
 
   it("writes archimate model and exits with runtime error when continue-on-error is enabled", async () => {

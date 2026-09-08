@@ -161,7 +161,7 @@ describe("AppComponentsFromModulesProcessor", () => {
     );
   });
 
-  it("skips Realization when module Artifact is missing", () => {
+  it("creates Realization when module Artifact is missing from archi snapshot", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -189,7 +189,10 @@ describe("AppComponentsFromModulesProcessor", () => {
     });
 
     assert.equal(output.elements?.length, 1);
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(output.relations?.length, 1);
+    assert.equal(output.relations?.[0]?.relationType, "RealizationRelationship");
+    assert.equal(output.relations?.[0]?.sourceId, module.id);
+    assert.equal(output.relations?.[0]?.targetId, applicationComponentIdForModule(module.id));
   });
 
   it("assigns Library profile and Aggregation with c2a:libraryVersion", () => {

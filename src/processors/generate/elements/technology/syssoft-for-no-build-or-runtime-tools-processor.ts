@@ -94,10 +94,6 @@ export class SyssoftForNoBuildOrRuntimeToolsProcessor extends AbstractProcessor<
     }
 
     for (const assignment of markers.assignments) {
-      if (input.archi.getElement(assignment.moduleId) === undefined) {
-        continue;
-      }
-
       const relationId = assignmentRelationshipId(
         assignment.catalogEntry.systemSoftwareId,
         assignment.moduleId,

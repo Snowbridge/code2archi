@@ -185,7 +185,7 @@ describe("SyssoftForNoBuildOrRuntimeToolsProcessor", () => {
     assert.equal(systemSoftware?.some((element) => element.name === "npm unknown"), true);
   });
 
-  it("skips assignments when module artifact is missing from archi", () => {
+  it("creates assignments when module artifact is missing from archi snapshot", () => {
     const module = moduleRecord({
       repositoryId: "repo-1",
       buildSystem: "maven",
@@ -210,7 +210,11 @@ describe("SyssoftForNoBuildOrRuntimeToolsProcessor", () => {
     });
 
     assert.ok((output.elements?.length ?? 0) > 0);
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.ok((output.relations?.length ?? 0) > 0);
+    assert.equal(
+      output.relations?.every((relation) => relation.targetId === module.id),
+      true,
+    );
   });
 
   it("is idempotent when unknown system software and assignments already exist", () => {

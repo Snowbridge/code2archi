@@ -189,7 +189,7 @@ export class SyssoftForBuildSystemsAndRuntimesProcessor extends AbstractProcesso
 
     for (const module of modules) {
       const repositoryId = String(module.repositoryId);
-      if (input.archi.getElement(repositoryId) === undefined) {
+      if (repositoriesById.get(repositoryId) === undefined) {
         continue;
       }
 

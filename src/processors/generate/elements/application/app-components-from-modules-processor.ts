@@ -154,10 +154,6 @@ export class AppComponentsFromModulesProcessor extends AbstractProcessor<
         elements.push(elementIntent);
       }
 
-      if (input.archi.getElement(module.id) === undefined) {
-        continue;
-      }
-
       const relationId = realizationRelationshipId(module.id, applicationComponentId);
       if (input.archi.getRelationship(relationId)) {
         continue;

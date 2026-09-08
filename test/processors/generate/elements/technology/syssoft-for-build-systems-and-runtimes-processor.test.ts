@@ -197,7 +197,7 @@ describe("SyssoftForBuildSystemsAndRuntimesProcessor", () => {
     );
   });
 
-  it("does not create Composition when repository Artifact is missing from archi", () => {
+  it("creates Composition when repository Artifact is missing from archi snapshot", () => {
     const repository = repositoryRecord({
       url: "",
       localPath: "/workspace/demo",
@@ -225,10 +225,11 @@ describe("SyssoftForBuildSystemsAndRuntimesProcessor", () => {
       options: defaultGenerateProcessorOptions,
     });
 
-    assert.equal(
-      output.relations?.some((relation) => relation.relationType === "CompositionRelationship"),
-      false,
+    const composition = output.relations?.find(
+      (relation) => relation.relationType === "CompositionRelationship",
     );
+    assert.equal(composition?.sourceId, repository.id);
+    assert.equal(composition?.targetId, module.id);
   });
 
   it("deduplicates SystemSoftware for shared Java version", () => {
@@ -395,7 +396,16 @@ describe("SyssoftForBuildSystemsAndRuntimesProcessor", () => {
       output.elements?.filter((element) => element.conceptType === "SystemSoftware").length ?? 0,
       0,
     );
-    assert.equal(output.relations?.length ?? 0, 0);
+    assert.equal(
+      output.relations?.filter((relation) => relation.relationType === "AssignmentRelationship")
+        .length ?? 0,
+      0,
+    );
+    assert.equal(
+      output.relations?.filter((relation) => relation.relationType === "CompositionRelationship")
+        .length ?? 0,
+      1,
+    );
     assert.equal(output.elements?.filter((element) => element.conceptType === "Artifact").length, 1);
   });
 
