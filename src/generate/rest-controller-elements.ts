@@ -4,6 +4,7 @@ import { applicationComponentIdForModule } from "./application-module-components
 export const INFERRED_REST_API_CONFIDENCE = 0.854321;
 
 export const REST_CONTROLLER_SERVICE_ID_PREFIX = "restcontroller:";
+export const REST_CLIENT_SERVICE_ID_PREFIX = "restclient:";
 export const HTTP_API_CONTRACT_INTERFACE_ID_PREFIX = "httpapicontract:";
 export const INFERRED_REST_API_INTERFACE_ID_PREFIX = "inferred-rest-api:";
 
@@ -87,11 +88,42 @@ export function appModuleRealizesRestControllerId(
   return computeArchiId("RealizationRelationship", appComponentId, serviceId);
 }
 
+export function restClientAppServiceId(restClientId: string): string {
+  return computeArchiId("ApplicationService", "restclient", restClientId);
+}
+
+export function restClientAppServiceLogicalId(restClientId: string): string {
+  return `${REST_CLIENT_SERVICE_ID_PREFIX}${restClientId}`;
+}
+
+export function appModuleRealizesRestClientLogicalId(
+  applicationModuleId: string,
+  restClientId: string,
+): string {
+  return `realization:app-module-rest-client:${applicationModuleId}:${restClientId}`;
+}
+
+export function appModuleRealizesRestClientId(
+  applicationModuleId: string,
+  restClientId: string,
+): string {
+  const appComponentId = applicationComponentIdForModule(applicationModuleId);
+  const serviceId = restClientAppServiceId(restClientId);
+  return computeArchiId("RealizationRelationship", appComponentId, serviceId);
+}
+
 export function restApiContractAssignmentLogicalId(
   interfaceLogicalId: string,
   restControllerId: string,
 ): string {
   return `assignment:rest-api-contract:${interfaceLogicalId}:${restControllerId}`;
+}
+
+export function restApiContractAssignmentLogicalIdForRestClient(
+  interfaceLogicalId: string,
+  restClientId: string,
+): string {
+  return `assignment:rest-api-contract:${interfaceLogicalId}:${restClientId}`;
 }
 
 export function restApiContractAssignmentId(

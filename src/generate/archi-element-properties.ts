@@ -16,7 +16,9 @@ export type ElementSlotId =
   | "module-artifact-realizes"
   | "module-lib-aggregation"
   | "rest-controller-app-service"
+  | "rest-client-app-service"
   | "app-module-realizes-rest-controller"
+  | "app-module-realizes-rest-client"
   | "rest-api-contract-interface"
   | "rest-api-contract-assignment";
 

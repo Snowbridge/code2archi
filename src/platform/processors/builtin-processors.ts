@@ -10,7 +10,8 @@ import { KtorProcessor } from "../../processors/scan/extract/rest/controllers/kt
 import { ProgrammaticRestClientComponentsProcessor } from "../../processors/scan/extract/rest/clients/programmatic-rest-client-components-processor.js";
 import { AppComponentsFromModulesProcessor } from "../../processors/generate/elements/application/app-components-from-modules-processor.js";
 import { LinkBuildTimeDependencyAggregationProcessor } from "../../processors/generate/elements/application/link-build-time-dependency-aggregation-processor.js";
-import { RestControllersAndContractsProcessor } from "../../processors/generate/elements/application/rest-controllers-and-contracts-processor.js";
+import { RestControllersAndDeclaredContractsProcessor } from "../../processors/generate/elements/application/rest/controllers-and-declared-contracts-processor.js";
+import { RestClientsAndDeclaredContractsProcessor } from "../../processors/generate/elements/application/rest/clients-and-declared-contracts-processor.js";
 import { SyssoftForBuildSystemsAndRuntimesProcessor } from "../../processors/generate/elements/technology/syssoft-for-build-systems-and-runtimes-processor.js";
 import { SyssoftForNoBuildOrRuntimeToolsProcessor } from "../../processors/generate/elements/technology/syssoft-for-no-build-or-runtime-tools-processor.js";
 import { CodeRepositoriesProcessor } from "../../processors/generate/elements/technology/code-repositories-processor.js";
@@ -34,5 +35,6 @@ processorRegistry.register(new CodeRepositoriesProcessor());
 processorRegistry.register(new SyssoftForBuildSystemsAndRuntimesProcessor());
 processorRegistry.register(new SyssoftForNoBuildOrRuntimeToolsProcessor());
 processorRegistry.register(new AppComponentsFromModulesProcessor());
-processorRegistry.register(new RestControllersAndContractsProcessor());
+processorRegistry.register(new RestControllersAndDeclaredContractsProcessor());
+processorRegistry.register(new RestClientsAndDeclaredContractsProcessor());
 processorRegistry.register(new LinkBuildTimeDependencyAggregationProcessor());

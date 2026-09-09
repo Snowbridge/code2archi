@@ -1,29 +1,29 @@
-import type { ArchiCreateIntents } from "../../../../archimate-model/archi-create-intents.js";
+import type { ArchiCreateIntents } from "../../../../../archimate-model/archi-create-intents.js";
 import {
   ApplicationInterface,
   ApplicationService,
   type ArchiElementCreateIntent,
-} from "../../../../archimate-model/elements/archi-element.js";
-import type { ArchiFolderCreateIntent } from "../../../../archimate-model/folders/archi-folder.js";
-import type { ArchiProfile } from "../../../../archimate-model/profiles/profile.js";
+} from "../../../../../archimate-model/elements/archi-element.js";
+import type { ArchiFolderCreateIntent } from "../../../../../archimate-model/folders/archi-folder.js";
+import type { ArchiProfile } from "../../../../../archimate-model/profiles/profile.js";
 import {
-  RestApiContractAssignmentProfile,
   RestApiContractInterfaceProfile,
   RestControllerProfile,
-} from "../../../../archimate-model/profiles/profile.js";
+} from "../../../../../archimate-model/profiles/profile.js";
 import {
   AssignmentRelationship,
   RealizationRelationship,
-} from "../../../../archimate-model/relationships/archi-relationship.js";
-import type { ArchiRelationshipCreateIntent } from "../../../../archimate-model/relationships/archi-relationship.js";
-import { applicationComponentIdForModule } from "../../../../generate/application-module-components.js";
-import { standardGenerateElementProperties } from "../../../../generate/archi-element-properties.js";
+} from "../../../../../archimate-model/relationships/archi-relationship.js";
+import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
+import { applicationComponentIdForModule } from "../../../../../generate/application-module-components.js";
+import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
 import {
   dedupeAndSortFolderIntents,
   ensureFolderPath,
   repositoryFolderSegments,
-} from "../../../../generate/archi-folder-path.js";
-import { withEntityDebugProperties } from "../../../../generate/generate-debug.js";
+} from "../../../../../generate/archi-folder-path.js";
+import { withEntityDebugProperties } from "../../../../../generate/generate-debug.js";
+import { buildExtractHttpApiContractInterfaceIntent } from "../../../../../generate/rest-declared-contract-elements.js";
 import {
   appModuleRealizesRestControllerId,
   appModuleRealizesRestControllerLogicalId,
@@ -38,34 +38,32 @@ import {
   restApiContractAssignmentLogicalId,
   restControllerAppServiceId,
   restControllerAppServiceLogicalId,
-} from "../../../../generate/rest-controller-elements.js";
-import type { ApplicationModuleRecord } from "../../../../code-inventory/entities/application-module.js";
-import type { DiscoveryEntityRecord } from "../../../../code-inventory/entities/entity-types.js";
-import type { HttpApiContractRecord } from "../../../../code-inventory/entities/http-api-contract.js";
-import type { RestControllerRecord } from "../../../../code-inventory/entities/rest-controller.js";
+} from "../../../../../generate/rest-controller-elements.js";
+import type { ApplicationModuleRecord } from "../../../../../code-inventory/entities/application-module.js";
+import type { DiscoveryEntityRecord } from "../../../../../code-inventory/entities/entity-types.js";
+import type { HttpApiContractRecord } from "../../../../../code-inventory/entities/http-api-contract.js";
+import type { RestControllerRecord } from "../../../../../code-inventory/entities/rest-controller.js";
 import {
   AbstractProcessor,
   type GenerateProcessorInput,
   type ProcessorId,
-} from "../../../../platform/processors/processor.js";
+} from "../../../../../platform/processors/processor.js";
 
-const GENERATOR_COORDINATE = "generate.elements.application:rest-controllers-and-contracts";
+const GENERATOR_COORDINATE =
+  "generate.elements.application.rest:controllers-and-declared-contracts";
 
 const REQUIRED_PROFILES: readonly ArchiProfile[] = [
   RestControllerProfile.create(),
   RestApiContractInterfaceProfile.create(),
-  RestApiContractAssignmentProfile.create(),
 ];
 
-const MISSING_CONTRACT_NAME = "API contract";
-
-export class RestControllersAndContractsProcessor extends AbstractProcessor<
+export class RestControllersAndDeclaredContractsProcessor extends AbstractProcessor<
   GenerateProcessorInput,
   ArchiCreateIntents
 > {
   readonly id: ProcessorId = {
-    groupId: "generate.elements.application",
-    artifactId: "rest-controllers-and-contracts",
+    groupId: "generate.elements.application.rest",
+    artifactId: "controllers-and-declared-contracts",
   };
 
   readonly version = "0.1.0";
@@ -73,7 +71,7 @@ export class RestControllersAndContractsProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps RestController and HttpApiContract entities to ApplicationService, ApplicationInterface, and Realization/Assignment relations.";
+    "Maps RestController and declared HttpApiContract entities to ApplicationService, ApplicationInterface, and Realization/Assignment relations.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -183,32 +181,13 @@ export class RestControllersAndContractsProcessor extends AbstractProcessor<
           const interfaceLogicalId = httpApiContractInterfaceLogicalId(contractId);
 
           if (input.archi.getElement(interfaceId) === undefined) {
-            const interfaceName = contract?.simpleName ?? MISSING_CONTRACT_NAME;
-
-            let interfaceBuilder = ApplicationInterface.withId(interfaceId)
-              .name(interfaceName)
-              .inFolder(targetFolder.folderId)
-              .profiles(RestApiContractInterfaceProfile.create().id);
-
-            for (const property of standardGenerateElementProperties({
-              logicalId: interfaceLogicalId,
-              generatorCoordinate: GENERATOR_COORDINATE,
-              slot: "rest-api-contract-interface",
-            })) {
-              interfaceBuilder = interfaceBuilder.property(property.key, property.value);
-            }
-
-            const debugSources =
-              contract === undefined
-                ? []
-                : [
-                    {
-                      entityType: "HttpApiContract" as const,
-                      record: contract as unknown as DiscoveryEntityRecord,
-                    },
-                  ];
             elements.push(
-              withEntityDebugProperties(interfaceBuilder.build().toCreateIntent(), debugSources),
+              buildExtractHttpApiContractInterfaceIntent({
+                contractId,
+                contract,
+                folderId: targetFolder.folderId,
+                generatorCoordinate: GENERATOR_COORDINATE,
+              }),
             );
           }
 
@@ -216,8 +195,7 @@ export class RestControllersAndContractsProcessor extends AbstractProcessor<
           if (input.archi.getRelationship(assignmentId) === undefined) {
             let assignmentBuilder = AssignmentRelationship.withId(assignmentId)
               .source(interfaceId)
-              .target(serviceId)
-              .profiles(RestApiContractAssignmentProfile.create().id);
+              .target(serviceId);
 
             for (const property of standardGenerateElementProperties({
               logicalId: restApiContractAssignmentLogicalId(interfaceLogicalId, controller.id),
@@ -264,8 +242,7 @@ export class RestControllersAndContractsProcessor extends AbstractProcessor<
       if (input.archi.getRelationship(inferredAssignmentId) === undefined) {
         let inferredAssignmentBuilder = AssignmentRelationship.withId(inferredAssignmentId)
           .source(inferredInterfaceId)
-          .target(serviceId)
-          .profiles(RestApiContractAssignmentProfile.create().id);
+          .target(serviceId);
 
         for (const property of standardGenerateElementProperties({
           logicalId: restApiContractAssignmentLogicalId(inferredInterfaceLogicalId, controller.id),

@@ -1,20 +1,20 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ArchiModelStore } from "../../../../../src/archimate-model/archi-model-store.js";
-import { buildCodeInventorySnapshot } from "../../../../../src/code-inventory/code-inventory-snapshot.js";
-import { ApplicationModule } from "../../../../../src/code-inventory/entities/application-module.js";
-import { HttpApiContract } from "../../../../../src/code-inventory/entities/http-api-contract.js";
-import { Repository } from "../../../../../src/code-inventory/entities/repository.js";
-import { RestController } from "../../../../../src/code-inventory/entities/rest-controller.js";
+import { ArchiModelStore } from "../../../../../../src/archimate-model/archi-model-store.js";
+import { buildCodeInventorySnapshot } from "../../../../../../src/code-inventory/code-inventory-snapshot.js";
+import { ApplicationModule } from "../../../../../../src/code-inventory/entities/application-module.js";
+import { HttpApiContract } from "../../../../../../src/code-inventory/entities/http-api-contract.js";
+import { Repository } from "../../../../../../src/code-inventory/entities/repository.js";
+import { RestController } from "../../../../../../src/code-inventory/entities/rest-controller.js";
 import {
   appModuleRealizesRestControllerId,
   httpApiContractInterfaceId,
   inferredRestApiContractInterfaceId,
   restApiContractAssignmentId,
   restControllerAppServiceId,
-} from "../../../../../src/generate/rest-controller-elements.js";
-import { RestControllersAndContractsProcessor } from "../../../../../src/processors/generate/elements/application/rest-controllers-and-contracts-processor.js";
-import { defaultGenerateProcessorOptions } from "../../../../generate/generate-processor-test-options.js";
+} from "../../../../../../src/generate/rest-controller-elements.js";
+import { RestControllersAndDeclaredContractsProcessor } from "../../../../../../src/processors/generate/elements/application/rest/controllers-and-declared-contracts-processor.js";
+import { defaultGenerateProcessorOptions } from "../../../../../generate/generate-processor-test-options.js";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -66,13 +66,13 @@ function propertyValue(
   return properties?.find((property) => property.key === key)?.value;
 }
 
-describe("RestControllersAndContractsProcessor", () => {
-  it("exposes generate.elements.application coordinates", () => {
-    const processor = new RestControllersAndContractsProcessor();
+describe("RestControllersAndDeclaredContractsProcessor", () => {
+  it("exposes generate.elements.application.rest coordinates", () => {
+    const processor = new RestControllersAndDeclaredContractsProcessor();
 
     assert.deepEqual(processor.id, {
-      groupId: "generate.elements.application",
-      artifactId: "rest-controllers-and-contracts",
+      groupId: "generate.elements.application.rest",
+      artifactId: "controllers-and-declared-contracts",
     });
     assert.equal(processor.version, "0.1.0");
     assert.equal(processor.executionPolicy, "ALWAYS");
@@ -110,7 +110,7 @@ describe("RestControllersAndContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller], [contract]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndContractsProcessor();
+    const processor = new RestControllersAndDeclaredContractsProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),
@@ -149,6 +149,7 @@ describe("RestControllersAndContractsProcessor", () => {
     assert.equal(assignment?.relationType, "AssignmentRelationship");
     assert.equal(assignment?.sourceId, interfaceId);
     assert.equal(assignment?.targetId, serviceId);
+    assert.equal(assignment?.profileIds?.length ?? 0, 0);
   });
 
   it("creates inferred contract when business endpoints exist without contractIds", () => {
@@ -182,7 +183,7 @@ describe("RestControllersAndContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndContractsProcessor();
+    const processor = new RestControllersAndDeclaredContractsProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),
@@ -202,6 +203,7 @@ describe("RestControllersAndContractsProcessor", () => {
     );
     assert.equal(propertyValue(assignment?.properties, "c2a:basis"), "inference");
     assert.equal(propertyValue(assignment?.properties, "c2a:confidence"), "0.854321");
+    assert.equal(assignment?.profileIds?.length ?? 0, 0);
   });
 
   it("creates only service and realization for infra-only endpoints without contracts", () => {
@@ -235,7 +237,7 @@ describe("RestControllersAndContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndContractsProcessor();
+    const processor = new RestControllersAndDeclaredContractsProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),
@@ -280,7 +282,7 @@ describe("RestControllersAndContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndContractsProcessor();
+    const processor = new RestControllersAndDeclaredContractsProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),

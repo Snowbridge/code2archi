@@ -187,7 +187,6 @@ export const CompiledWithProfile = defineAssignmentRelationshipProfile("Compiled
 export const BuildTimeDependencyProfile =
   defineAggregationRelationshipProfile("Build-time dependency");
 export const RestControllerProfile = defineApplicationServiceProfile("REST Controller");
+export const RestClientProfile = defineApplicationServiceProfile("REST Client");
 export const RestApiContractInterfaceProfile =
   defineApplicationInterfaceProfile("REST API Contract");
-export const RestApiContractAssignmentProfile =
-  defineAssignmentRelationshipProfile("REST API Contract");
