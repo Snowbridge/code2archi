@@ -22,6 +22,9 @@ export const APPLICATION_MODULE_DEPENDENCY_SCHEMA_ID =
 export const REST_CONTROLLER_SCHEMA_ID =
   `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/RestController`;
 
+export const REST_CLIENT_SCHEMA_ID =
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/RestClient`;
+
 export const HTTP_API_DATA_TYPE_SCHEMA_ID =
   `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/HttpApiDataType`;
 
@@ -84,6 +87,10 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
   RestController: {
     collectionPath: "rest-controllers.json",
     schemaId: REST_CONTROLLER_SCHEMA_ID,
+  },
+  RestClient: {
+    collectionPath: "rest-clients.json",
+    schemaId: REST_CLIENT_SCHEMA_ID,
   },
   HttpApiDataType: {
     collectionPath: "http-api-data-types.json",

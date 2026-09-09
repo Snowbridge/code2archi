@@ -108,6 +108,7 @@ export function collectDataTypesFromMethods(
   importContext: JvmImportContext,
   language: "java" | "kotlin",
   builder: RestDiscoveryIntentBuilder,
+  moduleTypeIndex?: ReadonlyMap<string, string>,
 ): string[] {
   const ids = new Set<string>();
   for (const method of methods) {
@@ -116,12 +117,35 @@ export function collectDataTypesFromMethods(
         if (isJvmPrimitiveOrExcluded(unwrapped)) {
           continue;
         }
-        const fqcn = resolveTypeName(unwrapped, importContext, language);
+        const fqcn = resolveDataTypeFqcn(unwrapped, importContext, language, moduleTypeIndex);
         ids.add(builder.registerDataType(fqcn));
       }
     }
   }
   return [...ids].sort((a, b) => a.localeCompare(b));
+}
+
+function resolveDataTypeFqcn(
+  typeText: string,
+  importContext: JvmImportContext,
+  language: "java" | "kotlin",
+  moduleTypeIndex?: ReadonlyMap<string, string>,
+): string {
+  if (moduleTypeIndex !== undefined) {
+    const simpleName = typeSimpleName(typeText);
+    const moduleFqcn = moduleTypeIndex.get(simpleName);
+    if (moduleFqcn !== undefined) {
+      return moduleFqcn;
+    }
+  }
+  return resolveTypeName(typeText, importContext, language);
+}
+
+function typeSimpleName(typeText: string): string {
+  const genericStart = typeText.indexOf("<");
+  const head = genericStart >= 0 ? typeText.slice(0, genericStart) : typeText;
+  const lastDot = head.lastIndexOf(".");
+  return lastDot >= 0 ? head.slice(lastDot + 1) : head;
 }
 
 export function registerSyntheticController(

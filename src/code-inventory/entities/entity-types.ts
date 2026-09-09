@@ -9,6 +9,7 @@ export const ENTITY_TYPES = [
   "MessageConsumer",
   "MessageProducer",
   "RestController",
+  "RestClient",
   "HttpApiDataType",
   "HttpApiContract",
 ] as const;

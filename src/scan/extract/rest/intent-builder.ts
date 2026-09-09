@@ -1,12 +1,14 @@
 import type { CreateIntents } from "../../../code-inventory/entities/create-intents.js";
 import { HttpApiContract } from "../../../code-inventory/entities/http-api-contract.js";
 import { HttpApiDataType } from "../../../code-inventory/entities/http-api-data-type.js";
+import { RestClient } from "../../../code-inventory/entities/rest-client.js";
 import { RestController } from "../../../code-inventory/entities/rest-controller.js";
 
 export class RestDiscoveryIntentBuilder {
   private readonly dataTypes = new Map<string, ReturnType<HttpApiDataType["toCreateIntent"]>>();
   private readonly contracts = new Map<string, ReturnType<HttpApiContract["toCreateIntent"]>>();
   private readonly controllers = new Map<string, ReturnType<RestController["toCreateIntent"]>>();
+  private readonly clients = new Map<string, ReturnType<RestClient["toCreateIntent"]>>();
 
   registerDataType(fqcn: string): string {
     const entity = new HttpApiDataType({ fqcn });
@@ -21,13 +23,26 @@ export class RestDiscoveryIntentBuilder {
   }
 
   registerController(intent: ReturnType<RestController["toCreateIntent"]>): void {
-    const existing = this.controllers.get(intent.id);
+    this.mergeRestEndpointIntent(this.controllers, intent);
+  }
+
+  registerClient(intent: ReturnType<RestClient["toCreateIntent"]>): void {
+    this.mergeRestEndpointIntent(this.clients, intent);
+  }
+
+  private mergeRestEndpointIntent<T extends {
+    readonly id: string;
+    readonly endpoints: readonly string[];
+    readonly contractIds: readonly string[];
+    readonly dataTypeIds: readonly string[];
+  }>(store: Map<string, T>, intent: T): void {
+    const existing = store.get(intent.id);
     if (existing === undefined) {
-      this.controllers.set(intent.id, intent);
+      store.set(intent.id, intent);
       return;
     }
 
-    this.controllers.set(intent.id, {
+    store.set(intent.id, {
       ...existing,
       endpoints: unionSorted(existing.endpoints, intent.endpoints),
       contractIds: unionSorted(existing.contractIds, intent.contractIds),
@@ -45,6 +60,9 @@ export class RestDiscoveryIntentBuilder {
     for (const intent of other.controllers.values()) {
       this.registerController(intent);
     }
+    for (const intent of other.clients.values()) {
+      this.registerClient(intent);
+    }
   }
 
   build(): CreateIntents {
@@ -57,6 +75,9 @@ export class RestDiscoveryIntentBuilder {
     }
     if (this.controllers.size > 0) {
       entities.RestController = [...this.controllers.values()];
+    }
+    if (this.clients.size > 0) {
+      entities.RestClient = [...this.clients.values()];
     }
     return { entities };
   }

@@ -35,6 +35,11 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
   "scan.extract.rest.controllers/spring-webflux-router": ["RestController"],
   "scan.extract.rest.controllers/quarkus-vertx": ["RestController"],
   "scan.extract.rest.controllers/ktor": ["RestController"],
+  "scan.extract.rest.clients/programmatic-rest-client-components": [
+    "RestClient",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
 };
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */

@@ -7,6 +7,7 @@ import { MicronautProcessor } from "../../processors/scan/extract/rest/controlle
 import { SpringWebfluxRouterProcessor } from "../../processors/scan/extract/rest/controllers/spring-webflux-router-processor.js";
 import { QuarkusVertxProcessor } from "../../processors/scan/extract/rest/controllers/quarkus-vertx-processor.js";
 import { KtorProcessor } from "../../processors/scan/extract/rest/controllers/ktor-processor.js";
+import { ProgrammaticRestClientComponentsProcessor } from "../../processors/scan/extract/rest/clients/programmatic-rest-client-components-processor.js";
 import { AppComponentsFromModulesProcessor } from "../../processors/generate/elements/application/app-components-from-modules-processor.js";
 import { LinkBuildTimeDependencyAggregationProcessor } from "../../processors/generate/elements/application/link-build-time-dependency-aggregation-processor.js";
 import { RestControllersAndContractsProcessor } from "../../processors/generate/elements/application/rest-controllers-and-contracts-processor.js";
@@ -28,6 +29,7 @@ processorRegistry.register(new MicronautProcessor());
 processorRegistry.register(new SpringWebfluxRouterProcessor());
 processorRegistry.register(new QuarkusVertxProcessor());
 processorRegistry.register(new KtorProcessor());
+processorRegistry.register(new ProgrammaticRestClientComponentsProcessor());
 processorRegistry.register(new CodeRepositoriesProcessor());
 processorRegistry.register(new SyssoftForBuildSystemsAndRuntimesProcessor());
 processorRegistry.register(new SyssoftForNoBuildOrRuntimeToolsProcessor());

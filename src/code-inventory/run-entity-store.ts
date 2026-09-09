@@ -48,6 +48,7 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
     "MessageConsumer",
     "MessageProducer",
     "RestController",
+    "RestClient",
     "HttpApiDataType",
     "HttpApiContract",
   ],

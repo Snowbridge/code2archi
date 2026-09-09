@@ -210,8 +210,10 @@ function extractJavaMethods(node: SyntaxNode): JvmMethodModel[] {
 
 function extractKotlinMethods(node: SyntaxNode): JvmMethodModel[] {
   const methods: JvmMethodModel[] = [];
-  const body = node.childForFieldName("body");
-  if (!body) {
+  const body =
+    node.childForFieldName("body") ??
+    node.children.find((child) => child.type === "class_body");
+  if (body === undefined) {
     return methods;
   }
   for (const child of body.children) {
@@ -241,7 +243,7 @@ function extractJavaMethod(node: SyntaxNode): JvmMethodModel | undefined {
 }
 
 function extractKotlinMethod(node: SyntaxNode): JvmMethodModel | undefined {
-  const nameNode = node.childForFieldName("name");
+  const nameNode = node.childForFieldName("name") ?? findChildTypeIdentifier(node);
   if (!nameNode) {
     return undefined;
   }
@@ -275,7 +277,8 @@ function extractParameterTypes(node: SyntaxNode): string[] {
     if (
       child.type !== "formal_parameter" &&
       child.type !== "required_parameter" &&
-      child.type !== "class_parameter"
+      child.type !== "class_parameter" &&
+      child.type !== "parameter"
     ) {
       continue;
     }

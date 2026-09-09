@@ -348,6 +348,7 @@ describe("RunEntityStore", () => {
       "MessageConsumer",
       "MessageProducer",
       "RestController",
+      "RestClient",
       "HttpApiDataType",
       "HttpApiContract",
     ]);
