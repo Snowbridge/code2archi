@@ -5,6 +5,10 @@ import type { CodeInventorySnapshot } from "../../../code-inventory/run-entity-s
 import type { Repository } from "../../../code-inventory/entities/repository.js";
 import { processorRegistry } from "../../processors/processor-registry.js";
 import type { ProcessorId, ScanAppInput, ScanScopeInput } from "../../processors/processor.js";
+import {
+  filterSupplementsForProcessor,
+  withProcessorSupplements,
+} from "../../processors/processor-supplements.js";
 import { runProcessorWithMetrics } from "../../profiling/flow-metrics.js";
 import { recordValue } from "../../profiling/index.js";
 import { METRIC_WORKER_TASK_DURATION } from "../../profiling/metric-types.js";
@@ -82,17 +86,37 @@ function withScanProgress(
   });
 }
 
+function resolveProcessorSupplements(
+  processorId: ProcessorId,
+  taskSupplements?: readonly import("../../processors/processor-supplements.js").ProcessorSupplementRef[],
+): readonly import("../../processors/processor-supplements.js").ProcessorSupplementRef[] {
+  if (taskSupplements && taskSupplements.length > 0) {
+    return taskSupplements;
+  }
+
+  const phase = tryGetWorkerPhase();
+  if (phase?.supplementCatalog) {
+    return filterSupplementsForProcessor(phase.supplementCatalog, processorId);
+  }
+
+  return [];
+}
+
 function processScanProcessorOnSnapshot(
   processorId: ProcessorId,
   snapshot: CodeInventorySnapshot,
   progress?: StepProgressHandle,
+  supplements?: readonly import("../../processors/processor-supplements.js").ProcessorSupplementRef[],
 ): CreateIntents {
   const processor = processorRegistry.get(processorId.groupId, processorId.artifactId);
   if (!processor) {
     throw new Error(`Processor not found: ${processorId.groupId}/${processorId.artifactId}`);
   }
 
-  const scanInput = withScanProgress(snapshot, progress);
+  const scanInput = withProcessorSupplements(
+    withScanProgress(snapshot, progress),
+    resolveProcessorSupplements(processorId, supplements),
+  );
   processor.logStart();
   const output = runProcessorWithMetrics(processorId, () =>
     processor.process(scanInput),
@@ -113,7 +137,7 @@ export function runScanProcessorTask(input: ScanProcessorTaskInput): CreateInten
     ? createWorkerProgressHandle(input.progressStepId)
     : undefined;
 
-  return processScanProcessorOnSnapshot(input.processor, snapshot, progress);
+  return processScanProcessorOnSnapshot(input.processor, snapshot, progress, input.supplements);
 }
 
 export function runScanRepositoryBatchTask(
@@ -179,10 +203,13 @@ export function runScanScopeUnitTask(input: ScanScopeUnitTaskInput): readonly Re
     return [repository];
   }
 
-  const scopeInput: ScanScopeInput = {
-    sourceDirs: input.sourceDirs,
-    progress,
-  };
+  const scopeInput = withProcessorSupplements(
+    {
+      sourceDirs: input.sourceDirs,
+      progress,
+    },
+    input.supplements ?? [],
+  );
   const processor = processorRegistry.get(input.processor.groupId, input.processor.artifactId);
   if (!processor) {
     throw new Error(

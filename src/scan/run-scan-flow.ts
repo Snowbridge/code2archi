@@ -7,6 +7,12 @@ import {
   type GlobalArgv,
 } from "../cli/processor-groups.js";
 import {
+  listRunningProcessorIds,
+  resolveProcessorSupplementCatalog,
+  warnUnusedSupplementTargets,
+  type ProcessorSupplementCatalog,
+} from "../platform/processors/processor-supplements.js";
+import {
   type ProcessorFilters,
   processorRegistry,
   resolveProcessorFilters,
@@ -33,6 +39,7 @@ import { getRunConfigResolution } from "../cli/run-config/run-config-context.js"
 
 export interface RunScanFlowInput extends ScanArgs {
   readonly processorFilters: ProcessorFilters;
+  readonly processorSupplements: ProcessorSupplementCatalog;
   readonly verbose: boolean;
   readonly profile: boolean;
   readonly parallelism: ParallelismOptions;
@@ -47,6 +54,7 @@ export function createRunScanFlowInput(
   return {
     ...scanArgs,
     processorFilters: resolveProcessorFilters(argv),
+    processorSupplements: resolveProcessorSupplementCatalog(argv.supplement, process.cwd()),
     verbose: argv.verbose,
     profile: argv.profile,
     parallelism: {
@@ -69,6 +77,12 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
     sync: input.parallelism.sync,
     continueOnError: input.parallelism.continueOnError,
   });
+
+  const scanGroupIds = [SCAN_SCOPE_GROUP_ID, SCAN_EXTRACT_GROUP_ID, SCAN_TRANSFORM_GROUP_ID];
+  warnUnusedSupplementTargets(
+    input.processorSupplements,
+    listRunningProcessorIds(scanGroupIds, input.processorFilters),
+  );
 
   const scopeProcessorCount = processorRegistry.listForBuiltInStep(
     SCAN_SCOPE_GROUP_ID,
@@ -134,6 +148,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
         store,
         progress.step("1"),
         parallelContext,
+        input.processorSupplements,
       );
     });
     const repositoryCount = store.getEntities("Repository").length;
@@ -157,6 +172,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
         progress.step("2"),
         parallelContext,
         "2",
+        input.processorSupplements,
       );
     });
     logger.info("step completed", { step: 2 });
@@ -170,6 +186,7 @@ export async function runScanFlow(input: RunScanFlowInput): Promise<void> {
         progress.step("3"),
         parallelContext,
         "3",
+        input.processorSupplements,
       );
     });
     logger.info("step completed", { step: 3 });

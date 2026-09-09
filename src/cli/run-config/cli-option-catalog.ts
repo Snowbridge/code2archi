@@ -11,9 +11,11 @@ export const RUN_CONFIG_EXCLUDED_KEYS = new Set([
 
 export const PROCESSOR_FILTER_KEYS = new Set(["with", "without", "with-only"]);
 
-const GLOBAL_OPTION_KEYS = Object.keys(globalOptions).filter(
-  (key) => !RUN_CONFIG_EXCLUDED_KEYS.has(key),
+const GLOBAL_OPTION_KEYS = new Set(
+  Object.keys(globalOptions).filter((key) => !RUN_CONFIG_EXCLUDED_KEYS.has(key)),
 );
+
+export const SUPPLEMENT_CONFIG_KEY = "supplement";
 
 const COMMAND_ALIASES: Record<string, RunConfigCommandName> = {
   scan: "scan",
@@ -59,7 +61,7 @@ export function allowedKeysForNode(
   command: RunConfigCommandName | undefined,
 ): Set<string> | undefined {
   if (nodeName === "root") {
-    return new Set(GLOBAL_OPTION_KEYS);
+    return GLOBAL_OPTION_KEYS;
   }
 
   if (command === undefined || nodeName !== command) {

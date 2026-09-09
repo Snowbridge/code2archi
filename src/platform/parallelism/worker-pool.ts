@@ -12,6 +12,7 @@ import type {
   SerializableDiscoverySnapshot,
   SnapshotRepositoryFilterScope,
 } from "./snapshot-serialization.js";
+import type { SerializableProcessorSupplementCatalog } from "../processors/processor-supplements.js";
 import type { WorkerHandlerId } from "./worker-handler-id.js";
 import type {
   WorkerInboundMessage,
@@ -33,6 +34,7 @@ export interface WorkerPhaseSetup {
   readonly phaseId: string;
   readonly snapshot: SerializableDiscoverySnapshot;
   readonly snapshotFilterScope: SnapshotRepositoryFilterScope;
+  readonly supplementCatalog?: SerializableProcessorSupplementCatalog;
 }
 
 export interface WorkerPoolRunOptions<TInput, TOutput> {
@@ -88,7 +90,12 @@ class InlineWorkerPool implements WorkerPool {
 
   async setupPhase(setup: WorkerPhaseSetup, _bridge: MainThreadBridge): Promise<void> {
     const startedAt = performance.now();
-    setWorkerPhase(setup.phaseId, setup.snapshot, setup.snapshotFilterScope);
+    setWorkerPhase(
+      setup.phaseId,
+      setup.snapshot,
+      setup.snapshotFilterScope,
+      setup.supplementCatalog,
+    );
     recordValue(METRIC_WORKER_PHASE_SETUP, performance.now() - startedAt, [setup.phaseId]);
   }
 
@@ -218,6 +225,7 @@ class ThreadWorkerPool implements WorkerPool {
       phaseId: setup.phaseId,
       snapshot: setup.snapshot,
       snapshotFilterScope: setup.snapshotFilterScope,
+      supplementCatalog: setup.supplementCatalog,
     };
 
     return new Promise<void>((resolve, reject) => {

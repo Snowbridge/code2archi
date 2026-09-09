@@ -17,6 +17,7 @@ function baseArgv(): Record<string, unknown> {
     with: [],
     without: [],
     withOnly: [],
+    supplement: [],
   };
 }
 
@@ -113,6 +114,26 @@ describe("validateGlobalArgv", () => {
         }),
       '"none" cannot be combined with other values',
     );
+  });
+
+  it("rejects invalid --supplement format", () => {
+    expectCliError(
+      () =>
+        validateGlobalArgv({
+          ...baseArgv(),
+          supplement: ["scan.scope.git-repositories"],
+        }),
+      "expected <coordinate>@<path>",
+    );
+  });
+
+  it("accepts valid --supplement token", () => {
+    const argv = {
+      ...baseArgv(),
+      supplement: ["scan.scope.git-repositories@.c2a/hints.txt"],
+    };
+    validateGlobalArgv(argv);
+    assert.deepEqual(argv.supplement, ["scan.scope.git-repositories@.c2a/hints.txt"]);
   });
 });
 

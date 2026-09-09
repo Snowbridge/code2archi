@@ -9,6 +9,11 @@ import {
 } from "../../../src/platform/processors/processor.js";
 import { processorRegistry } from "../../../src/platform/processors/processor-registry.js";
 import { runScanScopeGroup } from "../../../src/platform/processors/run-scan-scope-group.js";
+import type { ProcessorSupplementRef } from "../../../src/platform/processors/processor-supplements.js";
+import { resolveProcessorSupplementCatalog, supplementToken } from "../../../src/platform/processors/processor-supplements.js";
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+import { createTestTempDir } from "../../test-temp-dir.js";
 
 class StubRepositoryProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id: { groupId: string; artifactId: string };
@@ -32,12 +37,28 @@ class StubRepositoryProcessor extends AbstractProcessor<ScanScopeInput, ScanScop
 const STUB_ONE = "test-stub-one";
 const STUB_TWO = "test-stub-two";
 const STUB_STORE = "test-stub-store";
+const STUB_SUPPLEMENT = "test-stub-supplement";
+
+let capturedSupplements: readonly ProcessorSupplementRef[] = [];
+
+class SupplementCapturingProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
+  readonly id = { groupId: "scan.scope", artifactId: STUB_SUPPLEMENT };
+  readonly version = "0.0.0";
+  readonly executionPolicy = "ALWAYS" as const;
+  readonly description = "Captures supplements for tests.";
+
+  protected doProcess(input: ScanScopeInput): ScanScopeOutput {
+    capturedSupplements = input.supplements ?? [];
+    return [];
+  }
+}
 
 describe("runScanScopeGroup", () => {
   after(() => {
     processorRegistry.unregister("scan.scope", STUB_ONE);
     processorRegistry.unregister("scan.scope", STUB_TWO);
     processorRegistry.unregister("scan.scope", STUB_STORE);
+    processorRegistry.unregister("scan.scope", STUB_SUPPLEMENT);
   });
 
   it("unions repositories by id and throws on duplicate id", async () => {
@@ -115,5 +136,40 @@ describe("runScanScopeGroup", () => {
       store.getEntities("Repository")[0]?.extractProcessor,
       `scan.scope:${STUB_STORE}`,
     );
+  });
+
+  it("passes filtered supplements to sequential processors", async () => {
+    const root = createTestTempDir("c2a-scope-supplements-");
+    const hintsPath = path.join(root, "hints.txt");
+    writeFileSync(hintsPath, "hint", "utf8");
+
+    processorRegistry.register(new SupplementCapturingProcessor());
+    capturedSupplements = [];
+
+    const catalog = resolveProcessorSupplementCatalog(
+      [supplementToken(`scan.scope.${STUB_SUPPLEMENT}`, hintsPath)],
+      root,
+    );
+
+    await runScanScopeGroup(
+      ["/tmp"],
+      {
+        with: [],
+        without: [],
+        withOnly: [`scan.scope.${STUB_SUPPLEMENT}`],
+      },
+      new RunEntityStore({
+        sourceDirs: ["/tmp"],
+        scanId: "scan-1",
+        runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+      }),
+      undefined,
+      undefined,
+      catalog,
+    );
+
+    assert.equal(capturedSupplements.length, 1);
+    assert.equal(capturedSupplements[0]?.path, hintsPath);
+    assert.equal(capturedSupplements[0]?.basename, "hints.txt");
   });
 });

@@ -49,6 +49,7 @@ export interface WorkerPhaseSetupMessage {
   readonly phaseId: string;
   readonly snapshot: import("./snapshot-serialization.js").SerializableDiscoverySnapshot;
   readonly snapshotFilterScope: import("./snapshot-serialization.js").SnapshotRepositoryFilterScope;
+  readonly supplementCatalog?: import("../processors/processor-supplements.js").SerializableProcessorSupplementCatalog;
 }
 
 export interface WorkerPhaseSetupAckMessage {

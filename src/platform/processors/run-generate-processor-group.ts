@@ -13,6 +13,11 @@ import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { GenerateProcessorInput, GenerateOptions } from "./processor.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
+import {
+  filterSupplementsForProcessor,
+  withProcessorSupplements,
+  type ProcessorSupplementCatalog,
+} from "./processor-supplements.js";
 import { getLogger } from "../logging/index.js";
 import type { ProcessorGroupParallelContext } from "./run-create-intent-processor-group.js";
 import { finalizePoolErrorsAfterMerge, throwOnPoolErrors } from "./parallel-group-runner.js";
@@ -34,6 +39,7 @@ export async function runGenerateProcessorGroup(
   options: GenerateOptions,
   progress?: StepProgressHandle,
   parallel?: ProcessorGroupParallelContext,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): Promise<void> {
   const logger = getLogger(`generate.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
@@ -52,11 +58,17 @@ export async function runGenerateProcessorGroup(
     for (const processor of processors) {
       processor.logStart();
 
-      const input: GenerateProcessorInput = {
-        discovery,
-        archi: archiStore.snapshot(),
-        options,
-      };
+      const supplements = supplementCatalog
+        ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+        : [];
+      const input = withProcessorSupplements(
+        {
+          discovery,
+          archi: archiStore.snapshot(),
+          options,
+        },
+        supplements,
+      );
       const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
       if (output instanceof Promise) {
         throw new Error(
@@ -87,6 +99,7 @@ export async function runGenerateProcessorGroup(
     discoverySnapshot,
     archiSnapshot,
     options.decorate,
+    supplementCatalog,
   );
 
   const { results, errors } = await parallel.pool.runTasks({

@@ -33,6 +33,8 @@ const SPRING_FIXTURES_DIR = path.join(
 
 const FAILING_SCOPE_ARTIFACT = "test-flow-failing";
 
+const EMPTY_PROCESSOR_SUPPLEMENTS = { declarations: [] };
+
 class FailingScopeProcessor extends AbstractProcessor<ScanScopeInput, ScanScopeOutput> {
   readonly id = { groupId: "scan.scope", artifactId: FAILING_SCOPE_ARTIFACT };
   readonly version = "0.0.0";
@@ -70,6 +72,7 @@ describe("runScanFlow", async () => {
         without: [],
         withOnly: [],
       },
+      processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
     });
 
     const manifestPath = path.join(outputDir, "manifest.json");
@@ -131,6 +134,7 @@ describe("runScanFlow", async () => {
         without: ["scan.scope.unversioned-folders"],
         withOnly: [],
       },
+      processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
     });
 
     const repositories = JSON.parse(
@@ -179,6 +183,7 @@ describe("runScanFlow", async () => {
         without: [],
         withOnly: [],
       },
+      processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
     });
 
     const modulesPath = path.join(outputDir, "application-modules.json");
@@ -250,6 +255,7 @@ version = '1.0.0'`,
         without: [],
         withOnly: [],
       },
+      processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
     });
 
     const restControllersPath = path.join(outputDir, "rest-controllers.json");
@@ -298,6 +304,7 @@ version = '1.0.0'`,
           without: [],
           withOnly: [],
         },
+        processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
       });
 
       const reportPath = finalizeProfiling({ command: "scan", verbose: false });
@@ -339,6 +346,7 @@ version = '1.0.0'`,
               without: [],
               withOnly: [`scan.scope.${FAILING_SCOPE_ARTIFACT}`],
             },
+            processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
           });
         },
         (error: unknown) => error instanceof CliError && error.exitCode === ExitCode.RUNTIME,

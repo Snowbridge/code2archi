@@ -1,6 +1,10 @@
 import path from "node:path";
 import { GitWorkingCopy } from "../../utils/git-working-copy.js";
 import type { ProcessorId } from "../processors/processor.js";
+import {
+  filterSupplementsForProcessor,
+  type ProcessorSupplementCatalog,
+} from "../processors/processor-supplements.js";
 import type { ParallelTask } from "./worker-pool.js";
 import type {
   ScanProcessorTaskInput,
@@ -64,6 +68,7 @@ export function buildScanRepositoryBatchTasks(
 export function buildScanLinkTasks(
   processors: readonly { readonly id: ProcessorId }[],
   snapshot: CodeInventorySnapshot,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): ParallelTask<ScanProcessorTaskInput>[] {
   const serialized = serializeDiscoverySnapshot(snapshot);
 
@@ -72,6 +77,9 @@ export function buildScanLinkTasks(
     input: {
       processor: processor.id,
       snapshot: serialized,
+      supplements: supplementCatalog
+        ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+        : undefined,
     },
   }));
 }
@@ -80,6 +88,7 @@ export function buildScanScopeTasks(
   processors: readonly { readonly id: ProcessorId }[],
   sourceDirs: readonly string[],
   progressStepId: string,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): ParallelTask<ScanScopeUnitTaskInput>[] {
   const tasks: ParallelTask<ScanScopeUnitTaskInput>[] = [];
 
@@ -98,6 +107,9 @@ export function buildScanScopeTasks(
             sourceDirs,
             unit: { kind: "repoRoot", path: repoRoot } satisfies ScanScopeUnitDescriptor,
             progressStepId,
+            supplements: supplementCatalog
+              ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+              : undefined,
           },
         });
       }
@@ -113,6 +125,9 @@ export function buildScanScopeTasks(
             sourceDirs,
             unit: { kind: "sourceDir", path: sourceDir } satisfies ScanScopeUnitDescriptor,
             progressStepId,
+            supplements: supplementCatalog
+              ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+              : undefined,
           },
         });
       }
@@ -127,6 +142,7 @@ export function buildGenerateProcessorTasks(
   discovery: SerializableDiscoverySnapshot,
   archi: import("./snapshot-serialization.js").SerializableArchiSnapshot,
   decorate: boolean,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): ParallelTask<import("./task-inputs.js").GenerateProcessorTaskInput>[] {
   return processors.map((processor) => ({
     taskId: `${processor.id.groupId}/${processor.id.artifactId}`,
@@ -135,6 +151,9 @@ export function buildGenerateProcessorTasks(
       discovery,
       archi,
       decorate,
+      supplements: supplementCatalog
+        ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+        : undefined,
     },
   }));
 }

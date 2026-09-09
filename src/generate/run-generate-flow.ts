@@ -6,6 +6,12 @@ import {
   type GlobalArgv,
 } from "../cli/processor-groups.js";
 import {
+  listRunningProcessorIds,
+  resolveProcessorSupplementCatalog,
+  warnUnusedSupplementTargets,
+  type ProcessorSupplementCatalog,
+} from "../platform/processors/processor-supplements.js";
+import {
   type ProcessorFilters,
   processorRegistry,
   resolveProcessorFilters,
@@ -28,6 +34,7 @@ import type { GenerateArgs } from "./validate-generate-args.js";
 
 export interface RunGenerateFlowInput extends GenerateArgs {
   readonly processorFilters: ProcessorFilters;
+  readonly processorSupplements: ProcessorSupplementCatalog;
   readonly verbose: boolean;
   readonly profile: boolean;
   readonly parallelism: ParallelismOptions;
@@ -40,6 +47,7 @@ export function createRunGenerateFlowInput(
   return {
     ...generateArgs,
     processorFilters: resolveProcessorFilters(argv),
+    processorSupplements: resolveProcessorSupplementCatalog(argv.supplement, process.cwd()),
     verbose: argv.verbose,
     profile: argv.profile,
     parallelism: {
@@ -59,6 +67,12 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
     sync: input.parallelism.sync,
     continueOnError: input.parallelism.continueOnError,
   });
+
+  const generateGroupIds = [GENERATE_ELEMENTS_GROUP_ID, GENERATE_VIEWS_GROUP_ID];
+  warnUnusedSupplementTargets(
+    input.processorSupplements,
+    listRunningProcessorIds(generateGroupIds, input.processorFilters),
+  );
 
   const elementsProcessorCount = processorRegistry.listForBuiltInStep(
     GENERATE_ELEMENTS_GROUP_ID,
@@ -119,6 +133,7 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
         { decorate: !input.noDecorate },
         progress.step("1"),
         parallelContext,
+        input.processorSupplements,
       );
     });
     logger.info("step completed", { step: 1 });
@@ -133,6 +148,7 @@ export async function runGenerateFlow(input: RunGenerateFlowInput): Promise<void
         { decorate: !input.noDecorate },
         progress.step("2"),
         parallelContext,
+        input.processorSupplements,
       );
     });
     logger.info("step completed", { step: 2 });

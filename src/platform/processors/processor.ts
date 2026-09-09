@@ -4,7 +4,10 @@ import type { CreateIntents } from "../../code-inventory/entities/create-intents
 import type { Repository } from "../../code-inventory/entities/repository.js";
 import type { CodeInventorySnapshot } from "../../code-inventory/run-entity-store.js";
 import type { StepProgressHandle } from "../cli-progress/types.js";
+import type { ProcessorSupplementRef } from "./processor-supplements.js";
 import { getLogger, logCalls, processorLoggerName, type Logger } from "../logging/index.js";
+
+export type { ProcessorSupplementRef } from "./processor-supplements.js";
 
 export interface ProcessorId {
   readonly groupId: string;
@@ -20,11 +23,13 @@ export type ProcessorExecutionPolicy = "ALWAYS" | "ON_DEMAND";
 export type ScanScopeInput = {
   readonly sourceDirs: readonly string[];
   readonly progress?: StepProgressHandle;
+  readonly supplements?: readonly ProcessorSupplementRef[];
 };
 export type ScanScopeOutput = readonly Repository[];
 
 export type ScanAppInput = CodeInventorySnapshot & {
   readonly progress?: StepProgressHandle;
+  readonly supplements?: readonly ProcessorSupplementRef[];
 };
 export type ScanAppOutput = CreateIntents;
 
@@ -36,6 +41,7 @@ export interface GenerateProcessorInput {
   readonly discovery: CodeInventorySnapshot;
   readonly archi: ArchiModelSnapshot;
   readonly options: GenerateOptions;
+  readonly supplements?: readonly ProcessorSupplementRef[];
 }
 
 export type GenerateProcessorOutput = ArchiCreateIntents;

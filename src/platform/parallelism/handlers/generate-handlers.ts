@@ -1,6 +1,7 @@
 import type { ArchiCreateIntents } from "../../../archimate-model/archi-create-intents.js";
 import { processorRegistry } from "../../processors/processor-registry.js";
 import type { GenerateProcessorInput } from "../../processors/processor.js";
+import { withProcessorSupplements } from "../../processors/processor-supplements.js";
 import { runProcessorWithMetrics } from "../../profiling/flow-metrics.js";
 import { deserializeArchiSnapshot, deserializeDiscoverySnapshot } from "../snapshot-serialization.js";
 import type { GenerateProcessorTaskInput } from "../task-inputs.js";
@@ -13,11 +14,14 @@ export function runGenerateProcessorTask(input: GenerateProcessorTaskInput): Arc
     );
   }
 
-  const generateInput: GenerateProcessorInput = {
-    discovery: deserializeDiscoverySnapshot(input.discovery),
-    archi: deserializeArchiSnapshot(input.archi),
-    options: { decorate: input.decorate },
-  };
+  const generateInput = withProcessorSupplements(
+    {
+      discovery: deserializeDiscoverySnapshot(input.discovery),
+      archi: deserializeArchiSnapshot(input.archi),
+      options: { decorate: input.decorate },
+    },
+    input.supplements ?? [],
+  );
 
   processor.logStart();
   const output = runProcessorWithMetrics(input.processor, () =>

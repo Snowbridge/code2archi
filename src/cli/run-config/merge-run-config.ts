@@ -6,6 +6,8 @@ import {
 } from "./cli-option-catalog.js";
 import { listKnownTopLevelNodes } from "./cli-option-catalog.js";
 import { normalizeProcessorFilterValue } from "./normalize-processor-filter-value.js";
+import { SUPPLEMENT_CONFIG_KEY } from "./cli-option-catalog.js";
+import { normalizeSupplementConfigValue } from "../../platform/processors/processor-supplements.js";
 
 function filterOptionBag(
   raw: unknown,
@@ -29,6 +31,11 @@ function filterOptionBag(
 
     if (PROCESSOR_FILTER_KEYS.has(key)) {
       filtered[key] = normalizeProcessorFilterValue(value, `--${key}`);
+      continue;
+    }
+
+    if (key === SUPPLEMENT_CONFIG_KEY) {
+      filtered[key] = normalizeSupplementConfigValue(value);
       continue;
     }
 

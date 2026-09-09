@@ -32,7 +32,12 @@ function handlePhaseSetup(message: Extract<WorkerInboundMessage, { type: "phaseS
   });
 
   const startedAt = performance.now();
-  setWorkerPhase(message.phaseId, message.snapshot, message.snapshotFilterScope);
+  setWorkerPhase(
+    message.phaseId,
+    message.snapshot,
+    message.snapshotFilterScope,
+    message.supplementCatalog,
+  );
   workerRecordValue(METRIC_WORKER_PHASE_SETUP, performance.now() - startedAt, [message.phaseId]);
 
   parentPort?.postMessage({

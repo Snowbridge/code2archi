@@ -3,6 +3,10 @@ import type { GlobalArgv } from "./processor-groups.js";
 import { normalizeProcessorFilterValue } from "./run-config/normalize-processor-filter-value.js";
 import { parseCoordinate, validateFilterPattern } from "../platform/processors/processor-coordinate.js";
 import { processorRegistry } from "../platform/processors/processor-registry.js";
+import {
+  normalizeSupplementArgv,
+  parseSupplementToken,
+} from "../platform/processors/processor-supplements.js";
 
 function asStringArray(value: unknown): string[] {
   if (value === undefined || value === null) {
@@ -31,10 +35,24 @@ export function validateGlobalArgv(
   const withRequested = normalizeFilterArgv(argv.with, "--with");
   const without = normalizeFilterArgv(argv.without, "--without");
   const withOnly = normalizeFilterArgv(argv.withOnly, "--with-only");
+  const supplement = normalizeSupplementArgv(argv.supplement);
 
   argv.with = withRequested;
   argv.without = without;
   argv.withOnly = withOnly;
+  argv.supplement = supplement;
+
+  for (const token of supplement) {
+    try {
+      parseSupplementToken(token);
+    } catch (error) {
+      throw error instanceof CliError
+        ? error
+        : new CliError(
+            error instanceof Error ? error.message : `Invalid --supplement value: "${token}"`,
+          );
+    }
+  }
 
   for (const pattern of [...withRequested, ...without, ...withOnly]) {
     try {

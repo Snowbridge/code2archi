@@ -9,6 +9,11 @@ import { runProcessorWithMetrics } from "../profiling/flow-metrics.js";
 import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanScopeInput, ScanScopeOutput } from "./processor.js";
+import {
+  filterSupplementsForProcessor,
+  withProcessorSupplements,
+  type ProcessorSupplementCatalog,
+} from "./processor-supplements.js";
 import { getLogger } from "../logging/index.js";
 import { finalizePoolErrorsAfterMerge, throwOnPoolErrors } from "./parallel-group-runner.js";
 import type { Repository } from "../../code-inventory/entities/repository.js";
@@ -19,6 +24,7 @@ export async function runScanScopeGroup(
   store: RunEntityStore,
   progress?: StepProgressHandle,
   parallel?: ProcessorGroupParallelContext,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): Promise<void> {
   const logger = getLogger("scan.scope");
   logger.info("group start", { groupId: SCAN_SCOPE_GROUP_ID, sourceDirCount: sourceDirs.length });
@@ -36,7 +42,7 @@ export async function runScanScopeGroup(
   );
 
   if (parallel && parallelizable.length > 0) {
-    const tasks = buildScanScopeTasks(parallelizable, sourceDirs, "1");
+    const tasks = buildScanScopeTasks(parallelizable, sourceDirs, "1", supplementCatalog);
     if (tasks.length > 0) {
       const gitProcessor = parallelizable.find(
         (processor) => processor.id.artifactId === "git-repositories",
@@ -86,9 +92,12 @@ export async function runScanScopeGroup(
       finalizePoolErrorsAfterMerge(SCAN_SCOPE_GROUP_ID, errors, parallel.continueOnError);
     }
   } else {
-    const input: ScanScopeInput = { sourceDirs, progress };
-
     for (const processor of parallelizable) {
+      const supplements = supplementCatalog
+        ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+        : [];
+      const input = withProcessorSupplements({ sourceDirs, progress }, supplements);
+
       processor.logStart();
       const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
       if (output instanceof Promise) {
@@ -109,8 +118,12 @@ export async function runScanScopeGroup(
     }
   }
 
-  const input: ScanScopeInput = { sourceDirs, progress };
   for (const processor of sequential) {
+    const supplements = supplementCatalog
+      ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+      : [];
+    const input = withProcessorSupplements({ sourceDirs, progress }, supplements);
+
     processor.logStart();
     const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
     if (output instanceof Promise) {

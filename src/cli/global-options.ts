@@ -65,6 +65,12 @@ export const globalOptions: Record<string, Options> = {
   "with-only": processorFilterOption(
     "Global allow-list: run only processors matching coordinate or wildcard prefix.*; use 'none' to disable",
   ),
+  supplement: {
+    type: "array",
+    string: true,
+    default: [],
+    describe: "Processor sidecar file: <coordinate>@<path> (repeatable)",
+  },
   config: {
     type: "string",
     describe: "Path to run-config YAML, or 'none' to disable file discovery",

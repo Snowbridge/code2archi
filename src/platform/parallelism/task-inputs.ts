@@ -1,5 +1,6 @@
 import type { CreateIntents } from "../../code-inventory/entities/create-intents.js";
 import type { ProcessorId } from "../processors/processor.js";
+import type { ProcessorSupplementRef } from "../processors/processor-supplements.js";
 import type {
   SerializableDiscoverySnapshot,
   SnapshotRepositoryFilterScope,
@@ -16,6 +17,7 @@ export interface ScanProcessorTaskInput {
   readonly repositoryId?: string;
   readonly snapshotFilterScope?: SnapshotRepositoryFilterScope;
   readonly progressStepId?: string;
+  readonly supplements?: readonly ProcessorSupplementRef[];
 }
 
 export interface ScanRepositoryBatchTaskInput {
@@ -55,6 +57,7 @@ export interface ScanScopeUnitTaskInput {
   readonly sourceDirs: readonly string[];
   readonly unit: ScanScopeUnitDescriptor;
   readonly progressStepId?: string;
+  readonly supplements?: readonly ProcessorSupplementRef[];
 }
 
 export interface GenerateProcessorTaskInput {
@@ -62,4 +65,5 @@ export interface GenerateProcessorTaskInput {
   readonly discovery: SerializableDiscoverySnapshot;
   readonly archi: import("./snapshot-serialization.js").SerializableArchiSnapshot;
   readonly decorate: boolean;
+  readonly supplements?: readonly ProcessorSupplementRef[];
 }

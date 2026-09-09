@@ -44,6 +44,8 @@ class FailingGenerateProcessor extends AbstractProcessor<
 
 const defaultValidateArgs = { force: false, noDecorate: false };
 
+const EMPTY_PROCESSOR_SUPPLEMENTS = { declarations: [] };
+
 function emptyGlobalArgv(): GlobalArgv {
   return {
     debug: false,
@@ -55,6 +57,7 @@ function emptyGlobalArgv(): GlobalArgv {
     with: [],
     without: [],
     withOnly: [],
+    supplement: [],
   };
 }
 
@@ -180,6 +183,7 @@ describe("runGenerateFlow", async () => {
           without: [],
           withOnly: [],
         },
+        processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
       });
     } finally {
       resetLoggingForTests();
@@ -219,6 +223,7 @@ describe("runGenerateFlow", async () => {
           without: [],
           withOnly: [],
         },
+        processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
       });
     } finally {
       resetLoggingForTests();
@@ -275,6 +280,7 @@ describe("runGenerateFlow", async () => {
           without: [],
           withOnly: [],
         },
+        processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
       });
     } finally {
       resetLoggingForTests();
@@ -326,6 +332,7 @@ describe("runGenerateFlow", async () => {
           without: [],
           withOnly: [],
         },
+        processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
       });
     } finally {
       resetLoggingForTests();
@@ -396,6 +403,7 @@ describe("runGenerateFlow", async () => {
           without: [],
           withOnly: [],
         },
+        processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
       });
     } finally {
       resetLoggingForTests();
@@ -436,6 +444,7 @@ describe("runGenerateFlow", async () => {
                 without: [],
                 withOnly: [`generate.elements.${FAILING_GENERATE_ARTIFACT}`],
               },
+              processorSupplements: EMPTY_PROCESSOR_SUPPLEMENTS,
             });
           },
           (error: unknown) => error instanceof CliError && error.exitCode === ExitCode.RUNTIME,

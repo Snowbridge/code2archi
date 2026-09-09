@@ -15,6 +15,11 @@ import type { ProcessorFilters } from "./processor-registry.js";
 import { processorRegistry } from "./processor-registry.js";
 import type { ScanAppInput } from "./processor.js";
 import type { ProcessorId } from "./processor.js";
+import {
+  filterSupplementsForProcessor,
+  withProcessorSupplements,
+  type ProcessorSupplementCatalog,
+} from "./processor-supplements.js";
 import { getLogger } from "../logging/index.js";
 import {
   collectRepositoryBatchProcessorErrors,
@@ -58,6 +63,7 @@ function runSequentialCreateIntentGroup(
   filters: ProcessorFilters,
   store: RunEntityStore,
   progress?: StepProgressHandle,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): void {
   const processors = processorRegistry.listForBuiltInStep<ScanAppInput, CreateIntents>(
     builtInGroupId,
@@ -74,7 +80,10 @@ function runSequentialCreateIntentGroup(
     processor.logStart();
 
     const snapshot = store.snapshot();
-    const input: ScanAppInput = passProgress
+    const supplements = supplementCatalog
+      ? filterSupplementsForProcessor(supplementCatalog, processor.id)
+      : [];
+    const baseInput: ScanAppInput = passProgress
       ? new Proxy(snapshot, {
           get(target, prop, receiver) {
             if (prop === "progress") {
@@ -85,6 +94,7 @@ function runSequentialCreateIntentGroup(
           },
         })
       : snapshot;
+    const input = withProcessorSupplements(baseInput, supplements);
 
     const output = runProcessorWithMetrics(processor.id, () => processor.process(input));
     if (output instanceof Promise) {
@@ -123,6 +133,7 @@ async function runParallelScanSourcePhase(
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
   phase: ScanExtractParallelPhaseConfig,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): Promise<void> {
   if (processors.length === 0) {
     return;
@@ -135,6 +146,7 @@ async function runParallelScanSourcePhase(
       phaseId: phase.phaseId,
       snapshot: serialized,
       snapshotFilterScope: phase.snapshotFilterScope,
+      supplementCatalog,
     },
     parallel.bridge,
   );
@@ -184,6 +196,7 @@ async function runParallelScanSourceGroup(
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progressStepId: string,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): Promise<void> {
   const assemblyProcessors = processors.filter((processor) =>
     isAssemblyExtractProcessor(processor.id.groupId),
@@ -195,12 +208,12 @@ async function runParallelScanSourceGroup(
   await runParallelScanSourcePhase(assemblyProcessors, store, parallel, progressStepId, {
     phaseId: "scan.extract.assembly",
     snapshotFilterScope: "assembly",
-  });
+  }, supplementCatalog);
 
   await runParallelScanSourcePhase(moduleSourceProcessors, store, parallel, progressStepId, {
     phaseId: "scan.extract.module-source",
     snapshotFilterScope: "module-source",
-  });
+  }, supplementCatalog);
 }
 
 async function runParallelScanLinkGroup(
@@ -209,8 +222,9 @@ async function runParallelScanLinkGroup(
   store: RunEntityStore,
   parallel: ProcessorGroupParallelContext,
   progress?: StepProgressHandle,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): Promise<void> {
-  const tasks = buildScanLinkTasks(processors, snapshot);
+  const tasks = buildScanLinkTasks(processors, snapshot, supplementCatalog);
   const processorByTaskId = new Map<string, ProcessorId>(
     tasks.map((task) => [task.taskId, task.input.processor]),
   );
@@ -238,6 +252,7 @@ export async function runCreateIntentProcessorGroup(
   progress?: StepProgressHandle,
   parallel?: ProcessorGroupParallelContext,
   progressStepId?: string,
+  supplementCatalog?: ProcessorSupplementCatalog,
 ): Promise<void> {
   const logger = getLogger(`scan.${builtInGroupId}`);
   logger.info("group start", { groupId: builtInGroupId });
@@ -253,7 +268,7 @@ export async function runCreateIntentProcessorGroup(
   }
 
   if (!parallel) {
-    runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress);
+    runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress, supplementCatalog);
     logger.info("group completed", { groupId: builtInGroupId });
     return;
   }
@@ -261,11 +276,24 @@ export async function runCreateIntentProcessorGroup(
   const snapshot = store.snapshot();
 
   if (builtInGroupId === SCAN_EXTRACT_GROUP_ID) {
-    await runParallelScanSourceGroup(processors, store, parallel, progressStepId ?? "2");
+    await runParallelScanSourceGroup(
+      processors,
+      store,
+      parallel,
+      progressStepId ?? "2",
+      supplementCatalog,
+    );
   } else if (builtInGroupId === "scan.transform") {
-    await runParallelScanLinkGroup(processors, snapshot, store, parallel, progress);
+    await runParallelScanLinkGroup(
+      processors,
+      snapshot,
+      store,
+      parallel,
+      progress,
+      supplementCatalog,
+    );
   } else {
-    runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress);
+    runSequentialCreateIntentGroup(builtInGroupId, filters, store, progress, supplementCatalog);
   }
 
   logger.info("group completed", { groupId: builtInGroupId });

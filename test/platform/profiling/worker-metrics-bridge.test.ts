@@ -197,6 +197,7 @@ describe("parallel scan profiling", () => {
           without: [],
           withOnly: [],
         },
+        processorSupplements: { declarations: [] },
       });
 
       const reportPath = finalizeProfiling({ command: "scan", verbose: false });

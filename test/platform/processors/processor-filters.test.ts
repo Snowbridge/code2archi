@@ -41,6 +41,7 @@ function emptyGlobalArgv(overrides: Partial<GlobalArgv> = {}): GlobalArgv {
     with: [],
     without: [],
     withOnly: [],
+    supplement: [],
     ...overrides,
   };
 }

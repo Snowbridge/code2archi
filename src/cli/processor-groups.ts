@@ -45,6 +45,7 @@ export interface GlobalArgv {
   with: string[];
   without: string[];
   withOnly: string[];
+  supplement: string[];
 }
 
 const BUILTIN_GROUP_ID_SET = new Set<string>(BUILTIN_PROCESSOR_GROUPS);
