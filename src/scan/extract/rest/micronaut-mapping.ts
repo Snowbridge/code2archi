@@ -2,10 +2,13 @@ import type { JvmAnnotation, JvmMethodModel, JvmTypeModel } from "../../../parse
 import {
   annotationMatches,
   annotationStringAttribute,
+  resolveTypeName,
 } from "../../../parsers/jvm/extract-jvm-file.js";
+import type { JvmImportContext } from "../../../parsers/type-resolution/types.js";
 import { formatHttpEndpoint, joinPathPrefixes } from "./endpoint-format.js";
 
 const MICRONAUT_CONTROLLER = "Controller";
+const MICRONAUT_CLIENT = "Client";
 const MICRONAUT_HTTP_METHODS = new Map<string, string>([
   ["Get", "GET"],
   ["Post", "POST"],
@@ -29,6 +32,40 @@ export function isMicronautRouteBuilder(type: JvmTypeModel): boolean {
     type.implementedInterfaces.some((name) => name.includes("RouteBuilder")) ||
     type.fqcn.includes("RouteBuilder")
   );
+}
+
+export function isMicronautDeclarativeClient(
+  type: JvmTypeModel,
+  importContext: JvmImportContext,
+  language: "java" | "kotlin",
+): boolean {
+  if (isMicronautController(type)) {
+    return false;
+  }
+  return type.annotations.some((annotation) =>
+    isMicronautClientAnnotation(annotation, importContext, language),
+  );
+}
+
+export function extractMicronautClientPathPrefix(
+  type: JvmTypeModel,
+  importContext: JvmImportContext,
+  language: "java" | "kotlin",
+): string {
+  for (const annotation of type.annotations) {
+    if (!isMicronautClientAnnotation(annotation, importContext, language)) {
+      continue;
+    }
+    return annotationStringAttribute(annotation, "value", "id", "path") ?? "";
+  }
+  return "";
+}
+
+export function extractMicronautClientEndpoints(
+  type: JvmTypeModel,
+  classPathPrefix: string,
+): string[] {
+  return extractMicronautEndpoints(type, classPathPrefix);
 }
 
 export function extractMicronautClassPathPrefix(type: JvmTypeModel): string {
@@ -73,4 +110,19 @@ function resolveMicronautHttpMethod(annotation: JvmAnnotation): string | undefin
     ? annotation.name.slice(annotation.name.lastIndexOf(".") + 1)
     : annotation.name;
   return MICRONAUT_HTTP_METHODS.get(simpleName);
+}
+
+function isMicronautClientAnnotation(
+  annotation: JvmAnnotation,
+  importContext: JvmImportContext,
+  language: "java" | "kotlin",
+): boolean {
+  if (!annotationMatches(annotation, MICRONAUT_CLIENT)) {
+    return false;
+  }
+  if (annotation.name.includes("io.micronaut.http.client.annotation")) {
+    return true;
+  }
+  const resolved = resolveTypeName(annotation.name, importContext, language);
+  return resolved.includes("micronaut") && resolved.includes("Client");
 }

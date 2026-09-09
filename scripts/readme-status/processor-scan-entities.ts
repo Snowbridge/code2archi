@@ -40,6 +40,26 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
     "HttpApiDataType",
     "HttpApiContract",
   ],
+  "scan.extract.rest.clients/spring-http-exchange": [
+    "RestClient",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
+  "scan.extract.rest.clients/retrofit": [
+    "RestClient",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
+  "scan.extract.rest.clients/microprofile-rest-client": [
+    "RestClient",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
+  "scan.extract.rest.clients/micronaut": [
+    "RestClient",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
 };
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */

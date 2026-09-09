@@ -152,9 +152,14 @@ function findChildTypeIdentifier(node: SyntaxNode): SyntaxNode | null {
 
 function extractJavaInterfaces(node: SyntaxNode): string[] {
   const interfaces: string[] = [];
-  const superInterfaces = node.childForFieldName("interfaces");
-  if (superInterfaces) {
-    collectTypeIdentifiers(superInterfaces, interfaces);
+  const interfacesField = node.childForFieldName("interfaces");
+  if (interfacesField !== null) {
+    collectTypeIdentifiers(interfacesField, interfaces);
+  }
+  for (const child of node.children) {
+    if (child.type === "extends_interfaces" || child.type === "super_interfaces") {
+      collectTypeIdentifiers(child, interfaces);
+    }
   }
   return interfaces;
 }

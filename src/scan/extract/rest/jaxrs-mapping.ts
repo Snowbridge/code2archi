@@ -17,6 +17,9 @@ const JAXRS_METHODS = new Map<string, string>([
 ]);
 
 export function isJaxRsResource(type: JvmTypeModel): boolean {
+  if (type.annotations.some((annotation) => annotationMatches(annotation, "RegisterRestClient"))) {
+    return false;
+  }
   const classHasPath = type.annotations.some((annotation) => annotationMatches(annotation, JAXRS_PATH));
   const methodHasJaxRs = type.methods.some(
     (method) =>
