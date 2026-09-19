@@ -7,12 +7,15 @@ import type { JvmImportContext } from "../../../../parsers/type-resolution/types
 const IDENTIFIER_PATTERN = /[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*/g;
 
 /**
- * Collects declared type literals from a JVM source file:
- * - Java: types of `field_declaration` and `local_variable_declaration`.
- * - Kotlin: types of `property_declaration` and `local_variable_declaration`.
+ * Collects type references that signal concrete client usage from a JVM source
+ * file:
+ * - Java: types of `field_declaration`, `local_variable_declaration`, and
+ *   `object_creation_expression` (`new Client(...)`).
+ * - Kotlin: types of `property_declaration`, `local_variable_declaration`, and
+ *   constructor-style `call_expression` callees (`Client(...)`).
  *
- * Method parameters, return types and other references are intentionally not
- * collected. Returns `undefined` when the source cannot be parsed.
+ * Method parameters and return types are intentionally not collected. Returns
+ * `undefined` when the source cannot be parsed.
  */
 export function collectDeclaredTypeLiterals(
   source: string,
@@ -33,12 +36,41 @@ export function collectDeclaredTypeLiterals(
         literals.push(typeNode.text);
       }
     }
+    const constructionLiteral = findConstructionTypeLiteral(node, language);
+    if (constructionLiteral !== undefined) {
+      literals.push(constructionLiteral);
+    }
     for (const child of node.children) {
       visit(child);
     }
   };
   visit(tree.rootNode);
   return literals;
+}
+
+function findConstructionTypeLiteral(
+  node: SyntaxNode,
+  language: "java" | "kotlin",
+): string | undefined {
+  if (language === "java") {
+    // `new LimitServiceClient(baseUrl)` — the concrete client shows up only in
+    // the object creation expression when the target field is interface-typed.
+    if (node.type === "object_creation_expression") {
+      return node.childForFieldName("type")?.text;
+    }
+    return undefined;
+  }
+
+  // Kotlin has no `new`: `LimitServiceClient(baseUrl)` is a call_expression
+  // whose callee is a simple identifier. Instance method calls (`client.get()`)
+  // use a member access callee and are ignored here.
+  if (node.type === "call_expression") {
+    const callee = node.childForFieldName("function");
+    if (callee !== null && callee !== undefined && callee.type === "simple_identifier") {
+      return callee.text;
+    }
+  }
+  return undefined;
 }
 
 /**

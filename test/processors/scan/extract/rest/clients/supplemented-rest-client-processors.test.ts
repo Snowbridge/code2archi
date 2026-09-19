@@ -18,6 +18,11 @@ const FIXTURES_DIR = path.join(
   "../../../../../fixtures/jvm/rest/clients/supplemented",
 );
 
+const CONSTRUCTOR_FIXTURES_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../../../fixtures/jvm/rest/clients/supplemented-constructor",
+);
+
 const SUPPLEMENT_BASENAMES = ["rest-client.json", "rest-clients.json"] as const;
 const SUPPLEMENT_BASENAME = SUPPLEMENT_BASENAMES[0];
 
@@ -34,7 +39,7 @@ function copyFixtureTree(sourceDir: string, targetDir: string): void {
   }
 }
 
-function createScanStore(root: string): RunEntityStore {
+function createScanStore(root: string, constructorFixtures = false): RunEntityStore {
   const store = new RunEntityStore({
     sourceDirs: [root],
     scanId: "scan-supplemented-rest-clients",
@@ -77,6 +82,16 @@ function createScanStore(root: string): RunEntityStore {
     },
   );
   copyFixtureTree(path.join(FIXTURES_DIR, "java"), path.join(root, "src", "main", "java"));
+  if (constructorFixtures) {
+    copyFixtureTree(
+      path.join(CONSTRUCTOR_FIXTURES_DIR, "java"),
+      path.join(root, "src", "main", "java"),
+    );
+    copyFixtureTree(
+      path.join(CONSTRUCTOR_FIXTURES_DIR, "kotlin"),
+      path.join(root, "src", "main", "kotlin"),
+    );
+  }
   return store;
 }
 
@@ -181,6 +196,48 @@ describe("SupplementedRestClientComponentsProcessor", () => {
     assert.equal(client.simpleName, "PaymentFeignClient");
     assert.equal(client.applicationModuleId, moduleId);
     assert.deepEqual(client.endpoints, []);
+  });
+
+  it("discovers a client used only via constructor call (new Client(...)) with interface-typed field", () => {
+    const root = createTestTempDir("c2a-suppl-ctor-");
+    bootstrapProject(root);
+    const store = createScanStore(root, true);
+    const moduleId = consumerModuleId(store);
+    const supplementPath = writeSupplement(root, [
+      {
+        fqcn: "com.example.client.LimitServiceClient",
+        applicationModuleId: "origin-module-123",
+        simpleName: "LimitServiceClient",
+        fileName: "service-client/src/main/java/com/example/client/LimitServiceClient.java",
+      },
+    ]);
+
+    const output = runProcessor(store, supplementPath);
+    const client = findClient(output, "com.example.client.LimitServiceClient");
+
+    assert.ok(client);
+    assert.equal(client.simpleName, "LimitServiceClient");
+    assert.equal(client.applicationModuleId, moduleId);
+  });
+
+  it("discovers a client used via Kotlin constructor-style call with inferred local variable", () => {
+    const root = createTestTempDir("c2a-suppl-kt-");
+    bootstrapProject(root);
+    const store = createScanStore(root, true);
+    const moduleId = consumerModuleId(store);
+    const supplementPath = writeSupplement(root, [
+      {
+        fqcn: "com.example.client.LimitServiceClient",
+        applicationModuleId: "origin-module-123",
+        simpleName: "LimitServiceClient",
+      },
+    ]);
+
+    const output = runProcessor(store, supplementPath);
+    const client = findClient(output, "com.example.client.LimitServiceClient");
+
+    assert.ok(client);
+    assert.equal(client.applicationModuleId, moduleId);
   });
 
   it("skips when the found module is the client's own origin module", () => {
