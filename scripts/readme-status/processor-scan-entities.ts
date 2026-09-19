@@ -60,6 +60,7 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
     "HttpApiDataType",
     "HttpApiContract",
   ],
+  "scan.extract.rest.clients/supplemented-rest-clients": ["RestClient"],
 };
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */

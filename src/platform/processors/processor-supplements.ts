@@ -202,7 +202,32 @@ export function withProcessorSupplements<T extends object>(
   if (supplements.length === 0) {
     return input;
   }
-  return { ...input, supplements };
+  // Wrap in a Proxy rather than spreading/cloning so that the input keeps
+  // delegating to its original prototype (e.g. CodeInventorySnapshot methods
+  // such as listEntities) and any get-trap-provided properties (e.g. a
+  // `progress` handle exposed via an existing Proxy). Only `supplements` is
+  // overridden.
+  return new Proxy(input, {
+    get(target, prop, receiver) {
+      if (prop === "supplements") {
+        return supplements;
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+    has(target, prop) {
+      return prop === "supplements" || Reflect.has(target, prop);
+    },
+    ownKeys(target) {
+      return Array.from(new Set([...Reflect.ownKeys(target), "supplements"]));
+    },
+    getOwnPropertyDescriptor(target, prop) {
+      if (prop === "supplements") {
+        return { value: supplements, writable: true, enumerable: true, configurable: true };
+      }
+      return Object.getOwnPropertyDescriptor(target, prop);
+    },
+  }) as T & { supplements?: readonly ProcessorSupplementRef[] };
 }
 
 export function readSupplementUtf8Files(refs: readonly ProcessorSupplementRef[]): string[] {

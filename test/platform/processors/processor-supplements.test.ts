@@ -10,6 +10,7 @@ import {
   parseSupplementToken,
   resolveProcessorSupplementCatalog,
   supplementToken,
+  withProcessorSupplements,
 } from "../../../src/platform/processors/processor-supplements.js";
 import { createTestTempDir } from "../../test-temp-dir.js";
 
@@ -96,5 +97,59 @@ describe("processor supplements", () => {
       artifactId: "git-repositories",
     });
     assert.deepEqual(refs, []);
+  });
+
+  it("withProcessorSupplements preserves prototype methods of the input", () => {
+    class Stub {
+      listEntities(): string[] {
+        return ["value"];
+      }
+    }
+    const input = new Stub();
+    const output = withProcessorSupplements(input, [
+      { path: "/tmp/rest-client.json", basename: "rest-client.json" },
+    ]);
+
+    assert.equal(typeof (output as Stub).listEntities, "function");
+    assert.deepEqual((output as Stub).listEntities(), ["value"]);
+    assert.deepEqual(output.supplements, [
+      { path: "/tmp/rest-client.json", basename: "rest-client.json" },
+    ]);
+  });
+
+  it("withProcessorSupplements preserves properties exposed via an existing Proxy get trap", () => {
+    // Mirrors how the scan pipeline exposes `progress` on a Proxy-wrapped snapshot.
+    const progress = { tick: () => {} };
+    const snapshot = {
+      listEntities: () => ["entity"],
+    };
+    const proxied = new Proxy(snapshot, {
+      get(target, prop, receiver) {
+        if (prop === "progress") {
+          return progress;
+        }
+        const value = Reflect.get(target, prop, receiver);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+
+    const output = withProcessorSupplements(proxied, [
+      { path: "/tmp/rest-clients.json", basename: "rest-clients.json" },
+    ]) as {
+      listEntities(): string[];
+      progress?: { tick(): void };
+      supplements?: readonly { path: string; basename: string }[];
+    };
+
+    assert.deepEqual(output.listEntities(), ["entity"]);
+    assert.equal(output.progress, progress);
+    assert.deepEqual(output.supplements, [
+      { path: "/tmp/rest-clients.json", basename: "rest-clients.json" },
+    ]);
+  });
+
+  it("withProcessorSupplements returns the input unchanged when no supplements", () => {
+    const input = { existing: true };
+    assert.equal(withProcessorSupplements(input, []), input);
   });
 });

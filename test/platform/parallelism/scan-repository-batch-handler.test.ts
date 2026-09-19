@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cpSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
@@ -37,6 +37,29 @@ const FIXTURES_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../fixtures/jvm/rest/spring",
 );
+
+const SUPPLEMENTED_FIXTURES_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../fixtures/jvm/rest/clients/supplemented",
+);
+
+const supplementedRestClientProcessor = {
+  groupId: "scan.extract.rest.clients",
+  artifactId: "supplemented-rest-clients",
+} as const;
+
+function copyFixtureTree(sourceDir: string, targetDir: string): void {
+  mkdirSync(targetDir, { recursive: true });
+  for (const entry of readdirSync(sourceDir)) {
+    const sourcePath = path.join(sourceDir, entry);
+    const targetPath = path.join(targetDir, entry);
+    if (statSync(sourcePath).isDirectory()) {
+      copyFixtureTree(sourcePath, targetPath);
+      continue;
+    }
+    cpSync(sourcePath, targetPath);
+  }
+}
 
 function setupMavenRepo(): { root: string; repositoryId: string; serialized: ReturnType<typeof serializeDiscoverySnapshot> } {
   const root = createTestTempDir("c2a-repo-batch-");
@@ -271,6 +294,109 @@ describe("runScanRepositoryBatchTask", () => {
     } finally {
       resetWorkerRuntime();
       resetScanIoCache();
+    }
+  });
+
+  it("delivers rest-clients.json supplement via phase and discovers consuming-module clients", () => {
+    const root = createTestTempDir("c2a-repo-batch-suppl-");
+    writeFileSync(path.join(root, "settings.gradle"), `rootProject.name = 'demo'`);
+    writeFileSync(
+      path.join(root, "build.gradle"),
+      `group = 'com.example'\nversion = '1.0.0'`,
+    );
+    copyFixtureTree(
+      path.join(SUPPLEMENTED_FIXTURES_DIR, "java"),
+      path.join(root, "src", "main", "java"),
+    );
+
+    const supplementPath = path.join(root, "rest-clients.json");
+    writeFileSync(
+      supplementPath,
+      JSON.stringify([
+        {
+          fqcn: "com.example.client.PaymentFeignClient",
+          applicationModuleId: "origin-module-123",
+          simpleName: "PaymentFeignClient",
+          fileName: "client/src/main/java/com/example/client/PaymentFeignClient.java",
+          endpoints: [],
+          contractIds: [],
+          dataTypeIds: [],
+        },
+      ]),
+      "utf8",
+    );
+
+    const snapshot = buildCodeInventorySnapshot({
+      scanId: "scan-1",
+      sourceRoot: root,
+      sourceDirs: [root],
+      repositoryCommonRoot: root,
+      runStartedAt: new Date("2026-08-27T12:00:00.000Z"),
+      entityArrays: {
+        Repository: [
+          {
+            id: "repo-app",
+            name: "demo",
+            namespace: "",
+            localPath: root,
+            url: "",
+            buildSystems: ["gradle"],
+          },
+        ],
+        ApplicationModule: [
+          {
+            id: "mod-demo",
+            repositoryId: "repo-app",
+            buildSystem: "gradle",
+            groupId: "com.example",
+            artifactId: "demo",
+            version: "1.0.0",
+            name: "demo",
+            repoPath: "",
+            buildScript: "build.gradle",
+            isMultimodule: false,
+          },
+        ],
+      },
+    });
+    const serialized = serializeDiscoverySnapshot(snapshot);
+
+    const supplementCatalog = {
+      declarations: [
+        {
+          target: "scan.extract.rest.clients.supplemented-rest-clients",
+          paths: [{ path: supplementPath, basename: "rest-clients.json" }],
+        },
+      ],
+    };
+    setWorkerPhase("scan.extract.module-source", serialized, "module-source", supplementCatalog);
+    const bridge = createMainThreadBridge(new Map());
+
+    initWorkerRuntime({
+      threadId: "worker-1",
+      postEvent: (message) => bridge.dispatch(message),
+      trackWorkerTaskMetrics: false,
+    });
+
+    try {
+      const result = runScanRepositoryBatchTask({
+        repositoryId: "repo-app",
+        processors: [supplementedRestClientProcessor],
+        continueOnError: false,
+      });
+
+      const processorKey =
+        `${supplementedRestClientProcessor.groupId}/${supplementedRestClientProcessor.artifactId}`;
+      const output = result.outputs[processorKey];
+      assert.ok(output);
+      const client = (output.entities?.RestClient as
+        | Array<{ fqcn: string; simpleName?: string; applicationModuleId?: string }>
+        | undefined)?.find((item) => item.fqcn === "com.example.client.PaymentFeignClient");
+      assert.ok(client);
+      assert.equal(client.simpleName, "PaymentFeignClient");
+      assert.equal(client.applicationModuleId, "mod-demo");
+    } finally {
+      resetWorkerRuntime();
     }
   });
 });
