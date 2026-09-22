@@ -27,6 +27,13 @@ export class ArchiModelWriter {
     const absoluteOutput = path.resolve(input.outputFile);
     logger.info("writing archimate-model", { path: absoluteOutput });
 
+    const prunedRelations = input.store.pruneDanglingRelationships();
+    if (prunedRelations.length > 0) {
+      logger.warn("pruned dangling relationships before write", {
+        count: prunedRelations.length,
+        relationIds: prunedRelations.map((relation) => relation.id),
+      });
+    }
     input.store.validateForWrite();
     const xml = this.serialize(input.store);
     writeFileSync(absoluteOutput, xml, "utf8");

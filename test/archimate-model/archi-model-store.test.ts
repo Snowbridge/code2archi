@@ -199,6 +199,65 @@ describe("ArchiModelStore", () => {
     assert.throws(() => store.validateForWrite(), /missing source element: missing-source/);
   });
 
+  it("prunes dangling relationships and keeps relations with both endpoints", () => {
+    const store = new ArchiModelStore({
+      modelName: "Example",
+      modelId: "model-id",
+    });
+    const applicationFolderId = store.getPredefinedFolderId("application");
+    const source = ApplicationComponent.withId("source-id")
+      .name("service-a")
+      .inFolder(applicationFolderId)
+      .build();
+    const target = ApplicationComponent.withId("target-id")
+      .name("service-b")
+      .inFolder(applicationFolderId)
+      .build();
+    const validRelation = ServingRelationship.withId("valid-relation")
+      .source("source-id")
+      .target("target-id")
+      .build();
+    const danglingRelation = ServingRelationship.withId("dangling-relation")
+      .source("source-id")
+      .target("missing-target")
+      .build();
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
+      { elements: [source, target], relations: [validRelation, danglingRelation] },
+    );
+
+    const pruned = store.pruneDanglingRelationships();
+
+    assert.equal(pruned.length, 1);
+    assert.equal(pruned[0]?.id, "dangling-relation");
+    assert.equal(store.listRelations().length, 1);
+    assert.equal(store.listRelations()[0]?.id, "valid-relation");
+    assert.doesNotThrow(() => store.validateForWrite());
+  });
+
+  it("pruneDanglingRelationships is idempotent", () => {
+    const store = new ArchiModelStore({
+      modelName: "Example",
+      modelId: "model-id",
+    });
+    const relation = ServingRelationship.withId("dangling-relation")
+      .source("missing-source")
+      .target("missing-target")
+      .build();
+
+    store.addCreateIntents(
+      "generate.elements",
+      { groupId: "generate.elements", artifactId: "demo" },
+      { relations: [relation] },
+    );
+
+    assert.equal(store.pruneDanglingRelationships().length, 1);
+    assert.equal(store.pruneDanglingRelationships().length, 0);
+    assert.equal(store.listRelations().length, 0);
+  });
+
   it("rejects relationship create-intents for generate.views", () => {
     const store = new ArchiModelStore({
       modelName: "Example",

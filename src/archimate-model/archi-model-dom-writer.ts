@@ -32,6 +32,13 @@ export class ArchiModelDomWriter {
     const absoluteOutput = path.resolve(archiModelDomOutputPath(input.outputFile));
     logger.info("writing archi-model dom", { path: absoluteOutput });
 
+    const prunedRelations = input.store.pruneDanglingRelationships();
+    if (prunedRelations.length > 0) {
+      logger.warn("pruned dangling relationships before dom write", {
+        count: prunedRelations.length,
+        relationIds: prunedRelations.map((relation) => relation.id),
+      });
+    }
     input.store.validateForWrite();
     const document = this.buildDocument(input.store);
     writeFileSync(absoluteOutput, `${JSON.stringify(document, null, 2)}\n`, "utf8");

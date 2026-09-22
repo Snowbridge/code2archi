@@ -8,12 +8,9 @@ import { Repository } from "../../../../../../src/code-inventory/entities/reposi
 import { RestController } from "../../../../../../src/code-inventory/entities/rest-controller.js";
 import {
   appModuleRealizesRestControllerId,
-  httpApiContractInterfaceId,
-  inferredRestApiContractInterfaceId,
-  restApiContractAssignmentId,
   restControllerAppServiceId,
 } from "../../../../../../src/generate/rest-controller-elements.js";
-import { RestControllersAndDeclaredContractsProcessor } from "../../../../../../src/processors/generate/elements/application/rest/controllers-and-declared-contracts-processor.js";
+import { RestControllersProcessor } from "../../../../../../src/processors/generate/elements/application/rest/controllers-processor.js";
 import { defaultGenerateProcessorOptions } from "../../../../../generate/generate-processor-test-options.js";
 
 function repositoryRecord(
@@ -66,37 +63,42 @@ function propertyValue(
   return properties?.find((property) => property.key === key)?.value;
 }
 
-describe("RestControllersAndDeclaredContractsProcessor", () => {
+function demoModule(namespace: string) {
+  const repository = repositoryRecord({
+    url: "",
+    localPath: "/workspace/demo",
+    name: "demo",
+    namespace,
+    buildSystems: ["gradle"],
+  });
+  const module = moduleRecord({
+    repositoryId: repository.id,
+    buildSystem: "gradle",
+    groupId: "com.example",
+    artifactId: "demo",
+    version: "1",
+    name: "demo",
+    repoPath: "",
+    buildScript: "build.gradle",
+    isMultimodule: false,
+  });
+  return { repository, module };
+}
+
+describe("RestControllersProcessor", () => {
   it("exposes generate.elements.application.rest coordinates", () => {
-    const processor = new RestControllersAndDeclaredContractsProcessor();
+    const processor = new RestControllersProcessor();
 
     assert.deepEqual(processor.id, {
       groupId: "generate.elements.application.rest",
-      artifactId: "controllers-and-declared-contracts",
+      artifactId: "controllers",
     });
     assert.equal(processor.version, "0.1.0");
     assert.equal(processor.executionPolicy, "ALWAYS");
   });
 
-  it("creates ApplicationService, contract interface, and relations for extract path", () => {
-    const repository = repositoryRecord({
-      url: "",
-      localPath: "/workspace/demo",
-      name: "demo",
-      namespace: "com.example",
-      buildSystems: ["gradle"],
-    });
-    const module = moduleRecord({
-      repositoryId: repository.id,
-      buildSystem: "gradle",
-      groupId: "com.example",
-      artifactId: "demo",
-      version: "1",
-      name: "demo",
-      repoPath: "",
-      buildScript: "build.gradle",
-      isMultimodule: false,
-    });
+  it("creates only ApplicationService and Realization for declared contracts", () => {
+    const { repository, module } = demoModule("com.example");
     const contract = contractRecord("com.example.api.UserContract");
     const controller = controllerRecord({
       applicationModuleId: module.id,
@@ -110,7 +112,7 @@ describe("RestControllersAndDeclaredContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller], [contract]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndDeclaredContractsProcessor();
+    const processor = new RestControllersProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),
@@ -118,59 +120,27 @@ describe("RestControllersAndDeclaredContractsProcessor", () => {
     });
 
     const serviceId = restControllerAppServiceId(controller.id);
-    const interfaceId = httpApiContractInterfaceId(contract.id);
     const service = output.elements?.find((element) => element.id === serviceId);
-    const interfaceElement = output.elements?.find((element) => element.id === interfaceId);
 
+    assert.equal(output.elements?.length, 1);
     assert.equal(service?.conceptType, "ApplicationService");
     assert.equal(service?.name, "UserController");
     assert.equal(service?.documentation, undefined);
     assert.equal(propertyValue(service?.properties, "c2a:slot"), "rest-controller-app-service");
     assert.equal(propertyValue(service?.properties, "c2a:basis"), "extract");
-
-    assert.equal(interfaceElement?.conceptType, "ApplicationInterface");
-    assert.equal(interfaceElement?.name, "UserContract");
-    assert.equal(propertyValue(interfaceElement?.properties, "c2a:basis"), "extract");
-
-    assert.equal(output.relations?.length, 2);
-    assert.deepEqual(
-      output.relations?.map((relation) => relation.relationType).sort(),
-      ["AssignmentRelationship", "RealizationRelationship"],
+    assert.equal(
+      propertyValue(service?.properties, "c2a:generator"),
+      "generate.elements.application.rest:controllers",
     );
 
-    const realization = output.relations?.find(
-      (relation) => relation.id === appModuleRealizesRestControllerId(module.id, controller.id),
-    );
+    assert.equal(output.relations?.length, 1);
+    const realization = output.relations?.[0];
     assert.equal(realization?.relationType, "RealizationRelationship");
-
-    const assignment = output.relations?.find(
-      (relation) => relation.id === restApiContractAssignmentId(interfaceId, serviceId),
-    );
-    assert.equal(assignment?.relationType, "AssignmentRelationship");
-    assert.equal(assignment?.sourceId, interfaceId);
-    assert.equal(assignment?.targetId, serviceId);
-    assert.equal(assignment?.profileIds?.length ?? 0, 0);
+    assert.equal(realization?.id, appModuleRealizesRestControllerId(module.id, controller.id));
   });
 
-  it("creates inferred contract when business endpoints exist without contractIds", () => {
-    const repository = repositoryRecord({
-      url: "",
-      localPath: "/workspace/demo",
-      name: "demo",
-      namespace: "",
-      buildSystems: ["gradle"],
-    });
-    const module = moduleRecord({
-      repositoryId: repository.id,
-      buildSystem: "gradle",
-      groupId: "com.example",
-      artifactId: "demo",
-      version: "1",
-      name: "demo",
-      repoPath: "",
-      buildScript: "build.gradle",
-      isMultimodule: false,
-    });
+  it("does not create inferred contract interfaces (moved to rest-api-contracts)", () => {
+    const { repository, module } = demoModule("");
     const controller = controllerRecord({
       applicationModuleId: module.id,
       fqcn: "com.example.api.ItemController",
@@ -183,61 +153,7 @@ describe("RestControllersAndDeclaredContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndDeclaredContractsProcessor();
-    const output = processor.process({
-      discovery,
-      archi: store.snapshot(),
-      options: defaultGenerateProcessorOptions,
-    });
-
-    const interfaceId = inferredRestApiContractInterfaceId(controller.id);
-    const interfaceElement = output.elements?.find((element) => element.id === interfaceId);
-
-    assert.equal(interfaceElement?.name, "Inferred REST API (ItemController)");
-    assert.equal(interfaceElement?.documentation, "POST /api/items");
-    assert.equal(propertyValue(interfaceElement?.properties, "c2a:basis"), "inference");
-    assert.equal(propertyValue(interfaceElement?.properties, "c2a:confidence"), "0.854321");
-
-    const assignment = output.relations?.find(
-      (relation) => relation.relationType === "AssignmentRelationship",
-    );
-    assert.equal(propertyValue(assignment?.properties, "c2a:basis"), "inference");
-    assert.equal(propertyValue(assignment?.properties, "c2a:confidence"), "0.854321");
-    assert.equal(assignment?.profileIds?.length ?? 0, 0);
-  });
-
-  it("creates only service and realization for infra-only endpoints without contracts", () => {
-    const repository = repositoryRecord({
-      url: "",
-      localPath: "/workspace/demo",
-      name: "demo",
-      namespace: "",
-      buildSystems: ["gradle"],
-    });
-    const module = moduleRecord({
-      repositoryId: repository.id,
-      buildSystem: "gradle",
-      groupId: "com.example",
-      artifactId: "demo",
-      version: "1",
-      name: "demo",
-      repoPath: "",
-      buildScript: "build.gradle",
-      isMultimodule: false,
-    });
-    const controller = controllerRecord({
-      applicationModuleId: module.id,
-      fqcn: "com.example.api.HealthController",
-      simpleName: "HealthController",
-      fileName: "src/main/java/com/example/api/HealthController.java",
-      endpoints: ["GET /actuator/health", "GET /"],
-      contractIds: [],
-      dataTypeIds: [],
-    });
-    const discovery = discoverySnapshot([repository], [module], [controller]);
-    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
-
-    const processor = new RestControllersAndDeclaredContractsProcessor();
+    const processor = new RestControllersProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),
@@ -246,30 +162,37 @@ describe("RestControllersAndDeclaredContractsProcessor", () => {
 
     assert.equal(output.elements?.length, 1);
     assert.equal(output.elements?.[0]?.conceptType, "ApplicationService");
-    assert.equal(output.elements?.[0]?.documentation, undefined);
     assert.equal(output.relations?.length, 1);
     assert.equal(output.relations?.[0]?.relationType, "RealizationRelationship");
   });
 
+  it("skips controllers whose module cannot be resolved", () => {
+    const { repository, module } = demoModule("");
+    const controller = controllerRecord({
+      applicationModuleId: "missing-module",
+      fqcn: "com.example.api.UserController",
+      simpleName: "UserController",
+      fileName: "src/main/java/com/example/api/UserController.java",
+      endpoints: ["GET /api/users"],
+      contractIds: [],
+      dataTypeIds: [],
+    });
+    const discovery = discoverySnapshot([repository], [module], [controller]);
+    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
+
+    const processor = new RestControllersProcessor();
+    const output = processor.process({
+      discovery,
+      archi: store.snapshot(),
+      options: defaultGenerateProcessorOptions,
+    });
+
+    assert.equal(output.elements, undefined);
+    assert.equal(output.relations, undefined);
+  });
+
   it("emits realization when app-module-component is missing from archi snapshot", () => {
-    const repository = repositoryRecord({
-      url: "",
-      localPath: "/workspace/demo",
-      name: "demo",
-      namespace: "",
-      buildSystems: ["gradle"],
-    });
-    const module = moduleRecord({
-      repositoryId: repository.id,
-      buildSystem: "gradle",
-      groupId: "com.example",
-      artifactId: "demo",
-      version: "1",
-      name: "demo",
-      repoPath: "",
-      buildScript: "build.gradle",
-      isMultimodule: false,
-    });
+    const { repository, module } = demoModule("");
     const controller = controllerRecord({
       applicationModuleId: module.id,
       fqcn: "com.example.api.UserController",
@@ -282,7 +205,7 @@ describe("RestControllersAndDeclaredContractsProcessor", () => {
     const discovery = discoverySnapshot([repository], [module], [controller]);
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
-    const processor = new RestControllersAndDeclaredContractsProcessor();
+    const processor = new RestControllersProcessor();
     const output = processor.process({
       discovery,
       archi: store.snapshot(),

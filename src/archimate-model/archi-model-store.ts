@@ -399,6 +399,20 @@ export class ArchiModelStore {
     }
   }
 
+  pruneDanglingRelationships(): ArchiRelationshipCreateIntent[] {
+    const pruned: ArchiRelationshipCreateIntent[] = [];
+
+    for (const relation of [...this.relations.values()]) {
+      if (this.elements.has(relation.sourceId) && this.elements.has(relation.targetId)) {
+        continue;
+      }
+      this.relations.delete(relation.id);
+      pruned.push(relation);
+    }
+
+    return pruned.sort((left, right) => left.id.localeCompare(right.id));
+  }
+
   snapshot(): ArchiModelSnapshot {
     return deepFreeze(
       new FrozenArchiModelSnapshot(

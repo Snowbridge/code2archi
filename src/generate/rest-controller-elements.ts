@@ -119,13 +119,6 @@ export function restApiContractAssignmentLogicalId(
   return `assignment:rest-api-contract:${interfaceLogicalId}:${restControllerId}`;
 }
 
-export function restApiContractAssignmentLogicalIdForRestClient(
-  interfaceLogicalId: string,
-  restClientId: string,
-): string {
-  return `assignment:rest-api-contract:${interfaceLogicalId}:${restClientId}`;
-}
-
 export function restApiContractAssignmentId(
   interfaceId: string,
   serviceId: string,
