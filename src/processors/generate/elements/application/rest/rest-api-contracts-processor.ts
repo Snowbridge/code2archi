@@ -1,15 +1,11 @@
 import type { ArchiCreateIntents } from "../../../../../archimate-model/archi-create-intents.js";
-import {
-  ApplicationInterface,
-  type ArchiElementCreateIntent,
-} from "../../../../../archimate-model/elements/archi-element.js";
+import type { ArchiElementCreateIntent } from "../../../../../archimate-model/elements/archi-element.js";
 import type { ArchiFolderCreateIntent } from "../../../../../archimate-model/folders/archi-folder.js";
 import type { ArchiProfile } from "../../../../../archimate-model/profiles/profile.js";
 import { RestApiContractInterfaceProfile } from "../../../../../archimate-model/profiles/profile.js";
 import { AssignmentRelationship } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
-import type { GenerateBasis } from "../../../../../generate/archi-element-properties.js";
 import {
   dedupeAndSortFolderIntents,
   ensureFolderPath,
@@ -17,13 +13,8 @@ import {
 } from "../../../../../generate/archi-folder-path.js";
 import { buildExtractHttpApiContractInterfaceIntent } from "../../../../../generate/rest-declared-contract-elements.js";
 import {
-  businessEndpointsFrom,
   httpApiContractInterfaceId,
   httpApiContractInterfaceLogicalId,
-  INFERRED_REST_API_CONFIDENCE,
-  inferredRestApiContractInterfaceId,
-  inferredRestApiContractInterfaceLogicalId,
-  inferredRestApiContractName,
   restApiContractAssignmentId,
   restApiContractAssignmentLogicalId,
   restClientAppServiceId,
@@ -57,7 +48,7 @@ export class RestApiContractsProcessor extends AbstractProcessor<
   readonly executionPolicy = "ON_DEMAND" as const;
 
   readonly description =
-    "Maps declared HttpApiContract entities and inferred RestController endpoints to ApplicationInterface with Assignment to controller and client ApplicationServices.";
+    "Maps declared HttpApiContract entities to ApplicationInterface with Assignment to controller and client ApplicationServices.";
 
   protected doProcess(input: GenerateProcessorInput): ArchiCreateIntents {
     const pendingFolders = new Map<string, ArchiFolderCreateIntent>();
@@ -116,43 +107,23 @@ export class RestApiContractsProcessor extends AbstractProcessor<
         left.localeCompare(right),
       );
 
-      if (sortedContractIds.length > 0) {
-        for (const contractId of sortedContractIds) {
-          this.emitExtractContract(
-            input,
-            contractId,
-            contractsById.get(contractId) as HttpApiContractRecord | undefined,
-            targetFolderId,
-            serviceId,
-            restApiContractAssignmentLogicalId(
-              httpApiContractInterfaceLogicalId(contractId),
-              controller.id,
-            ),
-            elements,
-            relations,
-            emittedElementIds,
-            emittedRelationIds,
-          );
-        }
-        continue;
+      for (const contractId of sortedContractIds) {
+        this.emitExtractContract(
+          input,
+          contractId,
+          contractsById.get(contractId) as HttpApiContractRecord | undefined,
+          targetFolderId,
+          serviceId,
+          restApiContractAssignmentLogicalId(
+            httpApiContractInterfaceLogicalId(contractId),
+            controller.id,
+          ),
+          elements,
+          relations,
+          emittedElementIds,
+          emittedRelationIds,
+        );
       }
-
-      const businessEndpoints = businessEndpointsFrom(controller.endpoints);
-      if (businessEndpoints.length === 0) {
-        continue;
-      }
-
-      this.emitInferredContract(
-        input,
-        controller,
-        businessEndpoints,
-        targetFolderId,
-        serviceId,
-        elements,
-        relations,
-        emittedElementIds,
-        emittedRelationIds,
-      );
     }
 
     for (const client of clients) {
@@ -270,56 +241,6 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     );
   }
 
-  private emitInferredContract(
-    input: GenerateProcessorInput,
-    controller: RestControllerRecord,
-    businessEndpoints: readonly string[],
-    folderId: string,
-    serviceId: string,
-    elements: ArchiElementCreateIntent[],
-    relations: ArchiRelationshipCreateIntent[],
-    emittedElementIds: Set<string>,
-    emittedRelationIds: Set<string>,
-  ): void {
-    const inferredInterfaceId = inferredRestApiContractInterfaceId(controller.id);
-    const inferredInterfaceLogicalId = inferredRestApiContractInterfaceLogicalId(controller.id);
-
-    if (
-      input.archi.getElement(inferredInterfaceId) === undefined &&
-      !emittedElementIds.has(inferredInterfaceId)
-    ) {
-      let inferredInterfaceBuilder = ApplicationInterface.withId(inferredInterfaceId)
-        .name(inferredRestApiContractName(controller.simpleName))
-        .documentation(businessEndpoints.join("\n"))
-        .inFolder(folderId)
-        .profiles(RestApiContractInterfaceProfile.create().id);
-
-      for (const property of standardGenerateElementProperties({
-        logicalId: inferredInterfaceLogicalId,
-        generatorCoordinate: GENERATOR_COORDINATE,
-        slot: "rest-api-contract-interface",
-        basis: "inference",
-        confidence: INFERRED_REST_API_CONFIDENCE,
-      })) {
-        inferredInterfaceBuilder = inferredInterfaceBuilder.property(property.key, property.value);
-      }
-
-      elements.push(inferredInterfaceBuilder.build().toCreateIntent());
-      emittedElementIds.add(inferredInterfaceId);
-    }
-
-    this.emitAssignment(
-      input,
-      inferredInterfaceId,
-      serviceId,
-      restApiContractAssignmentLogicalId(inferredInterfaceLogicalId, controller.id),
-      relations,
-      emittedRelationIds,
-      "inference",
-      INFERRED_REST_API_CONFIDENCE,
-    );
-  }
-
   private emitAssignment(
     input: GenerateProcessorInput,
     interfaceId: string,
@@ -327,8 +248,6 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     assignmentLogicalId: string,
     relations: ArchiRelationshipCreateIntent[],
     emittedRelationIds: Set<string>,
-    basis?: GenerateBasis,
-    confidence?: number,
   ): void {
     const assignmentId = restApiContractAssignmentId(interfaceId, serviceId);
     if (input.archi.getRelationship(assignmentId) !== undefined || emittedRelationIds.has(assignmentId)) {
@@ -343,8 +262,6 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       logicalId: assignmentLogicalId,
       generatorCoordinate: GENERATOR_COORDINATE,
       slot: "rest-api-contract-assignment",
-      basis,
-      confidence,
     })) {
       assignmentBuilder = assignmentBuilder.property(property.key, property.value);
     }

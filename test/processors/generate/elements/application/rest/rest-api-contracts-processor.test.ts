@@ -9,7 +9,6 @@ import { RestClient } from "../../../../../../src/code-inventory/entities/rest-c
 import { RestController } from "../../../../../../src/code-inventory/entities/rest-controller.js";
 import {
   httpApiContractInterfaceId,
-  inferredRestApiContractInterfaceId,
   restApiContractAssignmentId,
   restClientAppServiceId,
   restControllerAppServiceId,
@@ -160,48 +159,7 @@ describe("RestApiContractsProcessor", () => {
     assert.equal(propertyValue(assignment?.properties, "c2a:basis"), "extract");
   });
 
-  it("creates inferred interface and assignment when business endpoints exist without contractIds", () => {
-    const { repository, module } = demoFixture();
-    const controller = controllerRecord({
-      applicationModuleId: module.id,
-      fqcn: "com.example.api.ItemController",
-      simpleName: "ItemController",
-      fileName: "src/main/java/com/example/api/ItemController.java",
-      endpoints: ["POST /api/items", "GET /actuator/health"],
-      contractIds: [],
-      dataTypeIds: [],
-    });
-    const discovery = discoverySnapshot({
-      repositories: [repository],
-      modules: [module],
-      controllers: [controller],
-    });
-    const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
-
-    const processor = new RestApiContractsProcessor();
-    const output = processor.process({
-      discovery,
-      archi: store.snapshot(),
-      options: defaultGenerateProcessorOptions,
-    });
-
-    const interfaceId = inferredRestApiContractInterfaceId(controller.id);
-    const interfaceElement = output.elements?.find((element) => element.id === interfaceId);
-
-    assert.equal(interfaceElement?.name, "Inferred REST API (ItemController)");
-    assert.equal(interfaceElement?.documentation, "POST /api/items");
-    assert.equal(propertyValue(interfaceElement?.properties, "c2a:basis"), "inference");
-    assert.equal(propertyValue(interfaceElement?.properties, "c2a:confidence"), "0.854321");
-
-    const assignment = output.relations?.find(
-      (relation) => relation.relationType === "AssignmentRelationship",
-    );
-    assert.equal(propertyValue(assignment?.properties, "c2a:basis"), "inference");
-    assert.equal(propertyValue(assignment?.properties, "c2a:confidence"), "0.854321");
-    assert.equal(assignment?.profileIds?.length ?? 0, 0);
-  });
-
-  it("creates nothing for infra-only endpoints without contracts", () => {
+  it("creates nothing for controllers without declared contracts", () => {
     const { repository, module } = demoFixture();
     const controller = controllerRecord({
       applicationModuleId: module.id,

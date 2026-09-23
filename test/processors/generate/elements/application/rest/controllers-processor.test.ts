@@ -139,7 +139,7 @@ describe("RestControllersProcessor", () => {
     assert.equal(realization?.id, appModuleRealizesRestControllerId(module.id, controller.id));
   });
 
-  it("does not create inferred contract interfaces (moved to rest-api-contracts)", () => {
+  it("does not create contract interfaces", () => {
     const { repository, module } = demoModule("");
     const controller = controllerRecord({
       applicationModuleId: module.id,
