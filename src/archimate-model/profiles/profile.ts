@@ -58,6 +58,12 @@ abstract class AggregationRelationshipProfile extends ArchiProfile {
   }
 }
 
+abstract class ServingRelationshipProfile extends ArchiProfile {
+  protected constructor(name: string) {
+    super("ServingRelationship", name);
+  }
+}
+
 abstract class ApplicationServiceProfile extends ArchiProfile {
   protected constructor(name: string) {
     super("ApplicationService", name);
@@ -138,6 +144,23 @@ function defineAggregationRelationshipProfile(profileName: string) {
   return NamedProfile;
 }
 
+function defineServingRelationshipProfile(profileName: string) {
+  class NamedProfile extends ServingRelationshipProfile {
+    static readonly CONCEPT_TYPE = "ServingRelationship" as const;
+    static readonly PROFILE_NAME = profileName;
+
+    constructor() {
+      super(profileName);
+    }
+
+    static create(): NamedProfile {
+      return new NamedProfile();
+    }
+  }
+
+  return NamedProfile;
+}
+
 function defineApplicationServiceProfile(profileName: string) {
   class NamedProfile extends ApplicationServiceProfile {
     static readonly CONCEPT_TYPE = "ApplicationService" as const;
@@ -192,3 +215,5 @@ export const RestControllerProfile = defineApplicationServiceProfile("REST Contr
 export const RestClientProfile = defineApplicationServiceProfile("REST Client");
 export const RestApiContractInterfaceProfile =
   defineApplicationInterfaceProfile("REST API Contract");
+export const ProcessesRestQueriesProfile =
+  defineServingRelationshipProfile("Processes REST queries");

@@ -11,4 +11,6 @@ export const ELEMENT_SLOT_EN_LABELS: Readonly<Record<string, string>> = {
   "app-module-realizes-rest-controller": "Module-to-REST-controller realizations",
   "rest-api-contract-interface": "REST API contract interfaces",
   "rest-api-contract-assignment": "REST API contract assignments",
+  "rest-controller-serves-rest-client": "REST controller to REST client servings",
+  "rest-controller-serves-app-component": "REST controller to consumer component servings",
 };

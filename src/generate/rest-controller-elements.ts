@@ -145,3 +145,38 @@ export function restApiContractAssignmentId(
 export function inferredRestApiContractName(simpleName: string): string {
   return `Inferred REST API (${simpleName})`;
 }
+
+export function restControllerServesRestClientLogicalId(
+  restControllerId: string,
+  restClientId: string,
+): string {
+  return `serving:rest-controller-rest-client:${restControllerId}:${restClientId}`;
+}
+
+export function restControllerServesRestClientId(
+  controllerServiceId: string,
+  clientServiceId: string,
+): string {
+  return computeArchiId("ServingRelationship", controllerServiceId, clientServiceId);
+}
+
+export function restControllerServesAppComponentLogicalId(
+  restControllerId: string,
+  contractId: string,
+  consumerModuleId: string,
+): string {
+  return `serving:rest-controller-app-component:${restControllerId}:${contractId}:${consumerModuleId}`;
+}
+
+export function restControllerServesAppComponentId(
+  controllerServiceId: string,
+  consumerComponentId: string,
+  contractId: string,
+): string {
+  return computeArchiId(
+    "ServingRelationship",
+    controllerServiceId,
+    consumerComponentId,
+    contractId,
+  );
+}

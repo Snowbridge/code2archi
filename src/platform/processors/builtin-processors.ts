@@ -16,6 +16,7 @@ import { MicronautClientProcessor } from "../../processors/scan/extract/rest/cli
 import { AppComponentsFromModulesProcessor } from "../../processors/generate/elements/application/app-components-from-modules-processor.js";
 import { LinkBuildTimeDependencyAggregationProcessor } from "../../processors/generate/elements/application/link-build-time-dependency-aggregation-processor.js";
 import { RestControllersProcessor } from "../../processors/generate/elements/application/rest/controllers-processor.js";
+import { RestControllersServingRelationsProcessor } from "../../processors/generate/elements/application/rest/controllers-serving-relations-processor.js";
 import { RestLibModuleClientsProcessor } from "../../processors/generate/elements/application/rest/lib-module-clients-processor.js";
 import { RestAppComponentClientsProcessor } from "../../processors/generate/elements/application/rest/app-component-clients-processor.js";
 import { RestApiContractsProcessor } from "../../processors/generate/elements/application/rest/rest-api-contracts-processor.js";
@@ -48,6 +49,7 @@ processorRegistry.register(new SyssoftForBuildSystemsAndRuntimesProcessor());
 processorRegistry.register(new SyssoftForNoBuildOrRuntimeToolsProcessor());
 processorRegistry.register(new AppComponentsFromModulesProcessor());
 processorRegistry.register(new RestControllersProcessor());
+processorRegistry.register(new RestControllersServingRelationsProcessor());
 processorRegistry.register(new RestLibModuleClientsProcessor());
 processorRegistry.register(new RestAppComponentClientsProcessor());
 processorRegistry.register(new RestApiContractsProcessor());
