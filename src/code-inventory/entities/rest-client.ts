@@ -1,6 +1,8 @@
 import type { DiscoveryEntityBase } from "./entity-base.js";
 import { Entity } from "./entity.js";
 
+export type RestClientOrigin = "source" | "supplement";
+
 export interface RestClientCreateIntent {
   readonly id: string;
   readonly simpleName: string;
@@ -10,6 +12,7 @@ export interface RestClientCreateIntent {
   readonly endpoints: readonly string[];
   readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
+  readonly origin: RestClientOrigin;
 }
 
 export interface RestClientNaturalKeys {
@@ -20,6 +23,7 @@ export interface RestClientNaturalKeys {
   readonly endpoints: readonly string[];
   readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
+  readonly origin?: RestClientOrigin;
 }
 
 export class RestClient extends Entity {
@@ -32,6 +36,7 @@ export class RestClient extends Entity {
   readonly endpoints: readonly string[];
   readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
+  readonly origin: RestClientOrigin;
 
   constructor(naturalKeys: RestClientNaturalKeys) {
     super(RestClient.ENTITY_TYPE, [naturalKeys.applicationModuleId, naturalKeys.fqcn]);
@@ -42,6 +47,7 @@ export class RestClient extends Entity {
     this.endpoints = [...naturalKeys.endpoints];
     this.contractIds = [...naturalKeys.contractIds];
     this.dataTypeIds = [...naturalKeys.dataTypeIds];
+    this.origin = naturalKeys.origin ?? "source";
   }
 
   static idFor(applicationModuleId: string, fqcn: string): string {
@@ -66,6 +72,7 @@ export class RestClient extends Entity {
       endpoints: this.endpoints,
       contractIds: this.contractIds,
       dataTypeIds: this.dataTypeIds,
+      origin: this.origin,
     };
   }
 }
@@ -83,4 +90,5 @@ export const REST_CLIENT_SCALAR_FIELDS = [
   "fqcn",
   "applicationModuleId",
   "fileName",
+  "origin",
 ] as const;

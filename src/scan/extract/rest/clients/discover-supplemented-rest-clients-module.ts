@@ -43,6 +43,7 @@ export function discoverSupplementedRestClientsForModule(
       endpoints: entry.endpoints ?? [],
       contractIds: entry.contractIds ?? [],
       dataTypeIds: entry.dataTypeIds ?? [],
+      origin: "supplement",
     });
     builder.registerClient(client.toCreateIntent());
   }

@@ -112,6 +112,22 @@ export function appModuleRealizesRestClientId(
   return computeArchiId("RealizationRelationship", appComponentId, serviceId);
 }
 
+export function libRestClientAggregationLogicalId(
+  consumerModuleId: string,
+  restClientId: string,
+): string {
+  return `aggregation:lib-rest-client:${consumerModuleId}:${restClientId}`;
+}
+
+export function libRestClientAggregationId(
+  consumerModuleId: string,
+  restClientId: string,
+): string {
+  const consumerComponentId = applicationComponentIdForModule(consumerModuleId);
+  const serviceId = restClientAppServiceId(restClientId);
+  return computeArchiId("AggregationRelationship", consumerComponentId, serviceId);
+}
+
 export function restApiContractAssignmentLogicalId(
   interfaceLogicalId: string,
   restControllerId: string,

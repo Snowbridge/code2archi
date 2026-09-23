@@ -91,13 +91,19 @@ function mergeRestClient(
   existing: DiscoveryEntityRecord,
   incoming: DiscoveryEntityRecord,
 ): DiscoveryEntityRecord {
-  return mergeRestEndpointEntity(
+  const merged = mergeRestEndpointEntity(
     "RestClient",
     existing,
     incoming,
     REST_CLIENT_SCALAR_FIELDS,
     REST_CLIENT_MERGE_ARRAY_FIELDS,
   );
+  // Deterministic origin resolution: a client discovered in module sources
+  // wins over a supplemented copy regardless of processor execution order.
+  if (existing.origin === "source" || incoming.origin === "source") {
+    return { ...merged, origin: "source" };
+  }
+  return merged;
 }
 
 export function mergeDuplicateEntity(

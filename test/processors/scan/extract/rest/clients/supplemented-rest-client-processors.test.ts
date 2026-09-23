@@ -163,6 +163,7 @@ describe("SupplementedRestClientComponentsProcessor", () => {
     assert.ok(client);
     assert.equal(client.simpleName, "PaymentFeignClient");
     assert.equal(client.applicationModuleId, moduleId);
+    assert.equal(client.origin, "supplement");
     assert.equal(
       client.fileName,
       "client/src/main/java/com/example/client/PaymentFeignClient.java",

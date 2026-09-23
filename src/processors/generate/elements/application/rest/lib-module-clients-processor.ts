@@ -7,12 +7,12 @@ export class RestLibModuleClientsProcessor extends AbstractRestClientsProcessor 
     artifactId: "lib-module-clients",
   };
 
-  readonly version = "0.1.0";
+  readonly version = "0.2.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Maps RestClient entities located in Library modules to ApplicationService with Realization from the owning ApplicationComponent.";
+    "Maps RestClient entities located in Library modules to ApplicationService with Realization from the owning ApplicationComponent and Aggregation into consumer ApplicationComponents.";
 
   protected readonly includeLibraryModules = true;
 }

@@ -19,6 +19,7 @@ export type ElementSlotId =
   | "rest-client-app-service"
   | "app-module-realizes-rest-controller"
   | "app-module-realizes-rest-client"
+  | "lib-rest-client-aggregated-into-app-component"
   | "rest-api-contract-interface"
   | "rest-api-contract-assignment";
 
