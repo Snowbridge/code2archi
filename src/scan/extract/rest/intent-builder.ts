@@ -91,16 +91,17 @@ export class RestDiscoveryIntentBuilder {
       entities.RestClient = [...this.clients.values()];
     }
 
-    const result: CreateIntents = {};
-    if (Object.keys(entities).length > 0) {
-      result.entities = entities;
+    const hasEntities = Object.keys(entities).length > 0;
+    const hasLinks = this.assignments.size > 0;
+    if (!hasEntities && !hasLinks) {
+      return {};
     }
-    if (this.assignments.size > 0) {
-      result.links = {
-        HttpApiContractAssignment: [...this.assignments.values()],
-      };
-    }
-    return result;
+    return {
+      ...(hasEntities ? { entities } : {}),
+      ...(hasLinks
+        ? { links: { HttpApiContractAssignment: [...this.assignments.values()] } }
+        : {}),
+    };
   }
 }
 

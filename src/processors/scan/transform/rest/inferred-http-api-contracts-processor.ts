@@ -88,14 +88,15 @@ export class InferredHttpApiContractsProcessor extends AbstractProcessor<
       );
     }
 
-    const result: CreateIntents = {};
-    if (contracts.length > 0) {
-      result.entities = { HttpApiContract: contracts };
+    if (contracts.length === 0 && assignments.length === 0) {
+      return {};
     }
-    if (assignments.length > 0) {
-      result.links = { HttpApiContractAssignment: assignments };
-    }
-    return result;
+    return {
+      ...(contracts.length > 0 ? { entities: { HttpApiContract: contracts } } : {}),
+      ...(assignments.length > 0
+        ? { links: { HttpApiContractAssignment: assignments } }
+        : {}),
+    };
   }
 
   private findBestControllerMatch(
