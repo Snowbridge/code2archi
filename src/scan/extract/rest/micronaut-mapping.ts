@@ -8,6 +8,7 @@ import type { JvmImportContext } from "../../../parsers/type-resolution/types.js
 import { formatHttpEndpoint, joinPathPrefixes } from "./endpoint-format.js";
 
 const MICRONAUT_CONTROLLER = "Controller";
+const MICRONAUT_CONTROLLER_FQCN = "io.micronaut.http.annotation.Controller";
 const MICRONAUT_CLIENT = "Client";
 const MICRONAUT_HTTP_METHODS = new Map<string, string>([
   ["Get", "GET"],
@@ -19,12 +20,24 @@ const MICRONAUT_HTTP_METHODS = new Map<string, string>([
   ["Options", "OPTIONS"],
 ]);
 
-export function isMicronautController(type: JvmTypeModel): boolean {
-  return type.annotations.some(
-    (annotation) =>
-      annotationMatches(annotation, MICRONAUT_CONTROLLER) &&
-      !annotation.name.includes("org.springframework"),
-  );
+export function isMicronautController(
+  type: JvmTypeModel,
+  importContext: JvmImportContext,
+  language: "java" | "kotlin",
+): boolean {
+  return type.annotations.some((annotation) => {
+    if (!annotationMatches(annotation, MICRONAUT_CONTROLLER)) {
+      return false;
+    }
+    if (annotation.name.includes("org.springframework")) {
+      return false;
+    }
+    const resolved = resolveTypeName(annotation.name, importContext, language);
+    return (
+      resolved === MICRONAUT_CONTROLLER_FQCN ||
+      resolved.startsWith("io.micronaut.http.annotation.")
+    );
+  });
 }
 
 export function isMicronautRouteBuilder(type: JvmTypeModel): boolean {
@@ -39,7 +52,7 @@ export function isMicronautDeclarativeClient(
   importContext: JvmImportContext,
   language: "java" | "kotlin",
 ): boolean {
-  if (isMicronautController(type)) {
+  if (isMicronautController(type, importContext, language)) {
     return false;
   }
   return type.annotations.some((annotation) =>

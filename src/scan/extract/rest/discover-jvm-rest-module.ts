@@ -22,7 +22,11 @@ import { getLogger } from "../../../platform/logging/index.js";
 const logger = getLogger("scan.extract.rest.jvm");
 
 export interface JvmRestTypeHandler {
-  isEligible(type: JvmTypeModel): boolean;
+  isEligible(
+    type: JvmTypeModel,
+    importContext: JvmImportContext,
+    language: "java" | "kotlin",
+  ): boolean;
   extractEndpoints(type: JvmTypeModel): string[];
 }
 
@@ -50,7 +54,7 @@ export function discoverJvmRestControllersForModule(
     const importContext = buildImportContext(source, language);
 
     for (const type of fileModel.types) {
-      if (!handler.isEligible(type)) {
+      if (!handler.isEligible(type, importContext, language)) {
         continue;
       }
       const contractIds = type.implementedInterfaces

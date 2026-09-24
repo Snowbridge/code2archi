@@ -1,4 +1,4 @@
-import type { JvmTypeModel } from "../../../parsers/jvm/types.js";
+import type { JvmAnnotation, JvmTypeModel } from "../../../parsers/jvm/types.js";
 import {
   annotationMatches,
   annotationStringAttribute,
@@ -42,7 +42,7 @@ export function extractFeignClientEndpoints(type: JvmTypeModel): string[] {
 }
 
 function isFeignClientAnnotation(
-  annotation: { readonly name: string },
+  annotation: JvmAnnotation,
   importContext: JvmImportContext,
   language: "java" | "kotlin",
 ): boolean {

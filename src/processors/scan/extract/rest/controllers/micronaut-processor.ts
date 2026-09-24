@@ -47,7 +47,8 @@ export class MicronautProcessor extends AbstractProcessor<ScanAppInput, ScanAppO
     forEachRepository(input, (repository) => {
       for (const module of modules.filter((item) => item.repositoryId === repository.id)) {
         const moduleBuilder = discoverJvmRestControllersForModule(repository, module, {
-          isEligible: (type) => isMicronautController(type) || isMicronautRouteBuilder(type),
+          isEligible: (type, importContext, language) =>
+            isMicronautController(type, importContext, language) || isMicronautRouteBuilder(type),
           extractEndpoints: (type) => {
             if (isMicronautRouteBuilder(type)) {
               return extractRouteBuilderEndpoints(
