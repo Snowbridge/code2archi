@@ -224,12 +224,19 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
   ): readonly {
     contractId: string;
     consumerModuleId: string;
+    clientFqcn: string;
     basis: GenerateBasis;
     confidence?: number;
   }[] {
     const keys = new Map<
       string,
-      { contractId: string; consumerModuleId: string; basis: GenerateBasis; confidence?: number }
+      {
+        contractId: string;
+        consumerModuleId: string;
+        clientFqcn: string;
+        basis: GenerateBasis;
+        confidence?: number;
+      }
     >();
     for (const { client, sharedContractIds } of matchedClients) {
       for (const contractId of sharedContractIds) {
@@ -246,6 +253,7 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
         keys.set(key, {
           contractId,
           consumerModuleId: client.applicationModuleId,
+          clientFqcn: client.fqcn,
           basis: meta.basis,
           confidence: meta.confidence,
         });
@@ -361,6 +369,7 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
     record: {
       contractId: string;
       consumerModuleId: string;
+      clientFqcn: string;
       basis: GenerateBasis;
       confidence?: number;
     },
@@ -396,6 +405,7 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
     })) {
       builder = builder.property(property.key, property.value);
     }
+    builder = builder.property("c2a:client-fqcn", record.clientFqcn);
 
     relations.push(builder.build().toCreateIntent());
     emittedRelationIds.add(relationId);

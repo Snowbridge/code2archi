@@ -219,6 +219,7 @@ describe("RestControllersServingRelationsProcessor", () => {
       propertyValue(toComponent?.properties, "c2a:slot"),
       "rest-controller-serves-app-component",
     );
+    assert.equal(propertyValue(toComponent?.properties, "c2a:client-fqcn"), client.fqcn);
   });
 
   it("emits two client servings but one component serving for two clients of one component", () => {
@@ -282,6 +283,12 @@ describe("RestControllersServingRelationsProcessor", () => {
 
     assert.equal(clientServings?.length, 2);
     assert.equal(componentServings?.length, 1);
+    const winningClient =
+      firstClient.id.localeCompare(secondClient.id) <= 0 ? firstClient : secondClient;
+    assert.equal(
+      propertyValue(componentServings?.[0]?.properties, "c2a:client-fqcn"),
+      winningClient.fqcn,
+    );
   });
 
   it("emits one client serving but two component servings for one client with two contracts", () => {
@@ -338,6 +345,9 @@ describe("RestControllersServingRelationsProcessor", () => {
 
     assert.equal(clientServings?.length, 1);
     assert.equal(componentServings?.length, 2);
+    for (const relation of componentServings ?? []) {
+      assert.equal(propertyValue(relation.properties, "c2a:client-fqcn"), client.fqcn);
+    }
   });
 
   it("emits nothing without contract intersection", () => {
