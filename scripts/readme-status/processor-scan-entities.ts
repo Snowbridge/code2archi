@@ -60,6 +60,11 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
     "HttpApiDataType",
     "HttpApiContract",
   ],
+  "scan.extract.rest.clients/feign-clients": [
+    "RestClient",
+    "HttpApiDataType",
+    "HttpApiContract",
+  ],
   "scan.extract.rest.clients/supplemented-rest-clients": ["RestClient"],
   "scan.transform.rest/inferred-http-api-contracts": ["HttpApiContract"],
 };
@@ -76,5 +81,6 @@ export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkTyp
   "scan.extract.rest.clients/retrofit": HTTP_API_CONTRACT_ASSIGNMENT,
   "scan.extract.rest.clients/microprofile-rest-client": HTTP_API_CONTRACT_ASSIGNMENT,
   "scan.extract.rest.clients/micronaut": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.clients/feign-clients": HTTP_API_CONTRACT_ASSIGNMENT,
   "scan.transform.rest/inferred-http-api-contracts": HTTP_API_CONTRACT_ASSIGNMENT,
 };

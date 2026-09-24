@@ -9,6 +9,7 @@ import { JaxRsProcessor } from "../../../../../../src/processors/scan/extract/re
 import { MicronautClientProcessor } from "../../../../../../src/processors/scan/extract/rest/clients/micronaut-client-processor.js";
 import { MicroProfileRestClientProcessor } from "../../../../../../src/processors/scan/extract/rest/clients/microprofile-rest-client-processor.js";
 import { RetrofitProcessor } from "../../../../../../src/processors/scan/extract/rest/clients/retrofit-processor.js";
+import { FeignClientsProcessor } from "../../../../../../src/processors/scan/extract/rest/clients/feign-clients-processor.js";
 import { SpringHttpExchangeProcessor } from "../../../../../../src/processors/scan/extract/rest/clients/spring-http-exchange-processor.js";
 import { createTestTempDir } from "../../../../../test-temp-dir.js";
 
@@ -122,6 +123,64 @@ describe("SpringHttpExchangeProcessor", () => {
       output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
     assert.ok(assignments.length > 0);
     assert.deepEqual(client.endpoints, []);
+  });
+});
+
+describe("FeignClientsProcessor", () => {
+  it("discovers @FeignClient with endpoints and DTO without contract assignment", () => {
+    const root = createTestTempDir("c2a-feign-inferred-");
+    bootstrapProject(root);
+    const store = createScanStore(root);
+
+    const output = new FeignClientsProcessor().process(store.snapshot());
+    const client = output.entities?.RestClient?.find(
+      (item) => item.simpleName === "PaymentFeignClient",
+    );
+
+    assert.ok(client);
+    assert.deepEqual(client.endpoints, ["GET /payments/{id}"]);
+    const assignments =
+      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
+    assert.equal(assignments.length, 0);
+    assert.ok(
+      output.entities?.HttpApiDataType?.some((item) => item.fqcn === "com.example.client.PaymentDto"),
+    );
+  });
+
+  it("discovers @FeignClient with contract from extends", () => {
+    const root = createTestTempDir("c2a-feign-declared-");
+    bootstrapProject(root);
+    const store = createScanStore(root);
+
+    const output = new FeignClientsProcessor().process(store.snapshot());
+    const client = output.entities?.RestClient?.find((item) => item.simpleName === "ItemFeignClient");
+
+    assert.ok(client);
+    assert.deepEqual(client.endpoints, []);
+    assert.equal(
+      output.entities?.HttpApiContract?.find((item) => item.fqcn === "com.example.client.ItemApi")?.fqcn,
+      "com.example.client.ItemApi",
+    );
+    const assignments =
+      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
+    assert.ok(assignments.length > 0);
+  });
+
+  it("discovers mixed @FeignClient with declared contract and local endpoints", () => {
+    const root = createTestTempDir("c2a-feign-mixed-");
+    bootstrapProject(root);
+    const store = createScanStore(root);
+
+    const output = new FeignClientsProcessor().process(store.snapshot());
+    const client = output.entities?.RestClient?.find(
+      (item) => item.simpleName === "MixedItemFeignClient",
+    );
+
+    assert.ok(client);
+    assert.deepEqual(client.endpoints, ["GET /api/extra"]);
+    const assignments =
+      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
+    assert.ok(assignments.length > 0);
   });
 });
 
