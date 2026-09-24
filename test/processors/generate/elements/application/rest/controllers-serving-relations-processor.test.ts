@@ -18,6 +18,8 @@ import {
 } from "../../../../../../src/generate/rest-controller-elements.js";
 import { RestControllersServingRelationsProcessor } from "../../../../../../src/processors/generate/elements/application/rest/controllers-serving-relations-processor.js";
 import { defaultGenerateProcessorOptions } from "../../../../../generate/generate-processor-test-options.js";
+import { extractAssignmentIntent } from "../../../../../support/http-api-contract-assignment-fixtures.js";
+import type { HttpApiContractAssignmentRecord } from "../../../../../../src/code-inventory/links/http-api-contract-assignment.js";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -53,6 +55,7 @@ function discoverySnapshot(input: {
   controllers?: ReturnType<typeof controllerRecord>[];
   clients?: ReturnType<typeof clientRecord>[];
   contracts?: ReturnType<typeof contractRecord>[];
+  assignments?: HttpApiContractAssignmentRecord[];
 }) {
   return buildCodeInventorySnapshot({
     scanId: "scan-1",
@@ -65,7 +68,16 @@ function discoverySnapshot(input: {
       RestClient: input.clients ?? [],
       HttpApiContract: input.contracts ?? [],
     },
+    linkArrays: {
+      HttpApiContractAssignment: input.assignments ?? [],
+    },
   });
+}
+
+function extractAssignmentsForPairs(
+  pairs: readonly { contractId: string; assigneeId: string }[],
+): HttpApiContractAssignmentRecord[] {
+  return pairs.map((pair) => extractAssignmentIntent(pair.contractId, pair.assigneeId));
 }
 
 function propertyValue(
@@ -129,7 +141,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const client = clientRecord({
@@ -138,7 +149,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: ["GET /api/users"],
-      contractIds: [contract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -148,6 +158,10 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [controller],
       clients: [client],
       contracts: [contract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: contract.id, assigneeId: controller.id },
+        { contractId: contract.id, assigneeId: client.id },
+      ]),
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -216,7 +230,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const firstClient = clientRecord({
@@ -225,7 +238,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "FirstClient",
       fileName: "src/main/java/com/example/api/FirstClient.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -235,7 +247,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "SecondClient",
       fileName: "src/main/java/com/example/api/SecondClient.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
       origin: "supplement",
     });
@@ -245,6 +256,11 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [controller],
       clients: [firstClient, secondClient],
       contracts: [contract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: contract.id, assigneeId: controller.id },
+        { contractId: contract.id, assigneeId: firstClient.id },
+        { contractId: contract.id, assigneeId: secondClient.id },
+      ]),
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -278,7 +294,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: [],
-      contractIds: [firstContract.id, secondContract.id],
       dataTypeIds: [],
     });
     const client = clientRecord({
@@ -287,7 +302,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: [],
-      contractIds: [firstContract.id, secondContract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -297,6 +311,12 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [controller],
       clients: [client],
       contracts: [firstContract, secondContract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: firstContract.id, assigneeId: controller.id },
+        { contractId: secondContract.id, assigneeId: controller.id },
+        { contractId: firstContract.id, assigneeId: client.id },
+        { contractId: secondContract.id, assigneeId: client.id },
+      ]),
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -330,7 +350,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [controllerContract.id],
       dataTypeIds: [],
     });
     const client = clientRecord({
@@ -339,7 +358,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: ["GET /api/users"],
-      contractIds: [clientContract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -349,6 +367,10 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [controller],
       clients: [client],
       contracts: [controllerContract, clientContract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: controllerContract.id, assigneeId: controller.id },
+        { contractId: clientContract.id, assigneeId: client.id },
+      ]),
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -371,7 +393,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const client = clientRecord({
@@ -380,7 +401,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -390,6 +410,10 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [controller],
       clients: [client],
       contracts: [contract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: contract.id, assigneeId: controller.id },
+        { contractId: contract.id, assigneeId: client.id },
+      ]),
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -423,7 +447,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "OrphanController",
       fileName: "src/main/java/com/example/api/OrphanController.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const orphanClient = clientRecord({
@@ -432,7 +455,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "OrphanClient",
       fileName: "src/main/java/com/example/api/OrphanClient.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -442,6 +464,10 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [orphanController],
       clients: [orphanClient],
       contracts: [contract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: contract.id, assigneeId: orphanController.id },
+        { contractId: contract.id, assigneeId: orphanClient.id },
+      ]),
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -464,7 +490,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const client = clientRecord({
@@ -473,7 +498,6 @@ describe("RestControllersServingRelationsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
       origin: "source",
     });
@@ -483,6 +507,10 @@ describe("RestControllersServingRelationsProcessor", () => {
       controllers: [controller],
       clients: [client],
       contracts: [contract],
+      assignments: extractAssignmentsForPairs([
+        { contractId: contract.id, assigneeId: controller.id },
+        { contractId: contract.id, assigneeId: client.id },
+      ]),
     });
 
     const processor = new RestControllersServingRelationsProcessor();

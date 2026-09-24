@@ -1,3 +1,3 @@
-export const LINK_TYPES = ["InferredHttpApiContractAssignment"] as const;
+export const LINK_TYPES = ["HttpApiContractAssignment"] as const;
 
 export type LinkType = (typeof LINK_TYPES)[number];

@@ -137,7 +137,6 @@ describe("RunEntityStore", () => {
             applicationModuleId: "mod-1",
             fileName: "src/main/java/com/example/UserController.java",
             endpoints: ["GET /users"],
-            contractIds: [],
             dataTypeIds: [],
           },
         ],
@@ -154,7 +153,6 @@ describe("RunEntityStore", () => {
             applicationModuleId: "mod-1",
             fileName: "src/main/java/com/example/UserController.java",
             endpoints: ["POST /users"],
-            contractIds: ["contract-1"],
             dataTypeIds: ["dto-1"],
           },
         ],
@@ -163,7 +161,6 @@ describe("RunEntityStore", () => {
 
     const controller = store.getEntities("RestController")[0];
     assert.deepEqual(controller?.endpoints, ["GET /users", "POST /users"]);
-    assert.deepEqual(controller?.contractIds, ["contract-1"]);
     assert.deepEqual(controller?.dataTypeIds, ["dto-1"]);
   });
 

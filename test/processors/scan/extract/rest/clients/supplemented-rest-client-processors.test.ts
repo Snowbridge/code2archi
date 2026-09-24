@@ -152,7 +152,6 @@ describe("SupplementedRestClientComponentsProcessor", () => {
         simpleName: "PaymentFeignClient",
         fileName: "client/src/main/java/com/example/client/PaymentFeignClient.java",
         endpoints: [],
-        contractIds: [],
         dataTypeIds: [],
       },
     ]);

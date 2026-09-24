@@ -1,12 +1,17 @@
 import type { CreateIntents } from "../../../code-inventory/entities/create-intents.js";
 import { HttpApiContract } from "../../../code-inventory/entities/http-api-contract.js";
 import { HttpApiDataType } from "../../../code-inventory/entities/http-api-data-type.js";
+import { HttpApiContractAssignment } from "../../../code-inventory/links/http-api-contract-assignment.js";
 import { RestClient } from "../../../code-inventory/entities/rest-client.js";
 import { RestController } from "../../../code-inventory/entities/rest-controller.js";
 
 export class RestDiscoveryIntentBuilder {
   private readonly dataTypes = new Map<string, ReturnType<HttpApiDataType["toCreateIntent"]>>();
   private readonly contracts = new Map<string, ReturnType<HttpApiContract["toCreateIntent"]>>();
+  private readonly assignments = new Map<
+    string,
+    ReturnType<HttpApiContractAssignment["toCreateIntent"]>
+  >();
   private readonly controllers = new Map<string, ReturnType<RestController["toCreateIntent"]>>();
   private readonly clients = new Map<string, ReturnType<RestClient["toCreateIntent"]>>();
 
@@ -22,6 +27,11 @@ export class RestDiscoveryIntentBuilder {
     return entity.id;
   }
 
+  registerExtractAssignment(contractId: string, assigneeId: string): void {
+    const link = HttpApiContractAssignment.forExtract(contractId, assigneeId);
+    this.assignments.set(link.id, link.toCreateIntent());
+  }
+
   registerController(intent: ReturnType<RestController["toCreateIntent"]>): void {
     this.mergeRestEndpointIntent(this.controllers, intent);
   }
@@ -33,7 +43,6 @@ export class RestDiscoveryIntentBuilder {
   private mergeRestEndpointIntent<T extends {
     readonly id: string;
     readonly endpoints: readonly string[];
-    readonly contractIds: readonly string[];
     readonly dataTypeIds: readonly string[];
   }>(store: Map<string, T>, intent: T): void {
     const existing = store.get(intent.id);
@@ -45,7 +54,6 @@ export class RestDiscoveryIntentBuilder {
     store.set(intent.id, {
       ...existing,
       endpoints: unionSorted(existing.endpoints, intent.endpoints),
-      contractIds: unionSorted(existing.contractIds, intent.contractIds),
       dataTypeIds: unionSorted(existing.dataTypeIds, intent.dataTypeIds),
     });
   }
@@ -56,6 +64,9 @@ export class RestDiscoveryIntentBuilder {
     }
     for (const intent of other.contracts.values()) {
       this.contracts.set(intent.id, intent);
+    }
+    for (const intent of other.assignments.values()) {
+      this.assignments.set(intent.id, intent);
     }
     for (const intent of other.controllers.values()) {
       this.registerController(intent);
@@ -79,7 +90,17 @@ export class RestDiscoveryIntentBuilder {
     if (this.clients.size > 0) {
       entities.RestClient = [...this.clients.values()];
     }
-    return { entities };
+
+    const result: CreateIntents = {};
+    if (Object.keys(entities).length > 0) {
+      result.entities = entities;
+    }
+    if (this.assignments.size > 0) {
+      result.links = {
+        HttpApiContractAssignment: [...this.assignments.values()],
+      };
+    }
+    return result;
   }
 }
 

@@ -15,6 +15,8 @@ import {
 } from "../../../../../../src/generate/rest-controller-elements.js";
 import { RestApiContractsProcessor } from "../../../../../../src/processors/generate/elements/application/rest/rest-api-contracts-processor.js";
 import { defaultGenerateProcessorOptions } from "../../../../../generate/generate-processor-test-options.js";
+import { extractAssignmentIntent } from "../../../../../support/http-api-contract-assignment-fixtures.js";
+import type { HttpApiContractAssignmentRecord } from "../../../../../../src/code-inventory/links/http-api-contract-assignment.js";
 
 function repositoryRecord(
   naturalKeys: ConstructorParameters<typeof Repository>[0],
@@ -52,6 +54,7 @@ function discoverySnapshot(input: {
   controllers?: ReturnType<typeof controllerRecord>[];
   clients?: ReturnType<typeof clientRecord>[];
   contracts?: ReturnType<typeof contractRecord>[];
+  assignments?: HttpApiContractAssignmentRecord[];
 }) {
   return buildCodeInventorySnapshot({
     scanId: "scan-1",
@@ -63,6 +66,9 @@ function discoverySnapshot(input: {
       RestController: input.controllers ?? [],
       RestClient: input.clients ?? [],
       HttpApiContract: input.contracts ?? [],
+    },
+    linkArrays: {
+      HttpApiContractAssignment: input.assignments ?? [],
     },
   });
 }
@@ -117,7 +123,6 @@ describe("RestApiContractsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot({
@@ -125,6 +130,7 @@ describe("RestApiContractsProcessor", () => {
       modules: [module],
       controllers: [controller],
       contracts: [contract],
+      assignments: [extractAssignmentIntent(contract.id, controller.id)],
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -167,7 +173,6 @@ describe("RestApiContractsProcessor", () => {
       simpleName: "HealthController",
       fileName: "src/main/java/com/example/api/HealthController.java",
       endpoints: ["GET /actuator/health", "GET /"],
-      contractIds: [],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot({
@@ -197,7 +202,6 @@ describe("RestApiContractsProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const client = clientRecord({
@@ -206,7 +210,6 @@ describe("RestApiContractsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: ["GET /api/users"],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot({
@@ -215,6 +218,10 @@ describe("RestApiContractsProcessor", () => {
       controllers: [controller],
       clients: [client],
       contracts: [contract],
+      assignments: [
+        extractAssignmentIntent(contract.id, controller.id),
+        extractAssignmentIntent(contract.id, client.id),
+      ],
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -259,7 +266,6 @@ describe("RestApiContractsProcessor", () => {
       simpleName: "UserClient",
       fileName: "src/main/java/com/example/api/UserClient.java",
       endpoints: [],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot({
@@ -267,6 +273,7 @@ describe("RestApiContractsProcessor", () => {
       modules: [module],
       clients: [client],
       contracts: [contract],
+      assignments: [extractAssignmentIntent(contract.id, client.id)],
     });
     const store = new ArchiModelStore({ modelName: "test", modelId: "model-1" });
 
@@ -295,7 +302,6 @@ describe("RestApiContractsProcessor", () => {
       simpleName: "RawHttpClient",
       fileName: "src/main/java/com/example/api/RawHttpClient.java",
       endpoints: ["GET /api/items"],
-      contractIds: [],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot({

@@ -19,7 +19,6 @@ function controllerRecord(input: {
     applicationModuleId: "mod-1",
     fileName: "src/Ctrl.java",
     endpoints: input.endpoints,
-    contractIds: [],
     dataTypeIds: input.dataTypeIds,
     extractProcessor: "scan.extract:test",
     extractSchema: "0.0.0",
@@ -40,7 +39,6 @@ function clientRecord(input: {
     applicationModuleId: "mod-2",
     fileName: "src/Client.java",
     endpoints: input.endpoints,
-    contractIds: [],
     dataTypeIds: input.dataTypeIds,
     origin: "source",
     extractProcessor: "scan.extract:test",
@@ -91,7 +89,7 @@ describe("InferredHttpApiContractsProcessor", () => {
     assert.equal(contract?.basis, "inference");
     assert.equal(contract?.confidence, 1);
 
-    const clientLink = output.links?.InferredHttpApiContractAssignment?.find(
+    const clientLink = output.links?.HttpApiContractAssignment?.find(
       (link) => link.assigneeId === clientId,
     );
     assert.ok(clientLink);

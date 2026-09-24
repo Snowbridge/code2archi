@@ -12,7 +12,8 @@ import {
   repositoryFolderSegments,
 } from "../../../../../generate/archi-folder-path.js";
 import { buildHttpApiContractInterfaceIntent } from "../../../../../generate/rest-declared-contract-elements.js";
-import { effectiveContractIdsForAssignee } from "../../../../../code-inventory/rest-effective-contract-ids.js";
+import { resolveAssignmentsForAssignee } from "../../../../../code-inventory/resolve-http-api-contract-assignments.js";
+import type { GenerateBasis } from "../../../../../generate/archi-element-properties.js";
 import {
   httpApiContractInterfaceId,
   httpApiContractInterfaceLogicalId,
@@ -104,22 +105,18 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       );
 
       const serviceId = restControllerAppServiceId(controller.id);
-      const sortedContractIds = effectiveContractIdsForAssignee(
-        controller.contractIds,
-        controller.id,
-        input.discovery,
-      );
-
-      for (const contractId of sortedContractIds) {
-        const contract = contractsById.get(contractId) as HttpApiContractRecord | undefined;
+      for (const assignment of resolveAssignmentsForAssignee(input.discovery, controller.id)) {
+        const contract = contractsById.get(assignment.contractId) as HttpApiContractRecord | undefined;
         this.emitContractAssignment(
           input,
-          contractId,
+          assignment.contractId,
           contract,
+          assignment.basis,
+          assignment.confidence,
           targetFolderId,
           serviceId,
           restApiContractAssignmentLogicalId(
-            httpApiContractInterfaceLogicalId(contractId),
+            httpApiContractInterfaceLogicalId(assignment.contractId),
             controller.id,
           ),
           elements,
@@ -138,12 +135,8 @@ export class RestApiContractsProcessor extends AbstractProcessor<
         continue;
       }
 
-      const sortedContractIds = effectiveContractIdsForAssignee(
-        client.contractIds,
-        client.id,
-        input.discovery,
-      );
-      if (sortedContractIds.length === 0) {
+      const clientAssignments = resolveAssignmentsForAssignee(input.discovery, client.id);
+      if (clientAssignments.length === 0) {
         continue;
       }
 
@@ -157,16 +150,18 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       );
 
       const serviceId = restClientAppServiceId(client.id);
-      for (const contractId of sortedContractIds) {
-        const contract = contractsById.get(contractId) as HttpApiContractRecord | undefined;
+      for (const assignment of clientAssignments) {
+        const contract = contractsById.get(assignment.contractId) as HttpApiContractRecord | undefined;
         this.emitContractAssignment(
           input,
-          contractId,
+          assignment.contractId,
           contract,
+          assignment.basis,
+          assignment.confidence,
           targetFolderId,
           serviceId,
           restApiContractAssignmentLogicalId(
-            httpApiContractInterfaceLogicalId(contractId),
+            httpApiContractInterfaceLogicalId(assignment.contractId),
             client.id,
           ),
           elements,
@@ -212,6 +207,8 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     input: GenerateProcessorInput,
     contractId: string,
     contract: HttpApiContractRecord | undefined,
+    linkBasis: GenerateBasis,
+    linkConfidence: number | undefined,
     folderId: string,
     serviceId: string,
     assignmentLogicalId: string,
@@ -221,8 +218,14 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     emittedRelationIds: Set<string>,
   ): void {
     const interfaceId = httpApiContractInterfaceId(contractId);
-    const basis = contract?.basis ?? "extract";
-    const confidence = contract?.confidence;
+    const contractForInterface =
+      contract === undefined
+        ? undefined
+        : ({
+            ...contract,
+            basis: linkBasis,
+            confidence: linkConfidence,
+          } as HttpApiContractRecord);
 
     if (
       input.archi.getElement(interfaceId) === undefined &&
@@ -231,7 +234,7 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       elements.push(
         buildHttpApiContractInterfaceIntent({
           contractId,
-          contract,
+          contract: contractForInterface,
           folderId,
           generatorCoordinate: GENERATOR_COORDINATE,
         }),
@@ -244,8 +247,8 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       interfaceId,
       serviceId,
       assignmentLogicalId,
-      basis,
-      confidence,
+      linkBasis,
+      linkConfidence,
       relations,
       emittedRelationIds,
     );

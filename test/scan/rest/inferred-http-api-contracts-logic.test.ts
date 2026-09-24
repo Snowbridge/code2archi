@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { buildCodeInventorySnapshot } from "../../../src/code-inventory/code-inventory-snapshot.js";
 import {
   computeClientControllerRank,
   isEffectivelyEmptyEndpoints,
-  isEligibleRestEndpointEntity,
+  isEligibleForInferenceAssignee,
   normalizeRestEndpoint,
 } from "../../../src/scan/rest/inferred-http-api-contracts-logic.js";
 import type { RestClientRecord } from "../../../src/code-inventory/entities/rest-client.js";
@@ -33,13 +34,45 @@ describe("inferred-http-api-contracts-logic", () => {
     assert.equal(rank, 1);
   });
 
-  it("excludes entities with empty contracts and no signals", () => {
+  it("excludes assignees with no endpoint or DTO signals when unassigned", () => {
+    const snapshot = buildCodeInventorySnapshot({
+      scanId: "scan-1",
+      sourceRoot: "/repo",
+      runStartedAt: new Date("2026-01-01T00:00:00Z"),
+      entityArrays: {},
+      linkArrays: { HttpApiContractAssignment: [] },
+    });
     assert.equal(
-      isEligibleRestEndpointEntity({
-        contractIds: [],
-        endpoints: ["GET /"],
-        dataTypeIds: [],
-      }),
+      isEligibleForInferenceAssignee(
+        { id: "ctrl-1", endpoints: ["GET /"], dataTypeIds: [] },
+        snapshot,
+      ),
+      false,
+    );
+  });
+
+  it("excludes assignees that already have HttpApiContractAssignment", () => {
+    const snapshot = buildCodeInventorySnapshot({
+      scanId: "scan-1",
+      sourceRoot: "/repo",
+      runStartedAt: new Date("2026-01-01T00:00:00Z"),
+      entityArrays: {},
+      linkArrays: {
+        HttpApiContractAssignment: [
+          {
+            id: "link-1",
+            contractId: "c-1",
+            assigneeId: "ctrl-1",
+            basis: "extract",
+          },
+        ],
+      },
+    });
+    assert.equal(
+      isEligibleForInferenceAssignee(
+        { id: "ctrl-1", endpoints: ["GET /api/items"], dataTypeIds: [] },
+        snapshot,
+      ),
       false,
     );
   });

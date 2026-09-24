@@ -41,7 +41,6 @@ export function discoverSupplementedRestClientsForModule(
       simpleName: entry.simpleName ?? "",
       fileName: entry.fileName ?? "",
       endpoints: entry.endpoints ?? [],
-      contractIds: entry.contractIds ?? [],
       dataTypeIds: entry.dataTypeIds ?? [],
       origin: "supplement",
     });

@@ -79,10 +79,12 @@ export function discoverJvmDeclarativeRestClientsForModule(
         simpleName: type.simpleName,
         fileName,
         endpoints,
-        contractIds,
         dataTypeIds,
       });
       builder.registerClient(client.toCreateIntent());
+      for (const contractId of contractIds) {
+        builder.registerExtractAssignment(contractId, client.id);
+      }
     }
   }
 

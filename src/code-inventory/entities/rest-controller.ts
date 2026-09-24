@@ -8,7 +8,6 @@ export interface RestControllerCreateIntent {
   readonly applicationModuleId: string;
   readonly fileName: string;
   readonly endpoints: readonly string[];
-  readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
 }
 
@@ -18,7 +17,6 @@ export interface RestControllerNaturalKeys {
   readonly simpleName: string;
   readonly fileName: string;
   readonly endpoints: readonly string[];
-  readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
 }
 
@@ -30,7 +28,6 @@ export class RestController extends Entity {
   readonly applicationModuleId: string;
   readonly fileName: string;
   readonly endpoints: readonly string[];
-  readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
 
   constructor(naturalKeys: RestControllerNaturalKeys) {
@@ -40,7 +37,6 @@ export class RestController extends Entity {
     this.applicationModuleId = naturalKeys.applicationModuleId;
     this.fileName = naturalKeys.fileName;
     this.endpoints = [...naturalKeys.endpoints];
-    this.contractIds = [...naturalKeys.contractIds];
     this.dataTypeIds = [...naturalKeys.dataTypeIds];
   }
 
@@ -51,7 +47,6 @@ export class RestController extends Entity {
       simpleName: "",
       fileName: "",
       endpoints: [],
-      contractIds: [],
       dataTypeIds: [],
     }).id;
   }
@@ -64,7 +59,6 @@ export class RestController extends Entity {
       applicationModuleId: this.applicationModuleId,
       fileName: this.fileName,
       endpoints: this.endpoints,
-      contractIds: this.contractIds,
       dataTypeIds: this.dataTypeIds,
     };
   }
@@ -72,11 +66,7 @@ export class RestController extends Entity {
 
 export interface RestControllerRecord extends DiscoveryEntityBase, RestControllerCreateIntent {}
 
-export const REST_CONTROLLER_MERGE_ARRAY_FIELDS = [
-  "endpoints",
-  "contractIds",
-  "dataTypeIds",
-] as const;
+export const REST_CONTROLLER_MERGE_ARRAY_FIELDS = ["endpoints", "dataTypeIds"] as const;
 
 export const REST_CONTROLLER_SCALAR_FIELDS = [
   "simpleName",

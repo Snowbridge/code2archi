@@ -14,7 +14,6 @@ function clientRecord(origin: RestClientOrigin): DiscoveryEntityRecord {
     simpleName: "Client",
     fileName: "src/main/java/com/example/Client.java",
     endpoints: [],
-    contractIds: [],
     dataTypeIds: [],
     origin,
   }).toCreateIntent();

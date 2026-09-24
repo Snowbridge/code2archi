@@ -64,10 +64,12 @@ export function discoverJvmRestControllersForModule(
         simpleName: type.simpleName,
         fileName,
         endpoints,
-        contractIds,
         dataTypeIds,
       });
       builder.registerController(controller.toCreateIntent());
+      for (const contractId of contractIds) {
+        builder.registerExtractAssignment(contractId, controller.id);
+      }
     }
   }
 
@@ -164,7 +166,6 @@ export function registerSyntheticController(
     simpleName: input.simpleName,
     fileName: input.fileName,
     endpoints: input.endpoints,
-    contractIds: [],
     dataTypeIds: [],
   });
   builder.registerController(controller.toCreateIntent());

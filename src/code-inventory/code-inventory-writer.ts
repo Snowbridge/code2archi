@@ -31,8 +31,8 @@ export const HTTP_API_DATA_TYPE_SCHEMA_ID =
 export const HTTP_API_CONTRACT_SCHEMA_ID =
   `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/HttpApiContract`;
 
-export const INFERRED_HTTP_API_CONTRACT_ASSIGNMENT_SCHEMA_ID =
-  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/InferredHttpApiContractAssignment`;
+export const HTTP_API_CONTRACT_ASSIGNMENT_SCHEMA_ID =
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/HttpApiContractAssignment`;
 
 interface ManifestCollectionEntry {
   readonly path: string;
@@ -106,9 +106,9 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
 };
 
 const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
-  InferredHttpApiContractAssignment: {
-    collectionPath: "inferred-http-api-contract-assignments.json",
-    schemaId: INFERRED_HTTP_API_CONTRACT_ASSIGNMENT_SCHEMA_ID,
+  HttpApiContractAssignment: {
+    collectionPath: "http-api-contract-assignments.json",
+    schemaId: HTTP_API_CONTRACT_ASSIGNMENT_SCHEMA_ID,
     fromEntityType: "HttpApiContract",
     toEntityType: "RestController",
     fromIdField: "contractId",

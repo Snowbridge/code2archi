@@ -3,7 +3,7 @@ import type { HttpApiDataTypeRecord } from "../../../../code-inventory/entities/
 import { HttpApiContract } from "../../../../code-inventory/entities/http-api-contract.js";
 import type { RestClientRecord } from "../../../../code-inventory/entities/rest-client.js";
 import type { RestControllerRecord } from "../../../../code-inventory/entities/rest-controller.js";
-import { InferredHttpApiContractAssignment } from "../../../../code-inventory/links/inferred-http-api-contract-assignment.js";
+import { HttpApiContractAssignment } from "../../../../code-inventory/links/http-api-contract-assignment.js";
 import {
   AbstractProcessor,
   type ProcessorId,
@@ -12,7 +12,7 @@ import {
 import {
   computeClientControllerRank,
   INFERRED_CLIENT_CONTROLLER_RANK_THRESHOLD,
-  isEligibleRestEndpointEntity,
+  isEligibleForInferenceAssignee,
 } from "../../../../scan/rest/inferred-http-api-contracts-logic.js";
 
 interface InferredControllerEntry {
@@ -34,7 +34,7 @@ export class InferredHttpApiContractsProcessor extends AbstractProcessor<
   readonly executionPolicy = "ALWAYS" as const;
 
   readonly description =
-    "Infers HttpApiContract entities and client-controller assignments from endpoint and DTO overlap when declared contractIds are empty.";
+    "Infers HttpApiContract entities and HttpApiContractAssignment links from endpoint and DTO overlap when assignee has no existing assignments.";
 
   protected doProcess(input: ScanAppInput): CreateIntents {
     const dataTypesById = new Map(
@@ -46,12 +46,12 @@ export class InferredHttpApiContractsProcessor extends AbstractProcessor<
 
     const controllers = [...input.listEntities("RestController")]
       .map((record) => record as unknown as RestControllerRecord)
-      .filter((controller) => isEligibleRestEndpointEntity(controller))
+      .filter((controller) => isEligibleForInferenceAssignee(controller, input))
       .sort((left, right) => left.id.localeCompare(right.id));
 
     const clients = [...input.listEntities("RestClient")]
       .map((record) => record as unknown as RestClientRecord)
-      .filter((client) => isEligibleRestEndpointEntity(client))
+      .filter((client) => isEligibleForInferenceAssignee(client, input))
       .sort((left, right) => left.id.localeCompare(right.id));
 
     const inferredControllers: InferredControllerEntry[] = controllers.map((controller) => ({
@@ -60,16 +60,16 @@ export class InferredHttpApiContractsProcessor extends AbstractProcessor<
     }));
 
     const contracts: ReturnType<HttpApiContract["toCreateIntent"]>[] = [];
-    const assignments: ReturnType<InferredHttpApiContractAssignment["toCreateIntent"]>[] = [];
+    const assignments: ReturnType<HttpApiContractAssignment["toCreateIntent"]>[] = [];
 
     for (const entry of inferredControllers) {
       contracts.push(entry.contract.toCreateIntent());
       assignments.push(
-        new InferredHttpApiContractAssignment({
-          contractId: entry.contract.id,
-          assigneeId: entry.controller.id,
-          confidence: 1,
-        }).toCreateIntent(),
+        HttpApiContractAssignment.forInference(
+          entry.contract.id,
+          entry.controller.id,
+          1,
+        ).toCreateIntent(),
       );
     }
 
@@ -80,11 +80,11 @@ export class InferredHttpApiContractsProcessor extends AbstractProcessor<
       }
 
       assignments.push(
-        new InferredHttpApiContractAssignment({
-          contractId: match.contract.id,
-          assigneeId: client.id,
-          confidence: match.rank,
-        }).toCreateIntent(),
+        HttpApiContractAssignment.forInference(
+          match.contract.id,
+          client.id,
+          match.rank,
+        ).toCreateIntent(),
       );
     }
 
@@ -93,7 +93,7 @@ export class InferredHttpApiContractsProcessor extends AbstractProcessor<
       result.entities = { HttpApiContract: contracts };
     }
     if (assignments.length > 0) {
-      result.links = { InferredHttpApiContractAssignment: assignments };
+      result.links = { HttpApiContractAssignment: assignments };
     }
     return result;
   }

@@ -1,6 +1,8 @@
 import type { HttpApiDataTypeRecord } from "../../code-inventory/entities/http-api-data-type.js";
+import type { CodeInventorySnapshot } from "../../code-inventory/code-inventory-snapshot.js";
 import type { RestClientRecord } from "../../code-inventory/entities/rest-client.js";
 import type { RestControllerRecord } from "../../code-inventory/entities/rest-controller.js";
+import { listAssignmentsForAssignee } from "../../code-inventory/resolve-http-api-contract-assignments.js";
 
 export const INFERRED_CLIENT_CONTROLLER_RANK_THRESHOLD = 0.15;
 
@@ -124,12 +126,15 @@ export function computeClientControllerRank(
   return weightedSum / norm;
 }
 
-export function isEligibleRestEndpointEntity(input: {
-  readonly contractIds: readonly string[];
-  readonly endpoints: readonly string[];
-  readonly dataTypeIds: readonly string[];
-}): boolean {
-  if (input.contractIds.length > 0) {
+export function isEligibleForInferenceAssignee(
+  input: {
+    readonly id: string;
+    readonly endpoints: readonly string[];
+    readonly dataTypeIds: readonly string[];
+  },
+  snapshot: CodeInventorySnapshot,
+): boolean {
+  if (listAssignmentsForAssignee(snapshot, input.id).length > 0) {
     return false;
   }
   if (isEffectivelyEmptyEndpoints(input.endpoints) && input.dataTypeIds.length === 0) {

@@ -64,7 +64,17 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
   "scan.transform.rest/inferred-http-api-contracts": ["HttpApiContract"],
 };
 
-/** Scan processors in scan.transform that create link collections (for gap detection). */
+const HTTP_API_CONTRACT_ASSIGNMENT: readonly LinkType[] = ["HttpApiContractAssignment"];
+
+/** Scan processors that create link collections (for gap detection). */
 export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {
-  "scan.transform.rest/inferred-http-api-contracts": ["InferredHttpApiContractAssignment"],
+  "scan.extract.rest.controllers/spring-webmvc": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.controllers/jax-rs": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.controllers/micronaut": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.clients/programmatic-rest-client-components": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.clients/spring-http-exchange": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.clients/retrofit": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.clients/microprofile-rest-client": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.extract.rest.clients/micronaut": HTTP_API_CONTRACT_ASSIGNMENT,
+  "scan.transform.rest/inferred-http-api-contracts": HTTP_API_CONTRACT_ASSIGNMENT,
 };

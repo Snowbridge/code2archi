@@ -120,7 +120,6 @@ function clientIn(
     simpleName,
     fileName: `src/main/java/com/example/api/${simpleName}.java`,
     endpoints: ["GET /api/users"],
-    contractIds: [],
     dataTypeIds: [],
     ...overrides,
   });

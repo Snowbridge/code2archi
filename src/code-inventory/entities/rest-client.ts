@@ -10,7 +10,6 @@ export interface RestClientCreateIntent {
   readonly applicationModuleId: string;
   readonly fileName: string;
   readonly endpoints: readonly string[];
-  readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
   readonly origin: RestClientOrigin;
 }
@@ -21,7 +20,6 @@ export interface RestClientNaturalKeys {
   readonly simpleName: string;
   readonly fileName: string;
   readonly endpoints: readonly string[];
-  readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
   readonly origin?: RestClientOrigin;
 }
@@ -34,7 +32,6 @@ export class RestClient extends Entity {
   readonly applicationModuleId: string;
   readonly fileName: string;
   readonly endpoints: readonly string[];
-  readonly contractIds: readonly string[];
   readonly dataTypeIds: readonly string[];
   readonly origin: RestClientOrigin;
 
@@ -45,7 +42,6 @@ export class RestClient extends Entity {
     this.applicationModuleId = naturalKeys.applicationModuleId;
     this.fileName = naturalKeys.fileName;
     this.endpoints = [...naturalKeys.endpoints];
-    this.contractIds = [...naturalKeys.contractIds];
     this.dataTypeIds = [...naturalKeys.dataTypeIds];
     this.origin = naturalKeys.origin ?? "source";
   }
@@ -57,7 +53,6 @@ export class RestClient extends Entity {
       simpleName: "",
       fileName: "",
       endpoints: [],
-      contractIds: [],
       dataTypeIds: [],
     }).id;
   }
@@ -70,7 +65,6 @@ export class RestClient extends Entity {
       applicationModuleId: this.applicationModuleId,
       fileName: this.fileName,
       endpoints: this.endpoints,
-      contractIds: this.contractIds,
       dataTypeIds: this.dataTypeIds,
       origin: this.origin,
     };
@@ -79,11 +73,7 @@ export class RestClient extends Entity {
 
 export interface RestClientRecord extends DiscoveryEntityBase, RestClientCreateIntent {}
 
-export const REST_CLIENT_MERGE_ARRAY_FIELDS = [
-  "endpoints",
-  "contractIds",
-  "dataTypeIds",
-] as const;
+export const REST_CLIENT_MERGE_ARRAY_FIELDS = ["endpoints", "dataTypeIds"] as const;
 
 export const REST_CLIENT_SCALAR_FIELDS = [
   "simpleName",

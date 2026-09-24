@@ -13,7 +13,6 @@ export interface SupplementedRestClientEntry {
   readonly simpleName?: string;
   readonly fileName?: string;
   readonly endpoints?: readonly string[];
-  readonly contractIds?: readonly string[];
   readonly dataTypeIds?: readonly string[];
 }
 
@@ -56,7 +55,6 @@ export function parseRestClientSupplement(content: string): SupplementedRestClie
       simpleName: typeof record.simpleName === "string" ? record.simpleName : undefined,
       fileName: typeof record.fileName === "string" ? record.fileName : undefined,
       endpoints: arrayOfStrings(record.endpoints),
-      contractIds: arrayOfStrings(record.contractIds),
       dataTypeIds: arrayOfStrings(record.dataTypeIds),
     });
   }

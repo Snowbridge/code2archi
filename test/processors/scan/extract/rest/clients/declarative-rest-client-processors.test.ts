@@ -97,7 +97,9 @@ describe("SpringHttpExchangeProcessor", () => {
     assert.ok(client);
     assert.equal(client.fqcn, "com.example.client.CamundaMetricsClient");
     assert.deepEqual(client.endpoints, ["GET /actuator/camunda/metrics"]);
-    assert.deepEqual(client.contractIds, []);
+    const assignments =
+      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
+    assert.equal(assignments.length, 0);
     assert.ok(
       output.entities?.HttpApiDataType?.some((item) => item.fqcn === "com.example.client.MetricsDto"),
     );
@@ -116,7 +118,9 @@ describe("SpringHttpExchangeProcessor", () => {
       output.entities?.HttpApiContract?.find((item) => item.fqcn === "com.example.client.ItemApi")?.fqcn,
       "com.example.client.ItemApi",
     );
-    assert.ok(client.contractIds.length > 0);
+    const assignments =
+      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
+    assert.ok(assignments.length > 0);
     assert.deepEqual(client.endpoints, []);
   });
 });

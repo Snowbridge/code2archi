@@ -7,10 +7,7 @@ import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-mod
 import { applicationComponentIdForModule } from "../../../../../generate/application-module-components.js";
 import type { GenerateBasis } from "../../../../../generate/archi-element-properties.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
-import {
-  effectiveContractIdsForAssignee,
-  inferredAssignmentConfidenceByContract,
-} from "../../../../../code-inventory/rest-effective-contract-ids.js";
+import { resolveAssignmentsForAssignee } from "../../../../../code-inventory/resolve-http-api-contract-assignments.js";
 import type { CodeInventorySnapshot } from "../../../../../code-inventory/code-inventory-snapshot.js";
 import {
   dedupeAndSortFolderIntents,
@@ -41,7 +38,7 @@ const REQUIRED_PROFILES: readonly ArchiProfile[] = [ProcessesRestQueriesProfile.
 /**
  * Direct Serving relationships from REST controllers to REST clients and to
  * consumer ApplicationComponents, matched by intersection of declared
- * `contractIds`. See
+ * HttpApiContractAssignment links. See
  * documentation/specifications/cli/generate/processors/generate/elements/application/rest/controllers-serving-relations.md.
  */
 export class RestControllersServingRelationsProcessor extends AbstractProcessor<
@@ -175,11 +172,8 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
         continue;
       }
 
-      for (const contractId of effectiveContractIdsForAssignee(
-        client.contractIds,
-        client.id,
-        discovery,
-      )) {
+      for (const assignment of resolveAssignmentsForAssignee(discovery, client.id)) {
+        const contractId = assignment.contractId;
         const bucket = index.get(contractId);
         if (bucket === undefined) {
           index.set(contractId, [client]);
@@ -197,17 +191,14 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
     clientsByContract: ReadonlyMap<string, readonly RestClientRecord[]>,
     discovery: CodeInventorySnapshot,
   ): readonly { client: RestClientRecord; sharedContractIds: readonly string[] }[] {
-    const sortedContractIds = effectiveContractIdsForAssignee(
-      controller.contractIds,
-      controller.id,
-      discovery,
-    );
-    if (sortedContractIds.length === 0) {
+    const controllerAssignments = resolveAssignmentsForAssignee(discovery, controller.id);
+    if (controllerAssignments.length === 0) {
       return [];
     }
 
     const sharedByClientId = new Map<string, { client: RestClientRecord; shared: Set<string> }>();
-    for (const contractId of sortedContractIds) {
+    for (const assignment of controllerAssignments) {
+      const contractId = assignment.contractId;
       for (const client of clientsByContract.get(contractId) ?? []) {
         let entry = sharedByClientId.get(client.id);
         if (entry === undefined) {
@@ -274,23 +265,41 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
     client: RestClientRecord,
     discovery: CodeInventorySnapshot,
   ): { basis: GenerateBasis; confidence?: number } {
-    const declaredShared = sharedContractIds.filter(
-      (contractId) =>
-        controller.contractIds.includes(contractId) && client.contractIds.includes(contractId),
+    const controllerByContract = new Map(
+      resolveAssignmentsForAssignee(discovery, controller.id).map((item) => [
+        item.contractId,
+        item,
+      ]),
     );
-    if (declaredShared.length > 0) {
-      return { basis: "extract" };
-    }
+    const clientByContract = new Map(
+      resolveAssignmentsForAssignee(discovery, client.id).map((item) => [item.contractId, item]),
+    );
 
-    const clientInferred = inferredAssignmentConfidenceByContract(client.id, discovery);
-    let minConfidence = 1;
+    let allExtract = true;
+    let minInferenceConfidence = 1;
+
     for (const contractId of sharedContractIds) {
-      const value = clientInferred.get(contractId);
-      if (value !== undefined && value < minConfidence) {
-        minConfidence = value;
+      const controllerAssignment = controllerByContract.get(contractId);
+      const clientAssignment = clientByContract.get(contractId);
+      if (controllerAssignment === undefined || clientAssignment === undefined) {
+        continue;
+      }
+      if (
+        controllerAssignment.basis !== "extract" ||
+        clientAssignment.basis !== "extract"
+      ) {
+        allExtract = false;
+        const clientConfidence = clientAssignment.confidence ?? 0;
+        if (clientConfidence < minInferenceConfidence) {
+          minInferenceConfidence = clientConfidence;
+        }
       }
     }
-    return { basis: "inference", confidence: minConfidence };
+
+    if (allExtract) {
+      return { basis: "extract" };
+    }
+    return { basis: "inference", confidence: minInferenceConfidence };
   }
 
   private ensureApplicationFolder(

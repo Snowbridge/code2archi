@@ -57,7 +57,9 @@ export const GROUP_ENTITY_ALLOWLIST: Partial<
 /** Mirror of documentation/specifications/code-inventory/entity-types.md § link types */
 export const GROUP_LINK_ALLOWLIST: Partial<
   Record<BuiltInProcessorGroupId, readonly LinkType[]>
-> = {};
+> = {
+  "scan.extract": ["HttpApiContractAssignment"],
+};
 
 function isEntityTypeAllowedForGroup(
   builtInGroupId: BuiltInProcessorGroupId,

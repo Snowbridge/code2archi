@@ -86,7 +86,11 @@ version = '1.0.0'`,
     assert.equal(contracts[0]?.fqcn, "com.example.api.UserContract");
     assert.equal(dataTypes.length, 1);
     assert.equal(dataTypes[0]?.fqcn, "com.example.api.UserDto");
-    assert.equal(controllers[0]?.contractIds[0], contracts[0]?.id);
+    const assignments = output.links?.HttpApiContractAssignment ?? [];
+    assert.equal(assignments.length, 1);
+    assert.equal(assignments[0]?.contractId, contracts[0]?.id);
+    assert.equal(assignments[0]?.assigneeId, controllers[0]?.id);
+    assert.equal(assignments[0]?.basis, "extract");
     assert.equal(controllers[0]?.dataTypeIds[0], dataTypes[0]?.id);
   });
 });

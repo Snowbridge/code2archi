@@ -109,7 +109,6 @@ function clientIn(moduleId: string, simpleName: string) {
     simpleName,
     fileName: `src/main/java/com/example/api/${simpleName}.java`,
     endpoints: ["GET /api/users"],
-    contractIds: [],
     dataTypeIds: [],
   });
 }

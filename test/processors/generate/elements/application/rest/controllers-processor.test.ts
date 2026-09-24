@@ -106,7 +106,6 @@ describe("RestControllersProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users", "GET /actuator/health"],
-      contractIds: [contract.id],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot([repository], [module], [controller], [contract]);
@@ -147,7 +146,6 @@ describe("RestControllersProcessor", () => {
       simpleName: "ItemController",
       fileName: "src/main/java/com/example/api/ItemController.java",
       endpoints: ["POST /api/items"],
-      contractIds: [],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot([repository], [module], [controller]);
@@ -174,7 +172,6 @@ describe("RestControllersProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot([repository], [module], [controller]);
@@ -199,7 +196,6 @@ describe("RestControllersProcessor", () => {
       simpleName: "UserController",
       fileName: "src/main/java/com/example/api/UserController.java",
       endpoints: ["GET /api/users"],
-      contractIds: [],
       dataTypeIds: [],
     });
     const discovery = discoverySnapshot([repository], [module], [controller]);
