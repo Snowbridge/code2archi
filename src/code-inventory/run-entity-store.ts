@@ -63,6 +63,9 @@ function isEntityTypeAllowedForGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   entityType: EntityType,
 ): boolean {
+  if (builtInGroupId === "scan.transform") {
+    return true;
+  }
   return (GROUP_ENTITY_ALLOWLIST[builtInGroupId] ?? []).includes(entityType);
 }
 
@@ -70,6 +73,9 @@ function isLinkTypeAllowedForGroup(
   builtInGroupId: BuiltInProcessorGroupId,
   linkType: LinkType,
 ): boolean {
+  if (builtInGroupId === "scan.transform") {
+    return true;
+  }
   return (GROUP_LINK_ALLOWLIST[builtInGroupId] ?? []).includes(linkType);
 }
 

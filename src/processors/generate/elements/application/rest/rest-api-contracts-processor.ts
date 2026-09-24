@@ -11,7 +11,8 @@ import {
   ensureFolderPath,
   repositoryFolderSegments,
 } from "../../../../../generate/archi-folder-path.js";
-import { buildExtractHttpApiContractInterfaceIntent } from "../../../../../generate/rest-declared-contract-elements.js";
+import { buildHttpApiContractInterfaceIntent } from "../../../../../generate/rest-declared-contract-elements.js";
+import { effectiveContractIdsForAssignee } from "../../../../../code-inventory/rest-effective-contract-ids.js";
 import {
   httpApiContractInterfaceId,
   httpApiContractInterfaceLogicalId,
@@ -103,15 +104,18 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       );
 
       const serviceId = restControllerAppServiceId(controller.id);
-      const sortedContractIds = [...controller.contractIds].sort((left, right) =>
-        left.localeCompare(right),
+      const sortedContractIds = effectiveContractIdsForAssignee(
+        controller.contractIds,
+        controller.id,
+        input.discovery,
       );
 
       for (const contractId of sortedContractIds) {
-        this.emitExtractContract(
+        const contract = contractsById.get(contractId) as HttpApiContractRecord | undefined;
+        this.emitContractAssignment(
           input,
           contractId,
-          contractsById.get(contractId) as HttpApiContractRecord | undefined,
+          contract,
           targetFolderId,
           serviceId,
           restApiContractAssignmentLogicalId(
@@ -134,7 +138,12 @@ export class RestApiContractsProcessor extends AbstractProcessor<
         continue;
       }
 
-      if (client.contractIds.length === 0) {
+      const sortedContractIds = effectiveContractIdsForAssignee(
+        client.contractIds,
+        client.id,
+        input.discovery,
+      );
+      if (sortedContractIds.length === 0) {
         continue;
       }
 
@@ -148,15 +157,12 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       );
 
       const serviceId = restClientAppServiceId(client.id);
-      const sortedContractIds = [...client.contractIds].sort((left, right) =>
-        left.localeCompare(right),
-      );
-
       for (const contractId of sortedContractIds) {
-        this.emitExtractContract(
+        const contract = contractsById.get(contractId) as HttpApiContractRecord | undefined;
+        this.emitContractAssignment(
           input,
           contractId,
-          contractsById.get(contractId) as HttpApiContractRecord | undefined,
+          contract,
           targetFolderId,
           serviceId,
           restApiContractAssignmentLogicalId(
@@ -202,7 +208,7 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     return targetFolder.folderId;
   }
 
-  private emitExtractContract(
+  private emitContractAssignment(
     input: GenerateProcessorInput,
     contractId: string,
     contract: HttpApiContractRecord | undefined,
@@ -215,13 +221,15 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     emittedRelationIds: Set<string>,
   ): void {
     const interfaceId = httpApiContractInterfaceId(contractId);
+    const basis = contract?.basis ?? "extract";
+    const confidence = contract?.confidence;
 
     if (
       input.archi.getElement(interfaceId) === undefined &&
       !emittedElementIds.has(interfaceId)
     ) {
       elements.push(
-        buildExtractHttpApiContractInterfaceIntent({
+        buildHttpApiContractInterfaceIntent({
           contractId,
           contract,
           folderId,
@@ -236,6 +244,8 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       interfaceId,
       serviceId,
       assignmentLogicalId,
+      basis,
+      confidence,
       relations,
       emittedRelationIds,
     );
@@ -246,6 +256,8 @@ export class RestApiContractsProcessor extends AbstractProcessor<
     interfaceId: string,
     serviceId: string,
     assignmentLogicalId: string,
+    basis: "extract" | "inference",
+    confidence: number | undefined,
     relations: ArchiRelationshipCreateIntent[],
     emittedRelationIds: Set<string>,
   ): void {
@@ -262,6 +274,8 @@ export class RestApiContractsProcessor extends AbstractProcessor<
       logicalId: assignmentLogicalId,
       generatorCoordinate: GENERATOR_COORDINATE,
       slot: "rest-api-contract-assignment",
+      basis,
+      confidence,
     })) {
       assignmentBuilder = assignmentBuilder.property(property.key, property.value);
     }

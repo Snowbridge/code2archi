@@ -5,7 +5,13 @@ import { ProcessesRestQueriesProfile } from "../../../../../archimate-model/prof
 import { ServingRelationship } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import type { ArchiRelationshipCreateIntent } from "../../../../../archimate-model/relationships/archi-relationship.js";
 import { applicationComponentIdForModule } from "../../../../../generate/application-module-components.js";
+import type { GenerateBasis } from "../../../../../generate/archi-element-properties.js";
 import { standardGenerateElementProperties } from "../../../../../generate/archi-element-properties.js";
+import {
+  effectiveContractIdsForAssignee,
+  inferredAssignmentConfidenceByContract,
+} from "../../../../../code-inventory/rest-effective-contract-ids.js";
+import type { CodeInventorySnapshot } from "../../../../../code-inventory/code-inventory-snapshot.js";
 import {
   dedupeAndSortFolderIntents,
   ensureFolderPath,
@@ -82,7 +88,11 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
       .map((record) => record as unknown as RestClientRecord)
       .sort((left, right) => left.id.localeCompare(right.id));
 
-    const clientsByContract = this.buildClientsByContract(clients, modulesById);
+    const clientsByContract = this.buildClientsByContract(
+      clients,
+      modulesById,
+      input.discovery,
+    );
 
     const applicationFolderId = input.archi.getPredefinedFolderId("application");
 
@@ -104,16 +114,34 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
       );
 
       const controllerServiceId = restControllerAppServiceId(controller.id);
-      const matchedClients = this.findMatchedClients(controller, clientsByContract);
+      const matchedClients = this.findMatchedClients(
+        controller,
+        clientsByContract,
+        input.discovery,
+      );
       if (matchedClients.length === 0) {
         continue;
       }
 
-      for (const { client } of matchedClients) {
-        this.emitServingToClient(input, controller, client, controllerServiceId, relations, emittedRelationIds);
+      for (const { client, sharedContractIds } of matchedClients) {
+        const servingMeta = this.resolveServingMetadata(
+          sharedContractIds,
+          controller,
+          client,
+          input.discovery,
+        );
+        this.emitServingToClient(
+          input,
+          controller,
+          client,
+          controllerServiceId,
+          servingMeta,
+          relations,
+          emittedRelationIds,
+        );
       }
 
-      for (const record of this.collectComponentKeys(matchedClients)) {
+      for (const record of this.collectComponentKeys(matchedClients, controller, input.discovery)) {
         this.emitServingToComponent(
           input,
           controller,
@@ -138,6 +166,7 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
   private buildClientsByContract(
     clients: readonly RestClientRecord[],
     modulesById: ReadonlyMap<string, ApplicationModuleRecord>,
+    discovery: CodeInventorySnapshot,
   ): ReadonlyMap<string, readonly RestClientRecord[]> {
     const index = new Map<string, RestClientRecord[]>();
 
@@ -146,8 +175,10 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
         continue;
       }
 
-      for (const contractId of [...new Set(client.contractIds)].sort((left, right) =>
-        left.localeCompare(right),
+      for (const contractId of effectiveContractIdsForAssignee(
+        client.contractIds,
+        client.id,
+        discovery,
       )) {
         const bucket = index.get(contractId);
         if (bucket === undefined) {
@@ -164,9 +195,12 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
   private findMatchedClients(
     controller: RestControllerRecord,
     clientsByContract: ReadonlyMap<string, readonly RestClientRecord[]>,
+    discovery: CodeInventorySnapshot,
   ): readonly { client: RestClientRecord; sharedContractIds: readonly string[] }[] {
-    const sortedContractIds = [...new Set(controller.contractIds)].sort((left, right) =>
-      left.localeCompare(right),
+    const sortedContractIds = effectiveContractIdsForAssignee(
+      controller.contractIds,
+      controller.id,
+      discovery,
     );
     if (sortedContractIds.length === 0) {
       return [];
@@ -194,20 +228,69 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
 
   private collectComponentKeys(
     matchedClients: readonly { client: RestClientRecord; sharedContractIds: readonly string[] }[],
-  ): readonly { contractId: string; consumerModuleId: string }[] {
-    const keys = new Set<string>();
+    controller: RestControllerRecord,
+    discovery: CodeInventorySnapshot,
+  ): readonly {
+    contractId: string;
+    consumerModuleId: string;
+    basis: GenerateBasis;
+    confidence?: number;
+  }[] {
+    const keys = new Map<
+      string,
+      { contractId: string; consumerModuleId: string; basis: GenerateBasis; confidence?: number }
+    >();
     for (const { client, sharedContractIds } of matchedClients) {
       for (const contractId of sharedContractIds) {
-        keys.add(contractId + "\u0000" + client.applicationModuleId);
+        const key = contractId + "\u0000" + client.applicationModuleId;
+        if (keys.has(key)) {
+          continue;
+        }
+        const meta = this.resolveServingMetadata(
+          [contractId],
+          controller,
+          client,
+          discovery,
+        );
+        keys.set(key, {
+          contractId,
+          consumerModuleId: client.applicationModuleId,
+          basis: meta.basis,
+          confidence: meta.confidence,
+        });
       }
     }
 
-    return [...keys]
-      .sort((left, right) => left.localeCompare(right))
-      .map((key) => {
-        const [contractId, consumerModuleId] = key.split("\u0000");
-        return { contractId: contractId!, consumerModuleId: consumerModuleId! };
-      });
+    return [...keys.values()].sort((left, right) =>
+      (left.contractId + left.consumerModuleId).localeCompare(
+        right.contractId + right.consumerModuleId,
+      ),
+    );
+  }
+
+  private resolveServingMetadata(
+    sharedContractIds: readonly string[],
+    controller: RestControllerRecord,
+    client: RestClientRecord,
+    discovery: CodeInventorySnapshot,
+  ): { basis: GenerateBasis; confidence?: number } {
+    const declaredShared = sharedContractIds.filter(
+      (contractId) =>
+        controller.contractIds.includes(contractId) && client.contractIds.includes(contractId),
+    );
+    if (declaredShared.length > 0) {
+      return { basis: "extract" };
+    }
+
+    const clientInferred = inferredAssignmentConfidenceByContract(client.id, discovery);
+    let minConfidence = 1;
+    for (const contractId of sharedContractIds) {
+      const value = clientInferred.get(contractId);
+      if (value !== undefined && value < minConfidence) {
+        minConfidence = value;
+      }
+    }
+    return { basis: "inference", confidence: minConfidence };
   }
 
   private ensureApplicationFolder(
@@ -234,6 +317,7 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
     controller: RestControllerRecord,
     client: RestClientRecord,
     controllerServiceId: string,
+    servingMeta: { basis: GenerateBasis; confidence?: number },
     relations: ArchiRelationshipCreateIntent[],
     emittedRelationIds: Set<string>,
   ): void {
@@ -252,6 +336,8 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
       logicalId: restControllerServesRestClientLogicalId(controller.id, client.id),
       generatorCoordinate: GENERATOR_COORDINATE,
       slot: "rest-controller-serves-rest-client",
+      basis: servingMeta.basis,
+      confidence: servingMeta.confidence,
     })) {
       builder = builder.property(property.key, property.value);
     }
@@ -263,7 +349,12 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
   private emitServingToComponent(
     input: GenerateProcessorInput,
     controller: RestControllerRecord,
-    record: { contractId: string; consumerModuleId: string },
+    record: {
+      contractId: string;
+      consumerModuleId: string;
+      basis: GenerateBasis;
+      confidence?: number;
+    },
     controllerServiceId: string,
     relations: ArchiRelationshipCreateIntent[],
     emittedRelationIds: Set<string>,
@@ -291,6 +382,8 @@ export class RestControllersServingRelationsProcessor extends AbstractProcessor<
       ),
       generatorCoordinate: GENERATOR_COORDINATE,
       slot: "rest-controller-serves-app-component",
+      basis: record.basis,
+      confidence: record.confidence,
     })) {
       builder = builder.property(property.key, property.value);
     }

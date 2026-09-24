@@ -61,7 +61,10 @@ export const SCAN_PROCESSOR_ENTITY_TYPES: Readonly<Record<string, readonly Entit
     "HttpApiContract",
   ],
   "scan.extract.rest.clients/supplemented-rest-clients": ["RestClient"],
+  "scan.transform.rest/inferred-http-api-contracts": ["HttpApiContract"],
 };
 
 /** Scan processors in scan.transform that create link collections (for gap detection). */
-export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {};
+export const SCAN_PROCESSOR_LINK_TYPES: Readonly<Record<string, readonly LinkType[]>> = {
+  "scan.transform.rest/inferred-http-api-contracts": ["InferredHttpApiContractAssignment"],
+};

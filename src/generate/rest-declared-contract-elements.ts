@@ -14,7 +14,7 @@ import {
 
 const MISSING_CONTRACT_NAME = "API contract";
 
-export function buildExtractHttpApiContractInterfaceIntent(input: {
+export function buildHttpApiContractInterfaceIntent(input: {
   contractId: string;
   contract: HttpApiContractRecord | undefined;
   folderId: string;
@@ -23,6 +23,8 @@ export function buildExtractHttpApiContractInterfaceIntent(input: {
   const interfaceId = httpApiContractInterfaceId(input.contractId);
   const interfaceLogicalId = httpApiContractInterfaceLogicalId(input.contractId);
   const interfaceName = input.contract?.simpleName ?? MISSING_CONTRACT_NAME;
+  const basis = input.contract?.basis ?? "extract";
+  const confidence = input.contract?.confidence;
 
   let interfaceBuilder = ApplicationInterface.withId(interfaceId)
     .name(interfaceName)
@@ -33,6 +35,8 @@ export function buildExtractHttpApiContractInterfaceIntent(input: {
     logicalId: interfaceLogicalId,
     generatorCoordinate: input.generatorCoordinate,
     slot: "rest-api-contract-interface",
+    basis,
+    confidence,
   })) {
     interfaceBuilder = interfaceBuilder.property(property.key, property.value);
   }
@@ -48,4 +52,11 @@ export function buildExtractHttpApiContractInterfaceIntent(input: {
         ];
 
   return withEntityDebugProperties(interfaceBuilder.build().toCreateIntent(), debugSources);
+}
+
+/** @deprecated Use buildHttpApiContractInterfaceIntent */
+export function buildExtractHttpApiContractInterfaceIntent(
+  input: Parameters<typeof buildHttpApiContractInterfaceIntent>[0],
+): ArchiElementCreateIntent {
+  return buildHttpApiContractInterfaceIntent(input);
 }

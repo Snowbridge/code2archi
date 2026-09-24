@@ -9,6 +9,7 @@ import { QuarkusVertxProcessor } from "../../processors/scan/extract/rest/contro
 import { KtorProcessor } from "../../processors/scan/extract/rest/controllers/ktor-processor.js";
 import { ProgrammaticRestClientComponentsProcessor } from "../../processors/scan/extract/rest/clients/programmatic-rest-client-components-processor.js";
 import { SupplementedRestClientComponentsProcessor } from "../../processors/scan/extract/rest/clients/supplemented-rest-client-components-processor.js";
+import { InferredHttpApiContractsProcessor } from "../../processors/scan/transform/rest/inferred-http-api-contracts-processor.js";
 import { SpringHttpExchangeProcessor } from "../../processors/scan/extract/rest/clients/spring-http-exchange-processor.js";
 import { RetrofitProcessor } from "../../processors/scan/extract/rest/clients/retrofit-processor.js";
 import { MicroProfileRestClientProcessor } from "../../processors/scan/extract/rest/clients/microprofile-rest-client-processor.js";
@@ -44,6 +45,7 @@ processorRegistry.register(new RetrofitProcessor());
 processorRegistry.register(new MicroProfileRestClientProcessor());
 processorRegistry.register(new MicronautClientProcessor());
 processorRegistry.register(new SupplementedRestClientComponentsProcessor());
+processorRegistry.register(new InferredHttpApiContractsProcessor());
 processorRegistry.register(new CodeRepositoriesProcessor());
 processorRegistry.register(new SyssoftForBuildSystemsAndRuntimesProcessor());
 processorRegistry.register(new SyssoftForNoBuildOrRuntimeToolsProcessor());

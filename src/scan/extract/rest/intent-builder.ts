@@ -17,7 +17,7 @@ export class RestDiscoveryIntentBuilder {
   }
 
   registerContract(fqcn: string): string {
-    const entity = new HttpApiContract({ fqcn });
+    const entity = new HttpApiContract({ fqcn, basis: "extract" });
     this.contracts.set(entity.id, entity.toCreateIntent());
     return entity.id;
   }

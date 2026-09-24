@@ -31,6 +31,9 @@ export const HTTP_API_DATA_TYPE_SCHEMA_ID =
 export const HTTP_API_CONTRACT_SCHEMA_ID =
   `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/HttpApiContract`;
 
+export const INFERRED_HTTP_API_CONTRACT_ASSIGNMENT_SCHEMA_ID =
+  `${CODE_INVENTORY_OPENAPI_ID}#/components/schemas/InferredHttpApiContractAssignment`;
+
 interface ManifestCollectionEntry {
   readonly path: string;
   readonly contentType: "entities" | "many-to-many";
@@ -102,7 +105,16 @@ const ENTITY_COLLECTION_REGISTRY: Record<EntityType, EntityCollectionDef> = {
   },
 };
 
-const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {};
+const LINK_COLLECTION_REGISTRY: Record<LinkType, LinkCollectionDef> = {
+  InferredHttpApiContractAssignment: {
+    collectionPath: "inferred-http-api-contract-assignments.json",
+    schemaId: INFERRED_HTTP_API_CONTRACT_ASSIGNMENT_SCHEMA_ID,
+    fromEntityType: "HttpApiContract",
+    toEntityType: "RestController",
+    fromIdField: "contractId",
+    toIdField: "assigneeId",
+  },
+};
 
 function getEntityCollectionDef(entityType: EntityType): EntityCollectionDef {
   return ENTITY_COLLECTION_REGISTRY[entityType];
