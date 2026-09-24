@@ -5,7 +5,10 @@ import {
   AbstractProcessor,
   type ProcessorId,
 } from "../../../../../platform/processors/processor.js";
-import { forEachRepository } from "../../../../../platform/cli-progress/index.js";
+import {
+  forEachRepository,
+  tickRepositoryProgress,
+} from "../../../../../platform/cli-progress/index.js";
 import { discoverSupplementedRestClientsForModule } from "../../../../../scan/extract/rest/clients/discover-supplemented-rest-clients-module.js";
 import {
   indexSupplementedRestClientsByFqcn,
@@ -42,11 +45,13 @@ export class SupplementedRestClientComponentsProcessor extends AbstractProcessor
       isRestClientSupplementBasename(ref.basename),
     );
     if (restClientRefs.length === 0) {
+      tickRepositoryProgress(input);
       return builder.build();
     }
 
     const entriesByFqcn = this.loadSupplementEntries(restClientRefs);
     if (entriesByFqcn === undefined) {
+      tickRepositoryProgress(input);
       return builder.build();
     }
 

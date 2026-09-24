@@ -5,7 +5,7 @@ export {
   processorGroupFlowStep,
   scopeDiscoveryFlowStep,
 } from "./flow-progress-steps.js";
-export { forEachRepository } from "./for-each-repository.js";
+export { forEachRepository, tickRepositoryProgress } from "./for-each-repository.js";
 export { noopFlowProgress } from "./noop-flow-progress.js";
 export type {
   CreateFlowProgressOptions,

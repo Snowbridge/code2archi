@@ -10,3 +10,8 @@ export function forEachRepository(
     input.progress?.tick(1);
   }
 }
+
+/** One Extract progress tick per repository when the processor skips repository iteration. */
+export function tickRepositoryProgress(input: ScanAppInput): void {
+  forEachRepository(input, () => {});
+}
