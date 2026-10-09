@@ -33,6 +33,7 @@ export const scanCommand: CommandModule = {
       })
       .option("force", {
         type: "boolean",
+        alias: "f",
         default: false,
         describe: "Overwrite non-empty output directory",
       })

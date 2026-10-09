@@ -26,6 +26,7 @@ export const generateCommand: CommandModule = {
       })
       .option("force", {
         type: "boolean",
+        alias: "f",
         default: false,
         describe: "Overwrite existing output file",
       })
