@@ -15,6 +15,7 @@ import { RetrofitProcessor } from "../../processors/scan/extract/rest/clients/re
 import { MicroProfileRestClientProcessor } from "../../processors/scan/extract/rest/clients/microprofile-rest-client-processor.js";
 import { MicronautClientProcessor } from "../../processors/scan/extract/rest/clients/micronaut-client-processor.js";
 import { FeignClientsProcessor } from "../../processors/scan/extract/rest/clients/feign-clients-processor.js";
+import { FeignProgrammaticBeansProcessor } from "../../processors/scan/extract/rest/clients/feign-programmatic-beans-processor.js";
 import { AppComponentsFromModulesProcessor } from "../../processors/generate/elements/application/app-components-from-modules-processor.js";
 import { LinkBuildTimeDependencyAggregationProcessor } from "../../processors/generate/elements/application/link-build-time-dependency-aggregation-processor.js";
 import { RestControllersProcessor } from "../../processors/generate/elements/application/rest/controllers-processor.js";
@@ -46,6 +47,7 @@ processorRegistry.register(new RetrofitProcessor());
 processorRegistry.register(new MicroProfileRestClientProcessor());
 processorRegistry.register(new MicronautClientProcessor());
 processorRegistry.register(new FeignClientsProcessor());
+processorRegistry.register(new FeignProgrammaticBeansProcessor());
 processorRegistry.register(new SupplementedRestClientComponentsProcessor());
 processorRegistry.register(new InferredHttpApiContractsProcessor());
 processorRegistry.register(new CodeRepositoriesProcessor());
