@@ -14,7 +14,7 @@ export class FeignProgrammaticBeansProcessor extends AbstractProcessor<ScanAppIn
     artifactId: "feign-programmatic-beans",
   };
 
-  readonly version = "0.1.0";
+  readonly version = "0.2.0";
 
   readonly executionPolicy = "ALWAYS" as const;
 

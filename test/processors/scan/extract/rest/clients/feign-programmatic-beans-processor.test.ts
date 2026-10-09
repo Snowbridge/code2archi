@@ -88,29 +88,45 @@ function createScanStore(root: string, fixtureSubdir: string): RunEntityStore {
   return store;
 }
 
+function assertTwoContracts(
+  output: ReturnType<FeignProgrammaticBeansProcessor["process"]>,
+  clientId: string,
+  returnContractFqcn: string,
+  builderContractFqcn: string,
+): void {
+  assert.ok(
+    output.entities?.HttpApiContract?.some((item) => item.fqcn === returnContractFqcn),
+  );
+  assert.ok(
+    output.entities?.HttpApiContract?.some((item) => item.fqcn === builderContractFqcn),
+  );
+  const assignments =
+    output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === clientId) ?? [];
+  assert.equal(assignments.length, 2);
+}
+
 describe("FeignProgrammaticBeansProcessor", () => {
-  it("path A: discovers FeignClientBuilder @Bean with contract assignment", () => {
+  it("path A: discovers FeignClientBuilder @Bean with surrogate fqcn and two contracts", () => {
     const root = createTestTempDir("c2a-feign-prog-a-");
     bootstrapProject(root);
     const store = createScanStore(root, "path-a-spring-builder");
 
     const output = new FeignProgrammaticBeansProcessor().process(store.snapshot());
     const client = output.entities?.RestClient?.find(
-      (item) => item.fqcn === "com.example.client.WrappedDaemonClient",
+      (item) => item.fqcn === "com.example.config.FeignClientsConfiguration#daemonClient",
     );
 
     assert.ok(client);
+    assert.equal(client.simpleName, "daemonClient");
     assert.deepEqual(client.endpoints, []);
     assert.deepEqual(client.dataTypeIds, []);
     assert.ok(client.fileName.includes("FeignClientsConfiguration.java"));
-    assert.equal(
-      output.entities?.HttpApiContract?.find((item) => item.fqcn === "com.example.client.DaemonApi")
-        ?.fqcn,
+    assertTwoContracts(
+      output,
+      client.id,
+      "com.example.client.WrappedDaemonClient",
       "com.example.client.DaemonApi",
     );
-    const assignments =
-      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
-    assert.equal(assignments.length, 1);
     assert.equal(output.entities?.HttpApiDataType?.length ?? 0, 0);
   });
 
@@ -121,13 +137,17 @@ describe("FeignProgrammaticBeansProcessor", () => {
 
     const output = new FeignProgrammaticBeansProcessor().process(store.snapshot());
     const client = output.entities?.RestClient?.find(
-      (item) => item.fqcn === "com.example.client.WrappedDaemonClient",
+      (item) => item.fqcn === "com.example.config.FeignLocalVarConfiguration#daemonClientLocal",
     );
 
     assert.ok(client);
-    const assignments =
-      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
-    assert.equal(assignments.length, 1);
+    assert.equal(client.simpleName, "daemonClientLocal");
+    assertTwoContracts(
+      output,
+      client.id,
+      "com.example.client.WrappedDaemonClient",
+      "com.example.client.DaemonApi",
+    );
   });
 
   it("path B: discovers Feign.builder().target() Kotlin @Bean", () => {
@@ -137,18 +157,17 @@ describe("FeignProgrammaticBeansProcessor", () => {
 
     const output = new FeignProgrammaticBeansProcessor().process(store.snapshot());
     const client = output.entities?.RestClient?.find(
-      (item) => item.fqcn === "com.example.client.LegacyGateway",
+      (item) => item.fqcn === "com.example.config.LegacyFeignConfiguration#legacyClient",
     );
 
     assert.ok(client);
+    assert.equal(client.simpleName, "legacyClient");
     assert.deepEqual(client.endpoints, []);
-    assert.equal(
-      output.entities?.HttpApiContract?.find((item) => item.fqcn === "com.example.client.LegacyApi")
-        ?.fqcn,
+    assertTwoContracts(
+      output,
+      client.id,
+      "com.example.client.LegacyGateway",
       "com.example.client.LegacyApi",
     );
-    const assignments =
-      output.links?.HttpApiContractAssignment?.filter((link) => link.assigneeId === client.id) ?? [];
-    assert.equal(assignments.length, 1);
   });
 });

@@ -67,40 +67,43 @@ export function discoverFeignProgrammaticBeansForModule(
         if (returnExpression === undefined) {
           continue;
         }
-        const contractFqcn = resolveContractFromExpression(
+        const builderContractFqcn = resolveBuilderContractFqcn(
           returnExpression,
           importContext,
           language,
           parameters,
         );
-        if (contractFqcn === undefined) {
+        if (builderContractFqcn === undefined) {
           continue;
         }
-        const clientFqcn = resolveClientFqcn(
+        const returnContractFqcn = resolveTypeFqcnFromSignature(
           method.returnType,
           importContext,
           language,
           moduleTypeIndex,
         );
-        if (clientFqcn === undefined) {
-          logger.warn("feign programmatic bean: unresolvable client return type", {
-            fileName,
-            method: method.name,
-          });
-          continue;
-        }
+        const clientFqcn = buildBeanRestClientFqcn(type.fqcn, method.name);
         const client = new RestClient({
           applicationModuleId: module.id,
           fqcn: clientFqcn,
-          simpleName: simpleNameFromFqcn(clientFqcn),
+          simpleName: method.name,
           fileName,
           endpoints: [],
           dataTypeIds: [],
           origin: "source",
         });
         builder.registerClient(client.toCreateIntent());
-        const contractId = builder.registerContract(contractFqcn);
-        builder.registerExtractAssignment(contractId, client.id);
+        const contractFqcns = [
+          ...new Set(
+            [returnContractFqcn, builderContractFqcn].filter(
+              (fqcn): fqcn is string => fqcn !== undefined,
+            ),
+          ),
+        ];
+        for (const contractFqcn of contractFqcns) {
+          const contractId = builder.registerContract(contractFqcn);
+          builder.registerExtractAssignment(contractId, client.id);
+        }
       }
     }
   }
@@ -136,7 +139,11 @@ function buildImportContext(source: string, language: "java" | "kotlin"): JvmImp
   return { packageName, imports };
 }
 
-function resolveClientFqcn(
+export function buildBeanRestClientFqcn(enclosingFqcn: string, methodName: string): string {
+  return `${enclosingFqcn}#${methodName}`;
+}
+
+function resolveTypeFqcnFromSignature(
   returnTypeText: string,
   importContext: JvmImportContext,
   language: "java" | "kotlin",
@@ -156,11 +163,6 @@ function resolveClientFqcn(
   } catch {
     return undefined;
   }
-}
-
-function simpleNameFromFqcn(fqcn: string): string {
-  const lastDot = fqcn.lastIndexOf(".");
-  return lastDot >= 0 ? fqcn.slice(lastDot + 1) : fqcn;
 }
 
 function simpleNameFromTypeText(typeText: string): string {
@@ -486,7 +488,7 @@ function resolveJavaLocalVariableReturn(body: SyntaxNode): SyntaxNode | undefine
   return declarations.get(returnIdentifier);
 }
 
-function resolveContractFromExpression(
+function resolveBuilderContractFqcn(
   expression: SyntaxNode,
   importContext: JvmImportContext,
   language: "java" | "kotlin",
