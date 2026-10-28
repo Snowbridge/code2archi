@@ -33,6 +33,23 @@ export interface StandardGenerateElementPropertiesInput {
   readonly confidence?: number;
 }
 
+export interface StandardGenerateViewPropertiesInput {
+  readonly logicalId: string;
+  readonly generatorCoordinate: string;
+  readonly basis?: GenerateBasis;
+}
+
+export function standardGenerateViewProperties(
+  input: StandardGenerateViewPropertiesInput,
+): readonly ArchiProperty[] {
+  return [
+    { key: "c2a:Id", value: input.logicalId },
+    { key: "c2a:basis", value: input.basis ?? "extract" },
+    { key: "c2a:schema", value: packageVersion },
+    { key: "c2a:generator", value: input.generatorCoordinate },
+  ];
+}
+
 export function standardGenerateElementProperties(
   input: StandardGenerateElementPropertiesInput,
 ): readonly ArchiProperty[] {

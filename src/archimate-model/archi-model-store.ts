@@ -397,6 +397,26 @@ export class ArchiModelStore {
         );
       }
     }
+
+    for (const element of this.elements.values()) {
+      if (element.conceptType !== "ArchimateDiagramModel") {
+        continue;
+      }
+      for (const diagramObject of element.diagramObjects ?? []) {
+        if (!this.elements.has(diagramObject.archimateElement)) {
+          throw new Error(
+            `DiagramObject ${diagramObject.id} references missing archimateElement: ${diagramObject.archimateElement}`,
+          );
+        }
+        for (const connection of diagramObject.sourceConnections) {
+          if (!this.relations.has(connection.archimateRelationship)) {
+            throw new Error(
+              `Diagram connection ${connection.id} references missing relationship: ${connection.archimateRelationship}`,
+            );
+          }
+        }
+      }
+    }
   }
 
   pruneDanglingRelationships(): ArchiRelationshipCreateIntent[] {

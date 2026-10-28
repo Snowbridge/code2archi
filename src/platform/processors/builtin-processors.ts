@@ -18,6 +18,7 @@ import { FeignClientsProcessor } from "../../processors/scan/extract/rest/client
 import { FeignProgrammaticBeansProcessor } from "../../processors/scan/extract/rest/clients/feign-programmatic-beans-processor.js";
 import { AppComponentsFromModulesProcessor } from "../../processors/generate/elements/application/app-components-from-modules-processor.js";
 import { LinkBuildTimeDependencyAggregationProcessor } from "../../processors/generate/elements/application/link-build-time-dependency-aggregation-processor.js";
+import { CyclicalDependenciesProcessor } from "../../processors/generate/views/application/cyclical-dependencies-processor.js";
 import { RestControllersProcessor } from "../../processors/generate/elements/application/rest/controllers-processor.js";
 import { RestControllersServingRelationsProcessor } from "../../processors/generate/elements/application/rest/controllers-serving-relations-processor.js";
 import { RestLibModuleClientsProcessor } from "../../processors/generate/elements/application/rest/lib-module-clients-processor.js";
@@ -60,3 +61,4 @@ processorRegistry.register(new RestLibModuleClientsProcessor());
 processorRegistry.register(new RestAppComponentClientsProcessor());
 processorRegistry.register(new RestApiContractsProcessor());
 processorRegistry.register(new LinkBuildTimeDependencyAggregationProcessor());
+processorRegistry.register(new CyclicalDependenciesProcessor());

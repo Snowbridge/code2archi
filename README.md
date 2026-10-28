@@ -180,7 +180,7 @@ The README above describes the **current slice** of the vision. The table below 
 | **Inter-service links** | HTTP clients, message producers/consumers, cross-service dependencies in the model | Entity types (MessageConsumer, MessageProducer) reserved; no scan/generate processors yet |
 | **JavaScript / TypeScript** | Source-level discovery alongside JVM languages | npm **module assembly** only; no JS/TS source parsing yet |
 | **Technology inventory** | Broad runtime, framework, and infra-pattern coverage (databases, messaging, deployment) | Limited to repo/module structure, versions from build files, runtime catalog |
-| **Diagrams** | `generate.views` — layout diagrams in Archi | Processor group exists; **no view processors** registered |
+| **Diagrams** | `generate.views` — layout diagrams in Archi | 1 view processor(s) registered |
 | **Plugins** | Extend scan/generate without forking core | Processor registry is internal; **plugin host API not shipped** |
 | **Run configuration** | `config` command, merged CLI + file defaults | Not specified |
 | **Element slot coverage** | All documented `generate.elements` slots materialised in `.archimate` | 15/19 documented element slots implemented |

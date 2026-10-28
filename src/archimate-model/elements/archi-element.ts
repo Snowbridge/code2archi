@@ -1,4 +1,8 @@
 import type { ConceptType } from "../concept-types.js";
+import type {
+  ArchiDiagramObject,
+  ArchimateDiagramModelFields,
+} from "../diagrams/archi-diagram-content.js";
 
 export interface ArchiProperty {
   readonly key: string;
@@ -16,6 +20,8 @@ export interface ArchiElementFields {
 
 export interface ArchiElementCreateIntent extends ArchiElementFields {
   readonly conceptType: ConceptType;
+  readonly viewpoint?: string;
+  readonly diagramObjects?: readonly ArchiDiagramObject[];
 }
 
 export abstract class ArchiElement {
@@ -26,8 +32,10 @@ export abstract class ArchiElement {
   readonly documentation?: string;
   readonly properties?: readonly ArchiProperty[];
   readonly profileIds?: readonly string[];
+  readonly viewpoint?: string;
+  readonly diagramObjects?: readonly ArchiDiagramObject[];
 
-  protected constructor(conceptType: ConceptType, fields: ArchiElementFields) {
+  protected constructor(conceptType: ConceptType, fields: ArchiElementFields, diagram?: ArchimateDiagramModelFields) {
     this.conceptType = conceptType;
     this.id = fields.id;
     this.name = fields.name;
@@ -40,6 +48,10 @@ export abstract class ArchiElement {
     }
     if (fields.profileIds !== undefined && fields.profileIds.length > 0) {
       this.profileIds = [...fields.profileIds];
+    }
+    if (diagram !== undefined) {
+      this.viewpoint = diagram.viewpoint;
+      this.diagramObjects = [...diagram.diagramObjects];
     }
   }
 
@@ -55,6 +67,10 @@ export abstract class ArchiElement {
         : {}),
       ...(this.profileIds && this.profileIds.length > 0
         ? { profileIds: [...this.profileIds] }
+        : {}),
+      ...(this.viewpoint ? { viewpoint: this.viewpoint } : {}),
+      ...(this.diagramObjects && this.diagramObjects.length > 0
+        ? { diagramObjects: [...this.diagramObjects] }
         : {}),
     };
   }
@@ -120,8 +136,12 @@ class ConceptElementBuilder<T extends ConceptType> {
 }
 
 class ConceptElement<T extends ConceptType> extends ArchiElement {
-  constructor(conceptType: T, fields: ArchiElementFields) {
-    super(conceptType, fields);
+  constructor(
+    conceptType: T,
+    fields: ArchiElementFields,
+    diagram?: ArchimateDiagramModelFields,
+  ) {
+    super(conceptType, fields, diagram);
   }
 }
 
@@ -183,4 +203,83 @@ export const Facility = defineConceptClass("Facility");
 export const DistributionNetwork = defineConceptClass("DistributionNetwork");
 export const Material = defineConceptClass("Material");
 
-export const ArchimateDiagramModel = defineConceptClass("ArchimateDiagramModel");
+class ArchimateDiagramModelBuilder {
+  private nameValue = "";
+  private folderIdValue = "";
+  private documentationValue?: string;
+  private propertiesValue: ArchiProperty[] = [];
+  private viewpointValue = "";
+  private diagramObjectsValue: ArchiDiagramObject[] = [];
+
+  constructor(private readonly idValue: string) {}
+
+  name(value: string): this {
+    this.nameValue = value;
+    return this;
+  }
+
+  inFolder(folderId: string): this {
+    this.folderIdValue = folderId;
+    return this;
+  }
+
+  documentation(value: string): this {
+    this.documentationValue = value;
+    return this;
+  }
+
+  property(key: string, value: string): this {
+    this.propertiesValue.push({ key, value });
+    return this;
+  }
+
+  viewpoint(value: string): this {
+    this.viewpointValue = value;
+    return this;
+  }
+
+  diagramObject(object: ArchiDiagramObject): this {
+    this.diagramObjectsValue.push(object);
+    return this;
+  }
+
+  build(): ConceptElement<"ArchimateDiagramModel"> {
+    if (!this.idValue) {
+      throw new Error("Element ArchimateDiagramModel is missing id");
+    }
+    if (!this.nameValue) {
+      throw new Error("Element ArchimateDiagramModel is missing name");
+    }
+    if (!this.folderIdValue) {
+      throw new Error("Element ArchimateDiagramModel is missing folderId");
+    }
+    if (!this.viewpointValue) {
+      throw new Error("Element ArchimateDiagramModel is missing viewpoint");
+    }
+
+    return new ConceptElement(
+      "ArchimateDiagramModel",
+      {
+        id: this.idValue,
+        name: this.nameValue,
+        folderId: this.folderIdValue,
+        ...(this.documentationValue ? { documentation: this.documentationValue } : {}),
+        ...(this.propertiesValue.length > 0 ? { properties: [...this.propertiesValue] } : {}),
+      },
+      {
+        viewpoint: this.viewpointValue,
+        diagramObjects: [...this.diagramObjectsValue],
+      },
+    );
+  }
+}
+
+class ArchimateDiagramModelElement extends ConceptElement<"ArchimateDiagramModel"> {
+  static readonly CONCEPT_TYPE = "ArchimateDiagramModel" as const;
+
+  static withId(id: string): ArchimateDiagramModelBuilder {
+    return new ArchimateDiagramModelBuilder(id);
+  }
+}
+
+export const ArchimateDiagramModel = ArchimateDiagramModelElement;

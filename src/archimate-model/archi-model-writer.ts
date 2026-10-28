@@ -148,10 +148,14 @@ export class ArchiModelWriter {
       element.profileIds && element.profileIds.length > 0
         ? ` profiles="${escapeXml(element.profileIds.join(" "))}"`
         : "";
+    const viewpointAttr =
+      element.conceptType === "ArchimateDiagramModel" && element.viewpoint
+        ? ` viewpoint="${escapeXml(element.viewpoint)}"`
+        : "";
     const lines = [
       `${pad}<element xsi:type="${escapeXml(archimateXsiType(element.conceptType))}" name="${escapeXml(
         element.name,
-      )}" id="${escapeXml(element.id)}"${profilesAttr}>`,
+      )}" id="${escapeXml(element.id)}"${viewpointAttr}${profilesAttr}>`,
     ];
 
     if (element.documentation) {
@@ -164,8 +168,42 @@ export class ArchiModelWriter {
       );
     }
 
+    for (const diagramObject of element.diagramObjects ?? []) {
+      lines.push(...this.serializeDiagramObject(diagramObject, indent + 1));
+    }
+
     lines.push(`${pad}</element>`);
     return lines.join("\n");
+  }
+
+  private serializeDiagramObject(
+    diagramObject: NonNullable<ArchiElementCreateIntent["diagramObjects"]>[number],
+    indent: number,
+  ): string[] {
+    const pad = "  ".repeat(indent);
+    const targetConnectionsAttr =
+      diagramObject.targetConnectionIds.length > 0
+        ? ` targetConnections="${escapeXml(diagramObject.targetConnectionIds.join(" "))}"`
+        : "";
+    const lines = [
+      `${pad}<child xsi:type="archimate:DiagramObject" id="${escapeXml(diagramObject.id)}" archimateElement="${escapeXml(
+        diagramObject.archimateElement,
+      )}" textPosition="${escapeXml(diagramObject.textPosition)}"${targetConnectionsAttr}>`,
+      `${pad}  <bounds x="${diagramObject.bounds.x}" y="${diagramObject.bounds.y}" width="${diagramObject.bounds.width}" height="${diagramObject.bounds.height}"/>`,
+    ];
+
+    for (const connection of diagramObject.sourceConnections) {
+      lines.push(
+        `${pad}  <sourceConnection xsi:type="archimate:Connection" id="${escapeXml(connection.id)}" source="${escapeXml(
+          connection.source,
+        )}" target="${escapeXml(connection.target)}" archimateRelationship="${escapeXml(
+          connection.archimateRelationship,
+        )}"/>`,
+      );
+    }
+
+    lines.push(`${pad}</child>`);
+    return lines;
   }
 
   private serializeRelationship(relation: ArchiRelationshipCreateIntent, indent: number): string {

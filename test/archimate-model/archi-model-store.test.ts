@@ -34,6 +34,7 @@ describe("ArchiModelStore", () => {
     const wrongConcept = ArchimateDiagramModel.withId("diagram-id")
       .name("Diagram")
       .inFolder(applicationFolderId)
+      .viewpoint("Application Layer")
       .build();
 
     assert.throws(
